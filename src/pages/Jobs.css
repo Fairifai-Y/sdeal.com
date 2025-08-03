@@ -1,0 +1,65 @@
+.list-group {
+  margin: 1rem 0;
+}
+
+.list-group-item {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0.5rem;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.25rem;
+  text-decoration: none;
+  color: #495057;
+  transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.list-group-item-action {
+  cursor: pointer;
+}
+
+.title-with-line-next {
+  border-bottom: 2px solid #000;
+  margin: 0;
+  padding: 0;
+}
+
+h2 {
+  margin-bottom: 1rem;
+}
+
+h3 {
+  color: #333;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+ul {
+  margin-bottom: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+p {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+} 

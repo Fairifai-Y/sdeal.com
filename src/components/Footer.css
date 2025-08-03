@@ -1,0 +1,14 @@
+.country-flag {
+  height: 22px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.w3-ul.no-lines li a {
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.w3-ul.no-lines li a:hover {
+  color: #f44336 !important;
+} 

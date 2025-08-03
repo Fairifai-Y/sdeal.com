@@ -1,0 +1,15 @@
+.w3-container p {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.w3-container a {
+  color: #2196F3;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.w3-container a:hover {
+  color: #1976D2;
+  text-decoration: underline;
+} 
