@@ -1,12 +1,13 @@
 .navbar-logo {
-  height: 35px;
+  height: 40px;
   width: auto;
   transition: all 0.3s ease;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  border-radius: 4px;
 }
 
 .navbar-logo:hover {
-  opacity: 0.8;
+  opacity: 0.9;
   transform: scale(1.05);
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
 }

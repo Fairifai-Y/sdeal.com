@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/images/sdeal-logo.svg';
+// Logo wordt geladen vanuit de public/images directory
 import './Header.css';
 
 const Header = () => {
@@ -8,7 +8,7 @@ const Header = () => {
     <div className="w3-top">
       <div className="w3-bar w3-white w3-wide w3-padding w3-card">
         <Link to="/" className="w3-bar-item">
-          <img src={logo} alt="SDeal Logo" className="navbar-logo" />
+          <img src="/images/sdeal Logo-01.jpg" alt="SDeal Logo" className="navbar-logo" />
         </Link>
         <div className="w3-right w3-hide-small">
           <a href="#about" className="w3-bar-item w3-button">About</a>
