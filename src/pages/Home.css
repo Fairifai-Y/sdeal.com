@@ -110,4 +110,27 @@
 
 .w3-card a:hover {
   color: var(--sdeal-dark-orange) !important;
+}
+
+/* Country section with extra top padding */
+#country {
+  padding-top: 60px !important;
+}
+
+/* Section headings with outline */
+.w3-border-bottom {
+  border-color: var(--sdeal-orange) !important;
+  padding-bottom: 20px !important;
+  margin-bottom: 40px !important;
+}
+
+.w3-border-bottom h3 {
+  text-shadow: 
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
+  color: blue;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 } 

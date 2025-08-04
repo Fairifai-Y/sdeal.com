@@ -30,17 +30,6 @@ const CountryCard = ({ country }) => {
         className="country-image"
       />
       <div className="country-info-bar">
-        <div className="country-flag">
-          <span className="flag-emoji">
-            {country.name === 'Italy' ? '🇮🇹' : 
-             country.name === 'Denmark' ? '🇩🇰' : 
-             country.name === 'Austria' ? '🇦🇹' : 
-             country.name === 'Netherlands' ? '🇳🇱' :
-             country.name === 'Germany' ? '🇩🇪' :
-             country.name === 'France' ? '🇫🇷' :
-             country.name === 'Belgium' ? '🇧🇪' : '🏳️'}
-          </span>
-        </div>
         <div className="country-name">
           <h4>{country.name}</h4>
         </div>

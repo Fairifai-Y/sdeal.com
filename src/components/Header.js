@@ -10,23 +10,6 @@ const Header = () => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 70, right: 20 });
   const languageBtnRef = useRef(null);
 
-  const getLanguageFlag = (lang) => {
-    const flags = {
-      en: '/images/uk_flag.svg',
-      nl: 'https://www.sdeal.nl/media/images/Nederlandse_vlag.png',
-      de: 'https://www.sdeal.nl/media/images/duitse_vlag.png',
-      fr: 'https://www.sdeal.nl/media/images/franse_vlag.png'
-    };
-    return flags[lang] || '/images/uk_flag.svg';
-  };
-
-  const handleImageError = (event) => {
-    // Fallback to PNG if SVG fails to load
-    if (event.target.src.includes('uk_flag.svg')) {
-      event.target.src = '/images/unitedkingdom.png';
-    }
-  };
-
   const getLanguageCode = (lang) => {
     const codes = {
       en: 'EN',
@@ -89,8 +72,10 @@ const Header = () => {
               className="language-btn" 
               onClick={toggleDropdown}
             >
-              <img src={getLanguageFlag(currentLanguage)} alt="Flag" className="flag-image" onError={handleImageError} />
               <span className="language-text">{getLanguageCode(currentLanguage)}</span>
+              <svg className="globe-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
             </button>
             <div 
               className={`language-dropdown ${isDropdownOpen ? 'open' : ''}`}
@@ -100,19 +85,31 @@ const Header = () => {
               }}
             >
               <button className="language-option" onClick={() => handleLanguageChange('en')}>
-                <img src="/images/uk_flag.svg" alt="UK Flag" className="flag-image" onError={handleImageError} />
+                <span>EN</span>
+                <svg className="globe-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
                 <span>English</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('nl')}>
-                <img src="https://www.sdeal.nl/media/images/Nederlandse_vlag.png" alt="NL Flag" className="flag-image" onError={handleImageError} />
+                <span>NL</span>
+                <svg className="globe-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
                 <span>Nederlands</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('de')}>
-                <img src="https://www.sdeal.nl/media/images/duitse_vlag.png" alt="DE Flag" className="flag-image" onError={handleImageError} />
+                <span>DE</span>
+                <svg className="globe-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
                 <span>Deutsch</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('fr')}>
-                <img src="https://www.sdeal.nl/media/images/franse_vlag.png" alt="FR Flag" className="flag-image" onError={handleImageError} />
+                <span>FR</span>
+                <svg className="globe-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
                 <span>Français</span>
               </button>
             </div>

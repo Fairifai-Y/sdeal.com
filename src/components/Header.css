@@ -70,21 +70,34 @@
 .language-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--sdeal-dark-blue);
   border: 2px solid var(--sdeal-dark-blue);
   color: white;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
   transition: all 0.3s ease;
+  position: relative; /* Needed for dropdown positioning */
+  z-index: 100003; /* Ensure it's above other elements */
 }
 
 .language-btn:hover {
   background: var(--sdeal-dark-blue);
   color: white;
+}
+
+.globe-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.language-text {
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .language-dropdown {
@@ -134,6 +147,18 @@
   color: white;
 }
 
+.language-option .globe-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.language-option span:first-child {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 20px;
+}
+
 .flag-image {
   width: 24px;
   height: 16px;
@@ -143,8 +168,4 @@
   display: inline-block;
   vertical-align: middle;
   margin-right: 4px;
-}
-
-.language-text {
-  font-weight: 600;
 } 
