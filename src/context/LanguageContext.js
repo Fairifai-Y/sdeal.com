@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getLanguageFromPath, getLocalizedUrl, getPathWithoutLanguage } from '../utils/languageUtils';
 
@@ -13,11 +13,18 @@ export const useLanguage = () => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguage] = useState(() => {
+    // Initialize with language from URL or localStorage
+    const urlLanguage = getLanguageFromPath(window.location.pathname);
+    const savedLanguage = localStorage.getItem('sdeal-language');
+    return urlLanguage || savedLanguage || 'en';
+  });
+  
   const location = useLocation();
   const navigate = useNavigate();
+  const prevLanguageRef = useRef(currentLanguage);
 
-  // Load language from URL or localStorage on component mount
+  // Sync language with URL changes
   useEffect(() => {
     const urlLanguage = getLanguageFromPath(location.pathname);
     const savedLanguage = localStorage.getItem('sdeal-language');
@@ -25,27 +32,22 @@ export const LanguageProvider = ({ children }) => {
     // Priority: URL > localStorage > default (en)
     const language = urlLanguage || savedLanguage || 'en';
     
-    console.log('useEffect - URL language:', urlLanguage, 'Saved language:', savedLanguage, 'Final language:', language, 'Current language:', currentLanguage);
-    
-    // Only update if language is different and not already being set
-    if (language !== currentLanguage) {
-      console.log('Setting new language from useEffect:', language);
+    // Only update if the language has actually changed
+    if (language !== prevLanguageRef.current) {
       setCurrentLanguage(language);
+      prevLanguageRef.current = language;
       
       // Update localStorage if different from URL
       if (language !== savedLanguage) {
         localStorage.setItem('sdeal-language', language);
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname]); // Only depend on pathname changes
 
   // Change language and update URL
   const changeLanguage = useCallback((language) => {
-    console.log('Changing language from', currentLanguage, 'to', language);
-    
     // Prevent changing to the same language
     if (currentLanguage === language) {
-      console.log('Same language, no change needed');
       return;
     }
     
@@ -56,9 +58,7 @@ export const LanguageProvider = ({ children }) => {
     const currentPath = getPathWithoutLanguage(location.pathname);
     const newUrl = getLocalizedUrl(currentPath, language);
     
-    console.log('Current path:', location.pathname, 'New URL:', newUrl);
-    
-    // Navigate to update the URL - let useEffect handle the state update
+    // Navigate to update the URL
     navigate(newUrl, { replace: true });
   }, [currentLanguage, location.pathname, navigate]);
 
