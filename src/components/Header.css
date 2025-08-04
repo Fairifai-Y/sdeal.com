@@ -1,7 +1,7 @@
 .navbar-logo {
-  height: 50px;
-  width: 200px;
-  object-fit: cover;
+  height: 60px;
+  width: 180px;
+  object-fit: contain;
   transition: all 0.3s ease;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
   border-radius: 4px;
