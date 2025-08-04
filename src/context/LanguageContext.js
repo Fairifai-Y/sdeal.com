@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getLanguageFromPath, getLocalizedUrl, getPathWithoutLanguage } from '../utils/languageUtils';
 
 const LanguageContext = createContext();
 
@@ -12,19 +14,33 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState('en');
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Load language from localStorage on component mount
+  // Load language from URL or localStorage on component mount
   useEffect(() => {
+    const urlLanguage = getLanguageFromPath(location.pathname);
     const savedLanguage = localStorage.getItem('sdeal-language');
-    if (savedLanguage) {
-      setCurrentLanguage(savedLanguage);
+    
+    // Priority: URL > localStorage > default (en)
+    const language = urlLanguage || savedLanguage || 'en';
+    setCurrentLanguage(language);
+    
+    // Update localStorage if different from URL
+    if (language !== savedLanguage) {
+      localStorage.setItem('sdeal-language', language);
     }
-  }, []);
+  }, [location.pathname]);
 
-  // Save language to localStorage when it changes
+  // Change language and update URL
   const changeLanguage = (language) => {
     setCurrentLanguage(language);
     localStorage.setItem('sdeal-language', language);
+    
+    // Update URL to reflect new language
+    const currentPath = getPathWithoutLanguage(location.pathname);
+    const newUrl = getLocalizedUrl(currentPath, language);
+    navigate(newUrl, { replace: true });
   };
 
   const value = {

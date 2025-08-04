@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- English (default) -->
+  <url>
+    <loc>https://www.sdeal.com/</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.sdeal.com/"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/connections</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/connections"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/connections"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/connections"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/connections"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/jobs</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/jobs"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/jobs"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/jobs"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/jobs"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/privacy-policy</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/privacy-policy"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/privacy-policy"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/privacy-policy"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/privacy-policy"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/terms-and-conditions</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/terms-and-conditions"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/terms-and-conditions"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/terms-and-conditions"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/terms-and-conditions"/>
+  </url>
+  
+  <!-- Dutch -->
+  <url>
+    <loc>https://www.sdeal.com/nl</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/connections</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/jobs</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/privacy-policy</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/terms-and-conditions</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <!-- German -->
+  <url>
+    <loc>https://www.sdeal.com/de</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/connections</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/jobs</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/privacy-policy</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/terms-and-conditions</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <!-- French -->
+  <url>
+    <loc>https://www.sdeal.com/fr</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/connections</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/jobs</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/privacy-policy</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/terms-and-conditions</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+</urlset> 
