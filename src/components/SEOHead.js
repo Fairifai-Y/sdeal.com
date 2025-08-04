@@ -30,18 +30,28 @@ const SEOHead = ({
   const seoImage = image || `${origin}/images/sdeal-logo-social.png`;
 
   // Generate hreflang tags for all languages
-  const hreflangTags = Object.entries(allLanguageUrls).map(([lang, url]) => ({
-    rel: 'alternate',
-    hreflang: lang,
-    href: `${origin}${url}`
-  }));
+  const hreflangTags = [];
+  
+  if (allLanguageUrls && typeof allLanguageUrls === 'object') {
+    Object.entries(allLanguageUrls).forEach(([lang, url]) => {
+      if (lang && url) {
+        hreflangTags.push({
+          rel: 'alternate',
+          hreflang: lang,
+          href: `${origin}${url}`
+        });
+      }
+    });
+  }
 
   // Add x-default hreflang
-  hreflangTags.push({
-    rel: 'alternate',
-    hreflang: 'x-default',
-    href: `${origin}${allLanguageUrls.en}`
-  });
+  if (allLanguageUrls && allLanguageUrls.en) {
+    hreflangTags.push({
+      rel: 'alternate',
+      hreflang: 'x-default',
+      href: `${origin}${allLanguageUrls.en}`
+    });
+  }
 
   return (
     <Helmet>

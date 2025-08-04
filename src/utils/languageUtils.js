@@ -44,16 +44,31 @@ export const getLocalizedUrl = (path, language) => {
 export const getAllLanguageUrls = (currentPath) => {
   const urls = {};
   
-  // Safety check for currentPath
-  if (!currentPath) {
-    currentPath = '/';
+  try {
+    // Safety check for currentPath
+    if (!currentPath) {
+      currentPath = '/';
+    }
+    
+    const pathWithoutLang = getPathWithoutLanguage(currentPath);
+    
+    if (languageConfig && typeof languageConfig === 'object') {
+      Object.keys(languageConfig).forEach(lang => {
+        if (lang) {
+          urls[lang] = getLocalizedUrl(pathWithoutLang, lang);
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Error in getAllLanguageUrls:', error);
+    // Return default URLs if there's an error
+    return {
+      en: '/',
+      nl: '/nl',
+      de: '/de',
+      fr: '/fr'
+    };
   }
-  
-  const pathWithoutLang = getPathWithoutLanguage(currentPath);
-  
-  Object.keys(languageConfig).forEach(lang => {
-    urls[lang] = getLocalizedUrl(pathWithoutLang, lang);
-  });
   
   return urls;
 }; 
