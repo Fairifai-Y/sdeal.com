@@ -6,12 +6,14 @@
   background: white;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  margin-bottom: 10px;
 }
 
 .country-card:hover {
-  transform: translateY(-10px) scale(1.02);
+  transform: translateY(-10px);
   box-shadow: 0 20px 40px rgba(237, 143, 71, 0.4);
   border: 3px solid var(--sdeal-orange);
+  z-index: 10;
 }
 
 .country-image {

@@ -3,6 +3,15 @@
   margin-bottom: 1rem;
 }
 
+.w3-row-padding {
+  margin: 0 -10px;
+}
+
+.w3-col {
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
 .w3-container a {
   color: var(--sdeal-orange);
   text-decoration: none;
