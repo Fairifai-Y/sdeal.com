@@ -12,12 +12,12 @@ const Header = () => {
 
   const getLanguageFlag = (lang) => {
     const flags = {
-      en: '🇬🇧',
-      nl: '🇳🇱',
-      de: '🇩🇪',
-      fr: '🇫🇷'
+      en: { emoji: '🇬🇧', text: 'GB' },
+      nl: { emoji: '🇳🇱', text: 'NL' },
+      de: { emoji: '🇩🇪', text: 'DE' },
+      fr: { emoji: '🇫🇷', text: 'FR' }
     };
-    return flags[lang] || '🇬🇧';
+    return flags[lang] || flags.en;
   };
 
   const getLanguageCode = (lang) => {
@@ -60,6 +60,8 @@ const Header = () => {
     };
   }, [isDropdownOpen]);
 
+  const currentFlag = getLanguageFlag(currentLanguage);
+
   return (
     <div className="w3-top">
       <div className="w3-bar w3-white w3-padding">
@@ -82,7 +84,8 @@ const Header = () => {
               className="language-btn" 
               onClick={toggleDropdown}
             >
-              <span className="flag-emoji">{getLanguageFlag(currentLanguage)}</span>
+              <span className="flag-emoji">{currentFlag.emoji}</span>
+              <span className="flag-text">{currentFlag.text}</span>
               <span className="language-text">{getLanguageCode(currentLanguage)}</span>
             </button>
             <div 
@@ -94,18 +97,22 @@ const Header = () => {
             >
               <button className="language-option" onClick={() => handleLanguageChange('en')}>
                 <span className="flag-emoji">🇬🇧</span>
+                <span className="flag-text">GB</span>
                 <span>English</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('nl')}>
                 <span className="flag-emoji">🇳🇱</span>
+                <span className="flag-text">NL</span>
                 <span>Nederlands</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('de')}>
                 <span className="flag-emoji">🇩🇪</span>
+                <span className="flag-text">DE</span>
                 <span>Deutsch</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('fr')}>
                 <span className="flag-emoji">🇫🇷</span>
+                <span className="flag-text">FR</span>
                 <span>Français</span>
               </button>
             </div>
