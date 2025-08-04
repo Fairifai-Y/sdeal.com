@@ -83,15 +83,15 @@
 }
 
 .visit-link {
-  color: white;
-  background: var(--sdeal-dark-orange);
+  color: var(--sdeal-dark-blue);
+  background: transparent;
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
   transition: all 0.3s ease;
   padding: 6px 12px;
   border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--sdeal-dark-blue);
 }
 
 .visit-link:hover {
