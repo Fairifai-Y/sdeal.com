@@ -87,7 +87,7 @@ const Home = () => {
           <div className="w3-col l4 m6 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
               <div className="w3-center">
-                <i className="fa fa-shopping-cart w3-xxlarge w3-text-orange"></i>
+                <i className="fa fa-shopping-cart w3-xxlarge"></i>
               </div>
               <h4 className="w3-center">{getTranslation(currentLanguage, 'marketplace')}</h4>
               <p className="w3-center">
@@ -98,7 +98,7 @@ const Home = () => {
           <div className="w3-col l4 m6 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
               <div className="w3-center">
-                <i className="fa fa-chart-line w3-xxlarge w3-text-orange"></i>
+                <i className="fa fa-chart-line w3-xxlarge"></i>
               </div>
               <h4 className="w3-center">{getTranslation(currentLanguage, 'analytics')}</h4>
               <p className="w3-center">
@@ -109,7 +109,7 @@ const Home = () => {
           <div className="w3-col l4 m6 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
               <div className="w3-center">
-                <i className="fa fa-users w3-xxlarge w3-text-orange"></i>
+                <i className="fa fa-users w3-xxlarge"></i>
               </div>
               <h4 className="w3-center">{getTranslation(currentLanguage, 'support')}</h4>
               <p className="w3-center">
@@ -128,6 +128,9 @@ const Home = () => {
         <div className="w3-row-padding">
           <div className="w3-col l6 m12 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
+              <div className="w3-center">
+                <i className="fa fa-bullseye w3-xxlarge"></i>
+              </div>
               <h4 className="w3-center">{getTranslation(currentLanguage, 'ourMission')}</h4>
               <p>
                 {getTranslation(currentLanguage, 'aboutText')}
@@ -136,40 +139,12 @@ const Home = () => {
           </div>
           <div className="w3-col l6 m12 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
+              <div className="w3-center">
+                <i className="fa fa-lightbulb w3-xxlarge"></i>
+              </div>
               <h4 className="w3-center">{getTranslation(currentLanguage, 'ourApproach')}</h4>
               <p>
                 {getTranslation(currentLanguage, 'aboutText2')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Contact Section */}
-      <div className="w3-container w3-padding-32" id="contact">
-        <h3 className="w3-border-bottom w3-border-light-grey w3-padding-16">
-          {getTranslation(currentLanguage, 'contact')}
-        </h3>
-        <div className="w3-row-padding">
-          <div className="w3-col l6 m12 w3-margin-bottom">
-            <div className="w3-card w3-white w3-padding">
-              <div className="w3-center">
-                <i className="fa fa-envelope w3-xxlarge w3-text-orange"></i>
-              </div>
-              <h4 className="w3-center">{getTranslation(currentLanguage, 'sales')}</h4>
-              <p className="w3-center">
-                <a href="mailto:sales@sdeal.com" className="w3-text-orange">sales@sdeal.com</a>
-              </p>
-            </div>
-          </div>
-          <div className="w3-col l6 m12 w3-margin-bottom">
-            <div className="w3-card w3-white w3-padding">
-              <div className="w3-center">
-                <i className="fa fa-briefcase w3-xxlarge w3-text-orange"></i>
-              </div>
-              <h4 className="w3-center">{getTranslation(currentLanguage, 'jobs')}</h4>
-              <p className="w3-center">
-                <a href="mailto:jobs@sdeal.com" className="w3-text-orange">jobs@sdeal.com</a>
               </p>
             </div>
           </div>

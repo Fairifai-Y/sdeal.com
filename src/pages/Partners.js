@@ -1,33 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Partners.css';
 
 const Partners = () => {
+  const [imageErrors, setImageErrors] = useState({});
+
+  const handleImageError = (partnerName) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [partnerName]: true
+    }));
+  };
+
   const partners = [
     {
       name: 'Fairifai',
       url: 'https://www.fairifai.com',
-      image: 'https://www.sdeal.nl/media//wysiwyg/media/fairifai.png',
+      image: '/images/fairifai-logo.jpg',
       description: 'Fairifai is our trusted partner for AI-powered product recommendations and personalized shopping experiences. Together, we enhance customer engagement and increase conversion rates through intelligent product suggestions.',
       category: 'AI & Personalization'
     },
     {
       name: 'Thuiswinkel Waarborg',
       url: 'https://www.thuiswinkel.org',
-      image: 'https://www.sdeal.nl/media//wysiwyg/media/thuiswinkel-waarborg.png',
+      image: '/images/logo-thuiswinkel_waarborg.svg',
       description: 'As a certified member of Thuiswinkel Waarborg, we ensure secure and reliable online shopping experiences for our customers with guaranteed buyer protection.',
       category: 'Trust & Security'
     },
     {
       name: 'Shopping Secure',
       url: 'https://www.shoppingsecure.nl',
-      image: 'https://www.sdeal.nl/media//wysiwyg/media/shopping-secure.png',
+      image: '/images/logo-shopping_secure.svg',
       description: 'Shopping Secure certification guarantees that our platform meets the highest security standards for online payments and data protection.',
       category: 'Security & Compliance'
     },
     {
       name: 'Thuiswinkel Platform',
       url: 'https://www.thuiswinkel.org',
-      image: 'https://www.sdeal.nl/media//wysiwyg/media/thuiswinkel-platform.png',
+      image: '/images/logo-thuiswinkel_platform.svg',
       description: 'Member of the Thuiswinkel Platform, representing the interests of online retailers and promoting fair e-commerce practices.',
       category: 'Industry Association'
     }
@@ -53,6 +62,7 @@ const Partners = () => {
                     src={partner.image} 
                     alt={partner.name} 
                     className="partner-logo"
+                    onError={() => handleImageError(partner.name)}
                   />
                 </a>
                 <span className="partner-category">{partner.category}</span>
