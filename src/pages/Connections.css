@@ -1,3 +1,12 @@
+:root {
+  --sdeal-dark-blue: #173441;
+  --sdeal-dark-orange: #e2603f;
+  --sdeal-yellow: #f5ae4c;
+  --sdeal-orange: #e2603f;
+  --sdeal-orange-hover: #d55a38;
+  --sdeal-orange-light: #f5ae4c;
+}
+
 .integrations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -14,8 +23,9 @@
 }
 
 .integration-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(226, 96, 63, 0.2);
   transform: translateY(-2px);
+  border-color: var(--sdeal-dark-orange);
 }
 
 .integration-logo {

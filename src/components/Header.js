@@ -7,9 +7,9 @@ const Header = () => {
   return (
     <div className="w3-top">
       <div className="w3-bar w3-white w3-wide w3-padding w3-card">
-        <Link to="/" className="w3-bar-item">
-          <img src="/images/sdeal Logo-01-3x1.png" alt="SDeal Logo" className="navbar-logo" />
-        </Link>
+                            <Link to="/" className="w3-bar-item">
+                      <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="navbar-logo" />
+                    </Link>
         <div className="nav-links w3-hide-small">
           <a href="#about" className="w3-bar-item w3-button">About</a>
           <a href="#contact" className="w3-bar-item w3-button">Contact</a>

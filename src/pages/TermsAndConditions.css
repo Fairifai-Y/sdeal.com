@@ -1,7 +1,16 @@
+:root {
+  --sdeal-dark-blue: #173441;
+  --sdeal-dark-orange: #e2603f;
+  --sdeal-yellow: #f5ae4c;
+  --sdeal-orange: #e2603f;
+  --sdeal-orange-hover: #d55a38;
+  --sdeal-orange-light: #f5ae4c;
+}
+
 h1 {
-  color: #333;
+  color: var(--sdeal-dark-blue);
   margin-bottom: 1rem;
-  border-bottom: 2px solid #000;
+  border-bottom: 2px solid var(--sdeal-dark-blue);
   padding-bottom: 0.5rem;
 }
 
@@ -34,7 +43,7 @@ li {
 }
 
 a {
-  color: #007bff;
+  color: var(--sdeal-dark-orange);
   text-decoration: none;
 }
 

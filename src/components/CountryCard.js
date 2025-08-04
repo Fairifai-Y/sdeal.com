@@ -23,29 +23,33 @@ const CountryCard = ({ country }) => {
 
   return (
     <div className="w3-display-container country-card">
-      <div className="country-card-overlay">
-        <div className="country-name">
-          <h3>{country.name}</h3>
-          <div className="country-flag-placeholder">
-            <span className="flag-emoji">
-              {country.name === 'Italy' ? '🇮🇹' : 
-               country.name === 'Denmark' ? '🇩🇰' : 
-               country.name === 'Austria' ? '🇦🇹' : '🏳️'}
-            </span>
-          </div>
-        </div>
-        <div className="country-actions">
-          <a href={country.url} target="_blank" rel="noopener noreferrer" className="visit-button">
-            Visit SDeal {country.name}
-          </a>
-        </div>
-      </div>
       <img 
         src={imageError ? getFallbackImage(country.name) : country.image} 
         alt={`Visit SDeal ${country.name}`} 
         onError={() => setImageError(true)}
         className="country-image"
       />
+      <div className="country-info-bar">
+        <div className="country-flag">
+          <span className="flag-emoji">
+            {country.name === 'Italy' ? '🇮🇹' : 
+             country.name === 'Denmark' ? '🇩🇰' : 
+             country.name === 'Austria' ? '🇦🇹' : 
+             country.name === 'Netherlands' ? '🇳🇱' :
+             country.name === 'Germany' ? '🇩🇪' :
+             country.name === 'France' ? '🇫🇷' :
+             country.name === 'Belgium' ? '🇧🇪' : '🏳️'}
+          </span>
+        </div>
+        <div className="country-name">
+          <h4>{country.name}</h4>
+        </div>
+        <div className="country-action">
+          <a href={country.url} target="_blank" rel="noopener noreferrer" className="visit-link">
+            Visit →
+          </a>
+        </div>
+      </div>
     </div>
   );
 };

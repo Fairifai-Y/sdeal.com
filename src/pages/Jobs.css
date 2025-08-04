@@ -1,3 +1,12 @@
+:root {
+  --sdeal-dark-blue: #173441;
+  --sdeal-dark-orange: #e2603f;
+  --sdeal-yellow: #f5ae4c;
+  --sdeal-orange: #e2603f;
+  --sdeal-orange-hover: #d55a38;
+  --sdeal-orange-light: #f5ae4c;
+}
+
 .list-group {
   margin: 1rem 0;
 }
@@ -16,8 +25,8 @@
 
 .list-group-item:hover {
   background-color: #f8f9fa;
-  border-color: #007bff;
-  color: #007bff;
+  border-color: var(--sdeal-dark-orange);
+  color: var(--sdeal-dark-orange);
   text-decoration: none;
 }
 
@@ -26,7 +35,7 @@
 }
 
 .title-with-line-next {
-  border-bottom: 2px solid #000;
+  border-bottom: 2px solid var(--sdeal-dark-blue);
   margin: 0;
   padding: 0;
 }
@@ -56,7 +65,7 @@ p {
 }
 
 a {
-  color: #007bff;
+  color: var(--sdeal-dark-orange);
   text-decoration: none;
 }
 

@@ -1,10 +1,18 @@
+:root {
+  --sdeal-dark-blue: #173441;
+  --sdeal-dark-orange: #e2603f;
+  --sdeal-yellow: #f5ae4c;
+  --sdeal-orange: #e2603f;
+  --sdeal-orange-hover: #d55a38;
+  --sdeal-orange-light: #f5ae4c;
+}
+
 .navbar-logo {
-  height: 60px;
-  width: 180px;
+  height: 50px;
+  width: auto;
   object-fit: contain;
   transition: all 0.3s ease;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-  border-radius: 4px;
 }
 
 .navbar-logo:hover {
