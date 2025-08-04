@@ -15,8 +15,14 @@
 
 .w3-bar-item.w3-button {
   transition: background-color 0.3s ease;
+  color: #333 !important;
 }
 
 .w3-bar-item.w3-button:hover {
-  background-color: #f1f1f1 !important;
+  background-color: var(--sdeal-orange) !important;
+  color: white !important;
+}
+
+.w3-bar {
+  border-bottom: 3px solid var(--sdeal-orange);
 } 

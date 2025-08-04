@@ -4,12 +4,20 @@
 }
 
 .w3-container a {
-  color: #2196F3;
+  color: var(--sdeal-orange);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .w3-container a:hover {
-  color: #1976D2;
+  color: var(--sdeal-orange-hover);
   text-decoration: underline;
+}
+
+.w3-border-bottom {
+  border-color: var(--sdeal-orange) !important;
+}
+
+.w3-padding-16 {
+  color: var(--sdeal-orange);
 } 
