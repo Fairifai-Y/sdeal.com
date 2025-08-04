@@ -21,8 +21,8 @@ const Footer = () => {
           <div className="w3-col s12 m2 w3-margin-bottom">
             <h4>Service</h4>
             <ul className="w3-ul no-lines">
-              <li><a href="#faq" className="w3-hover-text-red">FAQ</a></li>
-              <li><a href="#contact" className="w3-hover-text-red">Contact</a></li>
+              <li><Link to="/faq" className="w3-hover-text-red">FAQ</Link></li>
+              <li><Link to="/contact" className="w3-hover-text-red">Contact</Link></li>
             </ul>
           </div>
 
@@ -32,7 +32,6 @@ const Footer = () => {
               <li><a href="https://onboarding.sdeal.com" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Sell on SDeal</a></li>
               <li><Link to="/connections" className="w3-hover-text-red">Connections</Link></li>
               <li><Link to="/partners" className="w3-hover-text-red">Partners</Link></li>
-              <li><Link to="/partners" className="w3-hover-text-red">Partnerships</Link></li>
               <li><a href="#ads" className="w3-hover-text-red">Advertising</a></li>
               <li><Link to="/jobs" className="w3-hover-text-red">Jobs</Link></li>
             </ul>

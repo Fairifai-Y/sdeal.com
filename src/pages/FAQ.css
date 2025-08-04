@@ -1,0 +1,134 @@
+.faq-container {
+  padding-top: 80px;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.faq-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.faq-category {
+  margin-bottom: 40px;
+}
+
+.category-title {
+  color: var(--sdeal-dark-blue);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--sdeal-orange);
+}
+
+.faq-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faq-item {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.faq-question {
+  width: 100%;
+  padding: 20px;
+  background: white;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--sdeal-dark-blue);
+  transition: all 0.3s ease;
+}
+
+.faq-question:hover {
+  background: #f8f8f8;
+}
+
+.faq-question.active {
+  background: var(--sdeal-orange);
+  color: white;
+}
+
+.faq-icon {
+  font-size: 20px;
+  font-weight: bold;
+  margin-left: 15px;
+  transition: transform 0.3s ease;
+}
+
+.faq-question.active .faq-icon {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 20px 20px 20px;
+  background: white;
+  color: #333;
+  line-height: 1.6;
+}
+
+.faq-answer h3 {
+  color: var(--sdeal-dark-blue);
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.faq-answer p {
+  margin-bottom: 10px;
+}
+
+.faq-answer ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.faq-answer li {
+  margin-bottom: 5px;
+}
+
+.faq-answer b {
+  color: var(--sdeal-dark-blue);
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .faq-container {
+    padding-top: 60px;
+  }
+  
+  .faq-content {
+    padding: 0 20px;
+  }
+  
+  .faq-question {
+    padding: 15px;
+    font-size: 14px;
+  }
+  
+  .faq-answer {
+    padding: 0 15px 15px 15px;
+    font-size: 14px;
+  }
+  
+  .category-title {
+    font-size: 20px;
+  }
+} 

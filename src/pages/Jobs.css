@@ -71,4 +71,367 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.jobs-container {
+  padding-top: 80px;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.jobs-intro {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.jobs-intro p {
+  color: #666;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.jobs-categories {
+  margin-bottom: 60px;
+}
+
+.category-section {
+  margin-bottom: 50px;
+}
+
+.category-section h2 {
+  color: var(--sdeal-dark-blue);
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--sdeal-orange);
+}
+
+.traineeship-intro {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.job-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.job-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--sdeal-orange);
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.job-title {
+  color: var(--sdeal-dark-blue);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.job-category {
+  background: var(--sdeal-orange);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.job-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.job-info span {
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.job-info i {
+  color: var(--sdeal-orange);
+  width: 16px;
+}
+
+.job-description {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.apply-button {
+  background: var(--sdeal-orange);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.apply-button:hover {
+  background: var(--sdeal-orange-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.3);
+}
+
+.contact-section {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.contact-section h3 {
+  color: var(--sdeal-dark-blue);
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.contact-section p {
+  color: #666;
+  line-height: 1.6;
+}
+
+.contact-section a {
+  color: var(--sdeal-orange);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.contact-section a:hover {
+  color: var(--sdeal-orange-hover);
+  text-decoration: underline;
+}
+
+/* Modal Styles */
+.job-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.job-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.modal-header {
+  padding: 30px 30px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  color: var(--sdeal-dark-blue);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.modal-job-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.modal-job-info span {
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-job-info i {
+  color: var(--sdeal-orange);
+  width: 14px;
+}
+
+.modal-content {
+  padding: 20px 30px;
+}
+
+.modal-description {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  font-size: 16px;
+}
+
+.modal-section {
+  margin-bottom: 25px;
+}
+
+.modal-section h3 {
+  color: var(--sdeal-dark-blue);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.modal-section li {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.modal-section li:before {
+  content: "•";
+  color: var(--sdeal-orange);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.modal-footer {
+  padding: 20px 30px 30px;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+
+.apply-button-large {
+  background: var(--sdeal-orange);
+  color: white;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.apply-button-large:hover {
+  background: var(--sdeal-orange-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.3);
+  color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .jobs-container {
+    padding-top: 60px;
+  }
+  
+  .jobs-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 20px;
+  }
+  
+  .job-card {
+    padding: 20px;
+  }
+  
+  .job-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .job-title {
+    font-size: 18px;
+  }
+  
+  .contact-section {
+    margin: 0 20px;
+    padding: 30px 20px;
+  }
+  
+  .job-modal {
+    margin: 20px;
+    max-height: 95vh;
+  }
+  
+  .modal-header,
+  .modal-content,
+  .modal-footer {
+    padding: 20px;
+  }
+  
+  .modal-job-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .category-section h2 {
+    font-size: 24px;
+  }
 } 

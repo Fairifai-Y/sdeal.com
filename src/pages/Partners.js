@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Partners.css';
 
 const Partners = () => {
@@ -15,7 +16,7 @@ const Partners = () => {
     {
       name: 'Fairifai',
       url: 'https://www.fairifai.com',
-      image: '/images/fairifai-logo.jpg',
+      image: '/images/AI_logo.png',
       description: 'Fairifai is our trusted partner for AI-powered product recommendations and personalized shopping experiences. Together, we enhance customer engagement and increase conversion rates through intelligent product suggestions.',
       category: 'AI & Personalization'
     },
@@ -87,9 +88,9 @@ const Partners = () => {
             Are you interested in becoming a partner with SDeal? We're always looking for innovative companies 
             that share our vision of reliable and secure online shopping. Contact us to discuss partnership opportunities.
           </p>
-          <a href="#contact" className="w3-button w3-orange">
+          <Link to="/contact" className="w3-button w3-orange">
             Contact Us
-          </a>
+          </Link>
         </div>
       </div>
     </div>

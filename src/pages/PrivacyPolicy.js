@@ -110,7 +110,10 @@ const PrivacyPolicy = () => {
           </p>
           <p>
             Email: <a href="mailto:privacy@sdeal.com">privacy@sdeal.com</a><br />
-            Address: [Your Company Address]
+            Address: SDeal BV<br />
+            Osloweg 110<br />
+            9723 BX Groningen<br />
+            Netherlands
           </p>
         </section>
       </div>

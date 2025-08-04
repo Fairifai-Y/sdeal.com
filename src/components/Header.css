@@ -168,4 +168,170 @@
   display: inline-block;
   vertical-align: middle;
   margin-right: 4px;
+}
+
+/* Mobile Menu Styles */
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: var(--sdeal-dark-blue);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-line.open:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger-line.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-line.open:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 80px;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+.mobile-menu.open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-menu-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mobile-menu-item {
+  display: block;
+  padding: 15px 0;
+  color: var(--sdeal-dark-blue);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  font-family: inherit;
+}
+
+.mobile-menu-item:last-of-type {
+  border-bottom: none;
+}
+
+.mobile-menu-item:hover {
+  color: var(--sdeal-orange);
+}
+
+.mobile-language-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid var(--sdeal-orange);
+}
+
+.mobile-language-section h4 {
+  color: var(--sdeal-dark-blue);
+  margin-bottom: 15px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.mobile-language-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mobile-language-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: none;
+  font-family: inherit;
+}
+
+.mobile-language-option:hover {
+  background: var(--sdeal-dark-blue);
+  color: white;
+  border-color: var(--sdeal-dark-blue);
+}
+
+.mobile-language-option .language-code {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.mobile-language-option .language-name {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar-logo {
+    height: 40px;
+  }
+  
+  .w3-bar {
+    padding: 8px 16px !important;
+  }
+  
+  .mobile-language-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-menu-content {
+    padding: 15px;
+  }
+  
+  .mobile-menu-item {
+    padding: 12px 0;
+    font-size: 15px;
+  }
+  
+  .mobile-language-section h4 {
+    font-size: 13px;
+  }
 } 

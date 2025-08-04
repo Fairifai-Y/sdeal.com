@@ -1,0 +1,192 @@
+.contact-container {
+  padding-top: 80px;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.contact-intro {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.contact-intro p {
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.contact-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.contact-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.contact-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.contact-avatar {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--sdeal-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  color: white;
+  font-size: 36px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.contact-info {
+  text-align: center;
+}
+
+.contact-name {
+  color: var(--sdeal-dark-blue);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.contact-role {
+  color: var(--sdeal-orange);
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.contact-description {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+.schedule-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sdeal-orange);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid var(--sdeal-orange);
+}
+
+.schedule-button:hover {
+  background: var(--sdeal-orange-hover);
+  border-color: var(--sdeal-orange-hover);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.3);
+}
+
+.schedule-button i {
+  font-size: 16px;
+}
+
+.contact-additional {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.contact-additional h3 {
+  color: var(--sdeal-dark-blue);
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+
+.contact-methods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 30px;
+}
+
+.contact-method {
+  text-align: center;
+  padding: 20px;
+}
+
+.contact-method i {
+  font-size: 32px;
+  color: var(--sdeal-orange);
+  margin-bottom: 15px;
+}
+
+.contact-method h4 {
+  color: var(--sdeal-dark-blue);
+  font-size: 18px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.contact-method p {
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contact-container {
+    padding-top: 60px;
+  }
+  
+  .contact-cards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 20px;
+  }
+  
+  .contact-card {
+    padding: 25px;
+  }
+  
+  .contact-additional {
+    margin: 0 20px;
+    padding: 30px 20px;
+  }
+  
+  .contact-methods {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .contact-name {
+    font-size: 20px;
+  }
+  
+  .contact-role {
+    font-size: 14px;
+  }
+} 
