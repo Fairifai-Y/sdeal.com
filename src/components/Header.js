@@ -10,7 +10,7 @@ const Header = () => {
         <Link to="/" className="w3-bar-item">
           <img src="/images/sdeal Logo-01-3x1.png" alt="SDeal Logo" className="navbar-logo" />
         </Link>
-        <div className="w3-right w3-hide-small">
+        <div className="nav-links w3-hide-small">
           <a href="#about" className="w3-bar-item w3-button">About</a>
           <a href="#contact" className="w3-bar-item w3-button">Contact</a>
           <Link to="/connections" className="w3-bar-item w3-button">Connections</Link>
