@@ -83,17 +83,21 @@
 }
 
 .visit-link {
-  color: var(--sdeal-orange);
+  color: white;
+  background: var(--sdeal-dark-orange);
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
   transition: all 0.3s ease;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .visit-link:hover {
-  background: var(--sdeal-orange);
+  background: var(--sdeal-dark-blue);
   color: white;
   text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 } 

@@ -30,12 +30,13 @@
 
 .w3-bar-item.w3-button {
   transition: background-color 0.3s ease;
-  color: #333 !important;
+  color: var(--sdeal-dark-blue) !important;
   text-decoration: none !important;
+  font-weight: 600;
 }
 
 .w3-bar-item.w3-button:hover {
-  background-color: var(--sdeal-orange) !important;
+  background-color: var(--sdeal-dark-blue) !important;
   color: white !important;
   text-decoration: none !important;
 }
@@ -43,5 +44,6 @@
 .nav-links {
   display: flex;
   gap: 20px;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: 0;
 } 
