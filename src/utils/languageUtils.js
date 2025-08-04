@@ -43,6 +43,12 @@ export const getLocalizedUrl = (path, language) => {
 // Get all language URLs for current page
 export const getAllLanguageUrls = (currentPath) => {
   const urls = {};
+  
+  // Safety check for currentPath
+  if (!currentPath) {
+    currentPath = '/';
+  }
+  
   const pathWithoutLang = getPathWithoutLanguage(currentPath);
   
   Object.keys(languageConfig).forEach(lang => {

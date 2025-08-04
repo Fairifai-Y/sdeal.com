@@ -15,7 +15,10 @@ const SEOHead = ({
 }) => {
   const { currentLanguage } = useLanguage();
   const location = useLocation();
-  const currentUrl = window.location.origin + location.pathname;
+  
+  // Safety check for window.location.origin
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.sdeal.com';
+  const currentUrl = origin + location.pathname;
   const allLanguageUrls = getAllLanguageUrls(location.pathname);
 
   // Default SEO values
@@ -24,20 +27,20 @@ const SEOHead = ({
   
   const seoTitle = title || defaultTitle;
   const seoDescription = description || defaultDescription;
-  const seoImage = image || `${window.location.origin}/images/sdeal-logo-social.png`;
+  const seoImage = image || `${origin}/images/sdeal-logo-social.png`;
 
   // Generate hreflang tags for all languages
   const hreflangTags = Object.entries(allLanguageUrls).map(([lang, url]) => ({
     rel: 'alternate',
     hreflang: lang,
-    href: `${window.location.origin}${url}`
+    href: `${origin}${url}`
   }));
 
   // Add x-default hreflang
   hreflangTags.push({
     rel: 'alternate',
     hreflang: 'x-default',
-    href: `${window.location.origin}${allLanguageUrls.en}`
+    href: `${origin}${allLanguageUrls.en}`
   });
 
   return (
@@ -81,25 +84,25 @@ const SEOHead = ({
         </script>
       )}
       
-      {/* Default Structured Data for Organization */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "SDeal",
-          "url": window.location.origin,
-          "logo": `${window.location.origin}/images/logo_sdeal_navbar.svg`,
-          "description": seoDescription,
-          "sameAs": [
-            "https://www.sdeal.nl",
-            "https://www.sdeal.de",
-            "https://www.sdeal.fr",
-            "https://www.sdeal.it",
-            "https://www.sdeal.dk",
-            "https://www.sdeal.at"
-          ]
-        })}
-      </script>
+             {/* Default Structured Data for Organization */}
+       <script type="application/ld+json">
+         {JSON.stringify({
+           "@context": "https://schema.org",
+           "@type": "Organization",
+           "name": "SDeal",
+           "url": origin,
+           "logo": `${origin}/images/logo_sdeal_navbar.svg`,
+           "description": seoDescription,
+           "sameAs": [
+             "https://www.sdeal.nl",
+             "https://www.sdeal.de",
+             "https://www.sdeal.fr",
+             "https://www.sdeal.it",
+             "https://www.sdeal.dk",
+             "https://www.sdeal.at"
+           ]
+         })}
+       </script>
     </Helmet>
   );
 };
