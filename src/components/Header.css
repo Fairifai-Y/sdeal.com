@@ -105,6 +105,13 @@
   text-decoration: none;
   transition: background-color 0.2s ease;
   border-bottom: 1px solid #f0f0f0;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .language-option:last-child {

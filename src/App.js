@@ -19,8 +19,8 @@ const LocalizedRoute = ({ element, ...props }) => {
 function App() {
   return (
     <HelmetProvider>
-      <LanguageProvider>
-        <Router>
+      <Router>
+        <LanguageProvider>
           <div className="App">
             <Header />
             <main style={{ marginTop: '64px' }}>
@@ -56,8 +56,8 @@ function App() {
             </main>
             <Footer />
           </div>
-        </Router>
-      </LanguageProvider>
+        </LanguageProvider>
+      </Router>
     </HelmetProvider>
   );
 }

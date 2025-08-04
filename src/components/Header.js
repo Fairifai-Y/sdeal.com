@@ -38,8 +38,12 @@ const Header = () => {
                       <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="navbar-logo" />
                     </Link>
         <div className="nav-links w3-hide-small">
-          <a href="#about" className="w3-bar-item w3-button">{getTranslation(currentLanguage, 'about')}</a>
-          <a href="#contact" className="w3-bar-item w3-button">{getTranslation(currentLanguage, 'contact')}</a>
+          <button className="w3-bar-item w3-button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
+            {getTranslation(currentLanguage, 'about')}
+          </button>
+          <button className="w3-bar-item w3-button" onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}>
+            {getTranslation(currentLanguage, 'contact')}
+          </button>
           <Link to="/connections" className="w3-bar-item w3-button">{getTranslation(currentLanguage, 'connections')}</Link>
           <div className="language-selector">
             <button className="language-btn">
@@ -47,22 +51,22 @@ const Header = () => {
               <span className="language-text">{getLanguageCode(currentLanguage)}</span>
             </button>
             <div className="language-dropdown">
-              <a href="#" className="language-option" onClick={(e) => { e.preventDefault(); handleLanguageChange('en'); }}>
+              <button className="language-option" onClick={() => handleLanguageChange('en')}>
                 <span className="flag-emoji">🇬🇧</span>
                 <span>{getTranslation(currentLanguage, 'english')}</span>
-              </a>
-              <a href="#" className="language-option" onClick={(e) => { e.preventDefault(); handleLanguageChange('nl'); }}>
+              </button>
+              <button className="language-option" onClick={() => handleLanguageChange('nl')}>
                 <span className="flag-emoji">🇳🇱</span>
                 <span>{getTranslation(currentLanguage, 'dutch')}</span>
-              </a>
-              <a href="#" className="language-option" onClick={(e) => { e.preventDefault(); handleLanguageChange('de'); }}>
+              </button>
+              <button className="language-option" onClick={() => handleLanguageChange('de')}>
                 <span className="flag-emoji">🇩🇪</span>
                 <span>{getTranslation(currentLanguage, 'german')}</span>
-              </a>
-              <a href="#" className="language-option" onClick={(e) => { e.preventDefault(); handleLanguageChange('fr'); }}>
+              </button>
+              <button className="language-option" onClick={() => handleLanguageChange('fr')}>
                 <span className="flag-emoji">🇫🇷</span>
                 <span>{getTranslation(currentLanguage, 'french')}</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
