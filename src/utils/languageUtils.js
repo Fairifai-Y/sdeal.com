@@ -19,11 +19,12 @@ export const getLanguageFromPath = (pathname) => {
 
 // Get path without language prefix
 export const getPathWithoutLanguage = (pathname) => {
-  const language = getLanguageFromPath(pathname);
-  const prefix = languageConfig[language].prefix;
-  
-  if (prefix && pathname.startsWith(prefix)) {
-    return pathname.substring(prefix.length) || '/';
+  // Remove all language prefixes from the path
+  for (const [lang, config] of Object.entries(languageConfig)) {
+    if (config.prefix && pathname.startsWith(config.prefix)) {
+      const pathWithoutPrefix = pathname.substring(config.prefix.length);
+      return pathWithoutPrefix || '/';
+    }
   }
   return pathname;
 };

@@ -54,10 +54,10 @@ const Header = () => {
 
   return (
     <div className="w3-top">
-      <div className="w3-bar w3-white w3-wide w3-padding w3-card">
-                            <Link to="/" className="w3-bar-item">
-                      <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="navbar-logo" />
-                    </Link>
+      <div className="w3-bar w3-white w3-padding">
+        <Link to="/" className="w3-bar-item w3-button w3-padding-large">
+          <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="navbar-logo" />
+        </Link>
         <div className="nav-links w3-hide-small">
           <button className="w3-bar-item w3-button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
             {getTranslation(currentLanguage, 'about')}
@@ -74,19 +74,19 @@ const Header = () => {
                           <div className={`language-dropdown ${isDropdownOpen ? 'open' : ''}`}>
               <button className="language-option" onClick={() => handleLanguageChange('en')}>
                 <span className="flag-emoji">🇬🇧</span>
-                <span>{getTranslation(currentLanguage, 'english')}</span>
+                <span>English</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('nl')}>
                 <span className="flag-emoji">🇳🇱</span>
-                <span>{getTranslation(currentLanguage, 'dutch')}</span>
+                <span>Nederlands</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('de')}>
                 <span className="flag-emoji">🇩🇪</span>
-                <span>{getTranslation(currentLanguage, 'german')}</span>
+                <span>Deutsch</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('fr')}>
                 <span className="flag-emoji">🇫🇷</span>
-                <span>{getTranslation(currentLanguage, 'french')}</span>
+                <span>Français</span>
               </button>
             </div>
           </div>

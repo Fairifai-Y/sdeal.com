@@ -16,15 +16,10 @@
   height: 50px;
   width: auto;
   object-fit: contain;
-  transition: all 0.3s ease;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
-.navbar-logo:hover {
-  opacity: 0.9;
-  transform: scale(1.05);
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-}
+/* Logo hover effects removed */
 
 .w3-bar {
   display: flex;
@@ -33,6 +28,8 @@
   border-bottom: 3px solid var(--sdeal-orange);
   position: relative;
   z-index: 1000;
+  background: white !important;
+  box-shadow: none !important;
 }
 
 .w3-bar-item.w3-button {
@@ -40,6 +37,12 @@
   color: var(--sdeal-dark-blue) !important;
   text-decoration: none !important;
   font-weight: 600;
+}
+
+/* Remove hover effect for logo button specifically */
+.w3-bar-item.w3-button.w3-padding-large:hover {
+  background-color: transparent !important;
+  color: var(--sdeal-dark-blue) !important;
 }
 
 .w3-bar-item.w3-button:hover {

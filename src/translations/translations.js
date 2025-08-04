@@ -23,6 +23,22 @@ export const translations = {
     dutch: 'Dutch',
     german: 'German',
     french: 'French',
+    
+    // Products
+    products: 'Our Products',
+    marketplace: 'Marketplace Platform',
+    marketplaceDesc: 'Advanced e-commerce platform connecting retailers and wholesalers with consumers across Europe.',
+    analytics: 'Analytics & Insights',
+    analyticsDesc: 'Comprehensive data analytics and business intelligence tools to optimize your sales performance.',
+    support: '24/7 Support',
+    supportDesc: 'Round-the-clock customer support and technical assistance for all our partners.',
+    
+    // About
+    ourMission: 'Our Mission',
+    ourApproach: 'Our Approach',
+    
+    // Contact
+    sales: 'Sales Team',
   },
   
   nl: {
@@ -49,6 +65,22 @@ export const translations = {
     dutch: 'Nederlands',
     german: 'Duits',
     french: 'Frans',
+    
+    // Products
+    products: 'Onze Producten',
+    marketplace: 'Marktplaats Platform',
+    marketplaceDesc: 'Geavanceerd e-commerce platform dat retailers en groothandelaren verbindt met consumenten in heel Europa.',
+    analytics: 'Analytics & Inzichten',
+    analyticsDesc: 'Uitgebreide data analytics en business intelligence tools om uw verkoopprestaties te optimaliseren.',
+    support: '24/7 Ondersteuning',
+    supportDesc: 'Rond-de-klok klantenservice en technische ondersteuning voor al onze partners.',
+    
+    // About
+    ourMission: 'Onze Missie',
+    ourApproach: 'Onze Aanpak',
+    
+    // Contact
+    sales: 'Sales Team',
   },
   
   de: {
@@ -75,6 +107,22 @@ export const translations = {
     dutch: 'Niederländisch',
     german: 'Deutsch',
     french: 'Französisch',
+    
+    // Products
+    products: 'Unsere Produkte',
+    marketplace: 'Marktplatz-Plattform',
+    marketplaceDesc: 'Fortschrittliche E-Commerce-Plattform, die Einzelhändler und Großhändler mit Verbrauchern in ganz Europa verbindet.',
+    analytics: 'Analytics & Einblicke',
+    analyticsDesc: 'Umfassende Datenanalyse und Business-Intelligence-Tools zur Optimierung Ihrer Verkaufsleistung.',
+    support: '24/7 Support',
+    supportDesc: 'Rund-um-die-Uhr-Kundenservice und technische Unterstützung für alle unsere Partner.',
+    
+    // About
+    ourMission: 'Unsere Mission',
+    ourApproach: 'Unser Ansatz',
+    
+    // Contact
+    sales: 'Vertriebsteam',
   },
   
   fr: {
@@ -101,6 +149,22 @@ export const translations = {
     dutch: 'Néerlandais',
     german: 'Allemand',
     french: 'Français',
+    
+    // Products
+    products: 'Nos Produits',
+    marketplace: 'Plateforme de Marché',
+    marketplaceDesc: 'Plateforme e-commerce avancée connectant les détaillants et grossistes avec les consommateurs à travers l\'Europe.',
+    analytics: 'Analytics & Insights',
+    analyticsDesc: 'Outils d\'analyse de données et d\'intelligence d\'affaires complets pour optimiser vos performances de vente.',
+    support: 'Support 24/7',
+    supportDesc: 'Service client et assistance technique 24h/24 et 7j/7 pour tous nos partenaires.',
+    
+    // About
+    ourMission: 'Notre Mission',
+    ourApproach: 'Notre Approche',
+    
+    // Contact
+    sales: 'Équipe Commerciale',
   }
 };
 
