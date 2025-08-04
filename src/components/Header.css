@@ -98,7 +98,7 @@
   transition: all 0.3s ease;
 }
 
-.language-selector:hover .language-dropdown {
+.language-dropdown.open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
@@ -27,9 +27,30 @@ const Header = () => {
     return codes[lang] || 'EN';
   };
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const handleLanguageChange = (language) => {
     changeLanguage(language);
+    setIsDropdownOpen(false); // Close dropdown after selection
   };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && !event.target.closest('.language-selector')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
     <div className="w3-top">
@@ -45,12 +66,12 @@ const Header = () => {
             {getTranslation(currentLanguage, 'contact')}
           </button>
           <Link to="/connections" className="w3-bar-item w3-button">{getTranslation(currentLanguage, 'connections')}</Link>
-          <div className="language-selector">
-            <button className="language-btn">
-              <span className="flag-emoji">{getLanguageFlag(currentLanguage)}</span>
-              <span className="language-text">{getLanguageCode(currentLanguage)}</span>
-            </button>
-            <div className="language-dropdown">
+                      <div className="language-selector">
+              <button className="language-btn" onClick={toggleDropdown}>
+                <span className="flag-emoji">{getLanguageFlag(currentLanguage)}</span>
+                <span className="language-text">{getLanguageCode(currentLanguage)}</span>
+              </button>
+                          <div className={`language-dropdown ${isDropdownOpen ? 'open' : ''}`}>
               <button className="language-option" onClick={() => handleLanguageChange('en')}>
                 <span className="flag-emoji">🇬🇧</span>
                 <span>{getTranslation(currentLanguage, 'english')}</span>
