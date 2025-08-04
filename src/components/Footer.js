@@ -31,7 +31,8 @@ const Footer = () => {
             <ul className="w3-ul no-lines">
               <li><a href="https://onboarding.sdeal.com" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Sell on SDeal</a></li>
               <li><Link to="/connections" className="w3-hover-text-red">Connections</Link></li>
-              <li><a href="#partner" className="w3-hover-text-red">Partnerships</a></li>
+              <li><Link to="/partners" className="w3-hover-text-red">Partners</Link></li>
+              <li><Link to="/partners" className="w3-hover-text-red">Partnerships</Link></li>
               <li><a href="#ads" className="w3-hover-text-red">Advertising</a></li>
               <li><Link to="/jobs" className="w3-hover-text-red">Jobs</Link></li>
             </ul>

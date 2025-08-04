@@ -32,10 +32,6 @@
   text-decoration: underline;
 }
 
-.w3-border-bottom {
-  border-color: var(--sdeal-orange) !important;
-}
-
 .w3-padding-16 {
   color: var(--sdeal-orange);
 }
@@ -46,11 +42,13 @@
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid transparent;
 }
 
 .w3-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  border: 3px solid var(--sdeal-orange);
 }
 
 /* Product cards specific styling */
@@ -66,16 +64,42 @@
 .w3-card h4 {
   color: var(--sdeal-dark-blue);
   margin-bottom: 15px;
+  transition: color 0.3s ease;
+}
+
+.w3-card:hover h4 {
+  color: var(--sdeal-orange);
 }
 
 .w3-card p {
   color: #666;
   line-height: 1.6;
+  transition: color 0.3s ease;
+}
+
+.w3-card:hover p {
+  color: var(--sdeal-orange);
 }
 
 /* About and Contact cards */
 .w3-card .w3-padding {
   padding: 30px !important;
+}
+
+.w3-card .w3-padding h3 {
+  transition: color 0.3s ease;
+}
+
+.w3-card:hover .w3-padding h3 {
+  color: var(--sdeal-orange) !important;
+}
+
+.w3-card .w3-padding p {
+  transition: color 0.3s ease;
+}
+
+.w3-card:hover .w3-padding p {
+  color: var(--sdeal-orange) !important;
 }
 
 .w3-card a {

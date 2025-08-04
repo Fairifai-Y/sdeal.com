@@ -12,12 +12,19 @@ const Header = () => {
 
   const getLanguageFlag = (lang) => {
     const flags = {
-      en: { emoji: '🇬🇧', text: 'GB' },
-      nl: { emoji: '🇳🇱', text: 'NL' },
-      de: { emoji: '🇩🇪', text: 'DE' },
-      fr: { emoji: '🇫🇷', text: 'FR' }
+      en: '/images/uk_flag.svg',
+      nl: 'https://www.sdeal.nl/media/images/Nederlandse_vlag.png',
+      de: 'https://www.sdeal.nl/media/images/duitse_vlag.png',
+      fr: 'https://www.sdeal.nl/media/images/franse_vlag.png'
     };
-    return flags[lang] || flags.en;
+    return flags[lang] || '/images/uk_flag.svg';
+  };
+
+  const handleImageError = (event) => {
+    // Fallback to PNG if SVG fails to load
+    if (event.target.src.includes('uk_flag.svg')) {
+      event.target.src = '/images/unitedkingdom.png';
+    }
   };
 
   const getLanguageCode = (lang) => {
@@ -60,8 +67,6 @@ const Header = () => {
     };
   }, [isDropdownOpen]);
 
-  const currentFlag = getLanguageFlag(currentLanguage);
-
   return (
     <div className="w3-top">
       <div className="w3-bar w3-white w3-padding">
@@ -84,8 +89,7 @@ const Header = () => {
               className="language-btn" 
               onClick={toggleDropdown}
             >
-              <span className="flag-emoji">{currentFlag.emoji}</span>
-              <span className="flag-text">{currentFlag.text}</span>
+              <img src={getLanguageFlag(currentLanguage)} alt="Flag" className="flag-image" onError={handleImageError} />
               <span className="language-text">{getLanguageCode(currentLanguage)}</span>
             </button>
             <div 
@@ -96,23 +100,19 @@ const Header = () => {
               }}
             >
               <button className="language-option" onClick={() => handleLanguageChange('en')}>
-                <span className="flag-emoji">🇬🇧</span>
-                <span className="flag-text">GB</span>
+                <img src="/images/uk_flag.svg" alt="UK Flag" className="flag-image" onError={handleImageError} />
                 <span>English</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('nl')}>
-                <span className="flag-emoji">🇳🇱</span>
-                <span className="flag-text">NL</span>
+                <img src="https://www.sdeal.nl/media/images/Nederlandse_vlag.png" alt="NL Flag" className="flag-image" onError={handleImageError} />
                 <span>Nederlands</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('de')}>
-                <span className="flag-emoji">🇩🇪</span>
-                <span className="flag-text">DE</span>
+                <img src="https://www.sdeal.nl/media/images/duitse_vlag.png" alt="DE Flag" className="flag-image" onError={handleImageError} />
                 <span>Deutsch</span>
               </button>
               <button className="language-option" onClick={() => handleLanguageChange('fr')}>
-                <span className="flag-emoji">🇫🇷</span>
-                <span className="flag-text">FR</span>
+                <img src="https://www.sdeal.nl/media/images/franse_vlag.png" alt="FR Flag" className="flag-image" onError={handleImageError} />
                 <span>Français</span>
               </button>
             </div>

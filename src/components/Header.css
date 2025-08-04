@@ -71,9 +71,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: transparent;
+  background: var(--sdeal-dark-blue);
   border: 2px solid var(--sdeal-dark-blue);
-  color: var(--sdeal-dark-blue);
+  color: white;
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -143,29 +143,6 @@
   display: inline-block;
   vertical-align: middle;
   margin-right: 4px;
-}
-
-.flag-emoji {
-  font-size: 16px;
-  margin-right: 4px;
-}
-
-.flag-text {
-  font-size: 12px;
-  font-weight: bold;
-  color: #666;
-  margin-right: 4px;
-  display: none; /* Hide by default, show only if emoji doesn't work */
-}
-
-/* Show text flags on devices that might not support emoji flags well */
-@media (max-width: 768px) {
-  .flag-text {
-    display: inline;
-  }
-  .flag-emoji {
-    display: none;
-  }
 }
 
 .language-text {

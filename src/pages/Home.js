@@ -12,37 +12,37 @@ const Home = () => {
     {
       name: 'Netherlands',
       url: 'https://www.sdeal.nl',
-      image: '/images/netherlands.png'
+      image: '/images/image-1.jpg'
     },
     {
       name: 'Germany',
       url: 'https://www.sdeal.de',
-      image: '/images/germany.png'
+      image: '/images/image-2.jpg'
     },
     {
       name: 'France',
       url: 'https://www.sdeal.fr',
-      image: '/images/france.png'
+      image: '/images/image-3.jpg'
     },
     {
       name: 'Belgium',
       url: 'https://www.sdeal.be',
-      image: '/images/belgium.png'
+      image: '/images/image-4.jpg'
     },
     {
       name: 'Italy',
       url: 'https://www.sdeal.it',
-      image: '/images/italy.png'
+      image: '/images/image-5.jpg'
     },
     {
       name: 'Denmark',
       url: 'https://www.sdeal.dk',
-      image: '/images/denmark.png'
+      image: '/images/image-6.jpg'
     },
     {
       name: 'Austria',
       url: 'https://www.sdeal.at',
-      image: '/images/austria.png'
+      image: '/images/image-7.jpg'
     }
   ];
 
