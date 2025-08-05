@@ -7,53 +7,111 @@
   --sdeal-orange-light: #f5ae4c;
 }
 
-h1 {
+.privacy-container {
+  min-height: 100vh;
+  background-color: #fff;
+}
+
+.privacy-container h1 {
   color: var(--sdeal-dark-blue);
-  margin-bottom: 1rem;
-  border-bottom: 2px solid var(--sdeal-dark-blue);
-  padding-bottom: 0.5rem;
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  font-weight: bold;
 }
 
-h2 {
-  color: #444;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+.privacy-container h3 {
+  color: var(--sdeal-dark-blue);
+  font-size: 1.3em;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  border-bottom: 2px solid var(--sdeal-orange);
+  padding-bottom: 5px;
 }
 
-h3 {
-  color: #555;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  font-size: 1.2rem;
+.privacy-container h4 {
+  color: var(--sdeal-dark-blue);
+  font-size: 1.1em;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 
-section {
-  margin-bottom: 2rem;
-}
-
-p {
+.privacy-container p {
   line-height: 1.6;
-  margin-bottom: 1rem;
-  color: #666;
+  margin-bottom: 15px;
+  color: #333;
 }
 
-ul {
-  margin-bottom: 1.5rem;
-  padding-left: 2rem;
+.privacy-container ul {
+  margin-bottom: 20px;
+  padding-left: 20px;
 }
 
-li {
-  margin-bottom: 0.5rem;
+.privacy-container li {
+  margin-bottom: 8px;
   line-height: 1.6;
-  color: #666;
+  color: #333;
 }
 
-a {
-  color: var(--sdeal-dark-orange);
+.privacy-container strong {
+  color: var(--sdeal-dark-blue);
+  font-weight: bold;
+}
+
+.privacy-container a {
+  color: var(--sdeal-orange);
   text-decoration: none;
 }
 
-a:hover {
+.privacy-container a:hover {
   text-decoration: underline;
+}
+
+.privacy-container em {
+  font-style: italic;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.privacy-container hr {
+  border: 1px solid #ccc;
+  margin: 40px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .privacy-container h1 {
+    font-size: 2em;
+  }
+  
+  .privacy-container h3 {
+    font-size: 1.2em;
+  }
+  
+  .privacy-container h4 {
+    font-size: 1em;
+  }
+  
+  .privacy-container {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .privacy-container h1 {
+    font-size: 1.8em;
+  }
+  
+  .privacy-container h3 {
+    font-size: 1.1em;
+  }
+  
+  .privacy-container h4 {
+    font-size: 0.9em;
+  }
+  
+  .privacy-container ul {
+    padding-left: 15px;
+  }
 } 

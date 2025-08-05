@@ -79,6 +79,9 @@ const Header = () => {
           <Link to="/connections" className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'connections')}
           </Link>
+          <Link to="/partners" className="w3-bar-item w3-button">
+            {getTranslation(currentLanguage, 'partners')}
+          </Link>
           <Link to="/faq" className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'faq')}
           </Link>
@@ -156,6 +159,9 @@ const Header = () => {
           </Link>
           <Link to="/connections" className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'connections')}
+          </Link>
+          <Link to="/partners" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+            {getTranslation(currentLanguage, 'partners')}
           </Link>
           <Link to="/faq" className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'faq')}

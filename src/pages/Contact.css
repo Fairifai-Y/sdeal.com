@@ -4,9 +4,40 @@
   background: #f9f9f9;
 }
 
-.contact-intro {
+.contact-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
+}
+
+.contact-header h1 {
+  margin-bottom: 20px;
+}
+
+.language-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sdeal-dark-blue);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.globe-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.language-name {
+  font-weight: 600;
+}
+
+.contact-intro {
+  max-width: 800px;
+  margin: 0 auto 40px auto;
 }
 
 .contact-intro p {
@@ -188,5 +219,15 @@
   
   .contact-role {
     font-size: 14px;
+  }
+  
+  .language-indicator {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .globe-icon {
+    width: 16px;
+    height: 16px;
   }
 } 

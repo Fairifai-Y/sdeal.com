@@ -7,6 +7,55 @@
   --sdeal-orange-light: #f5ae4c;
 }
 
+.connections-container {
+  padding-top: 80px;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.connections-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.connections-header h1 {
+  margin-bottom: 20px;
+}
+
+.language-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sdeal-dark-blue);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.globe-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.language-name {
+  font-weight: 600;
+}
+
+.connections-intro {
+  max-width: 800px;
+  margin: 0 auto 40px auto;
+}
+
+.connections-intro p {
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
 .integrations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -20,12 +69,13 @@
   border-radius: 8px;
   transition: all 0.3s ease;
   background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .integration-card:hover {
-  box-shadow: 0 4px 20px rgba(226, 96, 63, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
-  border-color: var(--sdeal-dark-orange);
+  border-color: var(--sdeal-orange);
 }
 
 .integration-logo {
@@ -45,8 +95,27 @@
 }
 
 @media (max-width: 768px) {
+  .connections-container {
+    padding-top: 60px;
+  }
+  
   .integrations-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
+    padding: 0 20px;
+  }
+  
+  .integration-card {
+    padding: 1rem;
+  }
+  
+  .language-indicator {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .globe-icon {
+    width: 16px;
+    height: 16px;
   }
 } 

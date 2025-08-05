@@ -46,6 +46,32 @@ export const translations = {
     email: 'Email',
     phone: 'Phone',
     address: 'Address',
+    
+    // Connections
+    connectionsIntro: 'SDeal offers seamless integrations with the most commonly used e-commerce systems. This allows sellers to quickly and easily connect their webshop, order handling, and product feeds to our platform.',
+    
+    // Partners
+    partners: 'Our Partners',
+    partnersIntro: 'SDeal collaborates with industry-leading partners to provide the best possible experience for our customers. These partnerships enable us to offer innovative solutions, enhanced security, and reliable services.',
+         visitPartner: 'Visit Partner',
+     interestedPartnership: 'Interested in Partnership?',
+     partnershipDescription: 'Are you interested in becoming a partner with SDeal? We\'re always looking for innovative companies that share our vision of reliable and secure online shopping. Contact us to discuss partnership opportunities.',
+     contactUs: 'Contact Us',
+     contactForPartnership: 'Contact Us for Partnership Opportunities',
+     
+     // Jobs
+     joinOurTeam: 'Join Our Team',
+     jobsIntro: 'We are currently looking for top talents to join our fast-growing team. Discover opportunities that match your skills and ambitions.',
+     fullTimePositions: 'Full-time Positions',
+     traineeships: 'Traineeships',
+     traineeshipIntro: 'We are regularly seeking young and motivated talent who are eager to further develop their skills in their field.',
+     interestedInJoining: 'Interested in Joining Our Team?',
+     contactUsJobs: 'Does one of the positions above suit you perfectly? Don\'t hesitate and contact us at',
+     viewDetails: 'View Details',
+     applyNow: 'Apply Now',
+     keyResponsibilities: 'Key Responsibilities',
+     requirements: 'Requirements',
+     whatWeOffer: 'What We Offer',
   },
   
   nl: {
@@ -95,6 +121,32 @@ export const translations = {
     email: 'E-mail',
     phone: 'Telefoon',
     address: 'Adres',
+    
+    // Connections
+    connectionsIntro: 'SDeal biedt naadloze integraties met de meest gebruikte e-commerce systemen. Dit maakt het mogelijk voor verkopers om snel en gemakkelijk hun webshop, orderverwerking en product feeds te verbinden met onze platform.',
+    
+    // Partners
+    partners: 'Onze Partners',
+    partnersIntro: 'SDeal samenwerkt met leidende industrie-partners om de beste ervaring te bieden voor onze klanten. Deze samenwerkingen maken het ons mogelijk om innovatieve oplossingen aan te bieden, een verbeterde beveiliging en betrouwbare diensten te bieden.',
+         visitPartner: 'Partner Bezoeken',
+     interestedPartnership: 'Interesse in Partnerschap?',
+     partnershipDescription: 'Ben je geïnteresseerd in een partnerschap met SDeal? We zoeken altijd innovatieve bedrijven die onze visie delen van betrouwbare en veilige online winkelen. Neem contact met ons op om samenwerkingstaken te bespreken.',
+     contactUs: 'Neem Contact Op',
+     contactForPartnership: 'Neem Contact Op voor Partner Mogelijkheden',
+     
+     // Jobs
+     joinOurTeam: 'Word Lid van Ons Team',
+     jobsIntro: 'We zijn momenteel op zoek naar top talenten om ons snelgroeiende team te versterken. Ontdek kansen die passen bij jouw vaardigheden en ambities.',
+     fullTimePositions: 'Volledige Tijd Posities',
+     traineeships: 'Traineeships',
+     traineeshipIntro: 'We zijn regelmatig op zoek naar jong en gemotiveerd talent dat graag hun vaardigheden in hun vakgebied verder willen ontwikkelen.',
+     interestedInJoining: 'Interesse in Ons Team?',
+     contactUsJobs: 'Past een van de bovenstaande functies perfect bij jou? Aarzel niet en neem contact met ons op via',
+     viewDetails: 'Bekijk Details',
+     applyNow: 'Solliciteer Nu',
+     keyResponsibilities: 'Belangrijkste Verantwoordelijkheden',
+     requirements: 'Vereisten',
+     whatWeOffer: 'Wat Wij Bieden',
   },
   
   de: {
@@ -144,6 +196,32 @@ export const translations = {
     email: 'E-Mail',
     phone: 'Telefon',
     address: 'Adresse',
+    
+    // Connections
+    connectionsIntro: 'SDeal bietet nahtlose Integrationen mit den am häufigsten verwendeten E-Commerce-Systemen. Dies ermöglicht es Verkäufern, ihre Webshop, Bestellverarbeitung und Produktfeeds schnell und einfach mit unserer Plattform zu verbinden.',
+    
+    // Partners
+    partners: 'Unsere Partner',
+    partnersIntro: 'SDeal arbeitet mit führenden Branchenpartnern zusammen, um die beste Erfahrung für unsere Kunden zu bieten. Diese Partnerschaften ermöglichen es uns, innovative Lösungen anzubieten, eine verbesserte Sicherheit und zuverlässige Dienste anzubieten.',
+         visitPartner: 'Partner Besuchen',
+     interestedPartnership: 'Interessiert an einem Partnerschaft?',
+     partnershipDescription: 'Sind Sie an einem Partnerschaft mit SDeal interessiert? Wir suchen ständig innovativen Unternehmen, die unsere Vision von zuverlässigem und sicheren Online-Einkauf teilen. Wenden Sie sich an uns, um Partnerschaftsfragen zu besprechen.',
+     contactUs: 'Kontaktieren Sie uns',
+     contactForPartnership: 'Kontaktieren Sie uns für Partner-Möglichkeiten',
+     
+     // Jobs
+     joinOurTeam: 'Werden Sie Teil Unseres Teams',
+     jobsIntro: 'Wir suchen derzeit nach Top-Talenten, um unser schnell wachsendes Team zu verstärken. Entdecken Sie Möglichkeiten, die zu Ihren Fähigkeiten und Ambitionen passen.',
+     fullTimePositions: 'Vollzeit-Positionen',
+     traineeships: 'Traineeships',
+     traineeshipIntro: 'Wir suchen regelmäßig nach jungen und motivierten Talenten, die ihre Fähigkeiten in ihrem Fachgebiet weiterentwickeln möchten.',
+     interestedInJoining: 'Interesse an Unserem Team?',
+     contactUsJobs: 'Passt eine der oben genannten Positionen perfekt zu Ihnen? Zögern Sie nicht und kontaktieren Sie uns unter',
+     viewDetails: 'Details Anzeigen',
+     applyNow: 'Jetzt Bewerben',
+     keyResponsibilities: 'Wichtige Verantwortlichkeiten',
+     requirements: 'Anforderungen',
+     whatWeOffer: 'Was Wir Bieten',
   },
   
   fr: {
@@ -193,6 +271,32 @@ export const translations = {
     email: 'E-mail',
     phone: 'Téléphone',
     address: 'Adresse',
+    
+    // Connections
+    connectionsIntro: 'SDeal propose des intégrations fluides avec les systèmes e-commerce les plus couramment utilisés. Cela permet aux vendeurs de connecter rapidement et facilement leur boutique en ligne, la gestion des commandes et les flux de produits vers notre plateforme.',
+    
+    // Partners
+    partners: 'Nos Partenaires',
+    partnersIntro: 'SDeal collabore avec des partenaires industriels de premier plan pour offrir la meilleure expérience possible à nos clients. Ces partenariats nous permettent d\'offrir des solutions innovantes, une sécurité renforcée et des services fiables.',
+         visitPartner: 'Visiter le Partenaire',
+     interestedPartnership: 'Intéressé par un partenariat?',
+     partnershipDescription: 'Êtes-vous intéressé par un partenariat avec SDeal? Nous recherchons toujours des entreprises innovantes qui partagent notre vision d\'un achat en ligne fiable et sécurisé. Contactez-nous pour discuter des opportunités de partenariat.',
+     contactUs: 'Contactez-nous',
+     contactForPartnership: 'Contactez-nous pour les Opportunités de Partenariat',
+     
+     // Jobs
+     joinOurTeam: 'Rejoignez Notre Équipe',
+     jobsIntro: 'Nous recherchons actuellement des talents de premier plan pour rejoindre notre équipe en pleine croissance. Découvrez des opportunités qui correspondent à vos compétences et ambitions.',
+     fullTimePositions: 'Postes à Temps Plein',
+     traineeships: 'Stages',
+     traineeshipIntro: 'Nous recherchons régulièrement de jeunes talents motivés qui souhaitent développer leurs compétences dans leur domaine.',
+     interestedInJoining: 'Intéressé à Rejoindre Notre Équipe?',
+     contactUsJobs: 'L\'un des postes ci-dessus vous convient-il parfaitement? N\'hésitez pas et contactez-nous à',
+     viewDetails: 'Voir les Détails',
+     applyNow: 'Postuler Maintenant',
+     keyResponsibilities: 'Responsabilités Clés',
+     requirements: 'Exigences',
+     whatWeOffer: 'Ce Que Nous Offrons',
   }
 };
 

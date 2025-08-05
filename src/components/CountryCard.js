@@ -31,7 +31,16 @@ const CountryCard = ({ country }) => {
       />
       <div className="country-info-bar">
         <div className="country-name">
-          <h4>{country.name}</h4>
+          <h4>
+            {country.flag && (
+              <img 
+                src={country.flag} 
+                alt={`${country.name} flag`} 
+                className="country-flag-icon"
+              />
+            )}
+            {country.name}
+          </h4>
         </div>
         <div className="country-action">
           <a href={country.url} target="_blank" rel="noopener noreferrer" className="visit-link">

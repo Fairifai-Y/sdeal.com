@@ -3,119 +3,146 @@ import './PrivacyPolicy.css';
 
 const PrivacyPolicy = () => {
   return (
-    <div className="w3-content w3-padding" style={{ maxWidth: '1564px' }}>
-      <div className="w3-container w3-padding-64">
+    <div className="privacy-container">
+      <div className="w3-content w3-padding-64">
         <h1>Privacy Policy</h1>
-        <p>Last updated: [Date]</p>
-        
-        <section>
-          <h2>1. Introduction</h2>
-          <p>
-            SDeal ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our services.
-          </p>
-        </section>
 
-        <section>
-          <h2>2. Information We Collect</h2>
-          <h3>2.1 Personal Information</h3>
-          <p>We may collect personal information that you voluntarily provide to us, including:</p>
-          <ul>
-            <li>Name and contact information</li>
-            <li>Email address</li>
-            <li>Phone number</li>
-            <li>Company information</li>
-            <li>Any other information you choose to provide</li>
-          </ul>
+        <h3>Plain Language Summary</h3>
+        <p>This summary provides a quick overview of how SDeal handles your personal data. We only use your information when necessary, such as for delivering your order, sending updates, or improving our platform. We never sell your data. You can always ask to see, correct or delete your data. For full details, please read the sections below.</p>
 
-          <h3>2.2 Automatically Collected Information</h3>
-          <p>When you visit our website, we may automatically collect certain information, including:</p>
-          <ul>
-            <li>IP address</li>
-            <li>Browser type and version</li>
-            <li>Operating system</li>
-            <li>Pages visited</li>
-            <li>Time spent on pages</li>
-            <li>Referring website</li>
-          </ul>
-        </section>
+        <h3>Consent and Cookie Management</h3>
+        <p>SDeal uses cookies and other technologies for website functionality, analytics, and advertising. Before we place cookies that are not strictly necessary, we request your explicit consent via a cookie banner. You can manage or withdraw your consent at any time via the cookie settings.</p>
 
-        <section>
-          <h2>3. How We Use Your Information</h2>
-          <p>We use the information we collect to:</p>
-          <ul>
-            <li>Provide and maintain our services</li>
-            <li>Process transactions</li>
-            <li>Send you marketing communications (with your consent)</li>
-            <li>Respond to your inquiries</li>
-            <li>Improve our website and services</li>
-            <li>Comply with legal obligations</li>
-          </ul>
-        </section>
+        <h3>Retention Periods</h3>
+        <p>SDeal retains personal data no longer than necessary for the purpose it was collected. As a guideline:</p>
+        <ul>
+          <li><strong>Order data</strong>: kept for 7 years (tax requirement)</li>
+          <li><strong>Account data</strong>: kept until the user deletes the account</li>
+          <li><strong>Newsletter subscriptions</strong>: kept until user unsubscribes</li>
+          <li><strong>Job applications</strong>: kept for 4 weeks after rejection, unless consented for longer</li>
+        </ul>
 
-        <section>
-          <h2>4. Information Sharing</h2>
-          <p>We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except in the following circumstances:</p>
-          <ul>
-            <li>To trusted third-party service providers who assist us in operating our website and providing services</li>
-            <li>To comply with legal requirements</li>
-            <li>To protect our rights and safety</li>
-            <li>In connection with a business transfer or merger</li>
-          </ul>
-        </section>
+        <h3>Privacy Contact Person</h3>
+        <p>Although SDeal does not have a formal Data Protection Officer (DPO), our Privacy Coordinator handles all questions and complaints regarding your personal data. You can contact us via <a href="mailto:customerservice@sdeal.com">customerservice@sdeal.com</a>.</p>
 
-        <section>
-          <h2>5. Data Security</h2>
-          <p>
-            We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
-          </p>
-        </section>
+        <h3>Updated Legal Reference</h3>
+        <p>The Dutch Data Protection Act (Wbp) has been replaced by the General Data Protection Regulation (GDPR). For more information, visit the official Dutch Data Protection Authority site at <a href="https://autoriteitpersoonsgegevens.nl" target="_blank" rel="noopener noreferrer">autoriteitpersoonsgegevens.nl</a>.</p>
 
-        <section>
-          <h2>6. Your Rights</h2>
-          <p>You have the right to:</p>
-          <ul>
-            <li>Access your personal information</li>
-            <li>Correct inaccurate information</li>
-            <li>Request deletion of your information</li>
-            <li>Object to processing of your information</li>
-            <li>Withdraw consent for marketing communications</li>
-          </ul>
-        </section>
+        <hr style={{ border: '1px solid #ccc', margin: '40px 0' }} />
 
-        <section>
-          <h2>7. Cookies</h2>
-          <p>
-            We use cookies and similar technologies to enhance your browsing experience and analyze website traffic. You can control cookie settings through your browser preferences.
-          </p>
-        </section>
+        <p>SDeal values the protection of your personal data. In this Privacy Statement, we aim to provide clear and transparent information on how we handle your personal data. We do everything possible to safeguard your privacy and handle personal data with care. SDeal complies with all applicable laws and regulations, including the General Data Protection Regulation (GDPR). This means we will at least:</p>
+        <ul>
+          <li>Process your personal data in accordance with the purpose for which they were provided. These purposes and types of personal data are described in this Privacy Statement;</li>
+          <li>Limit the processing of your personal data to only those data that are minimally required for the purposes for which they are processed;</li>
+          <li>Request your explicit consent if we need it for the processing of your personal data;</li>
+          <li>Take appropriate technical and organizational measures to ensure the security of your personal data;</li>
+          <li>Not transfer personal data to other parties, unless necessary for the purposes for which they were provided;</li>
+          <li>Cooperate with the rights concerning your personal data and inform you of these rights.</li>
+        </ul>
 
-        <section>
-          <h2>8. Third-Party Links</h2>
-          <p>
-            Our website may contain links to third-party websites. We are not responsible for the privacy practices of these external sites.
-          </p>
-        </section>
+        <p>When an agreement is made between you and a third party on our platform, this third party will process your personal data for handling your order. Please refer to the privacy statement of that third party or contact them for more information on how your data is handled.</p>
 
-        <section>
-          <h2>9. Changes to This Policy</h2>
-          <p>
-            We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page.
-          </p>
-        </section>
+        <h3>Legal Grounds for Processing Personal Data</h3>
+        <p>Under the law, SDeal may only process personal data if there is a legal basis. SDeal uses the following legal grounds to process personal data. We process your data:</p>
+        <ul>
+          <li>In connection with the establishment and/or execution of the purchase agreement between you and SDeal;</li>
+          <li>Because we are legally obligated to do so;</li>
+          <li>With your consent;</li>
+          <li>Because we (or a third party) have a legitimate interest. Our legitimate interests are described in this privacy policy.</li>
+        </ul>
 
-        <section>
-          <h2>10. Contact Us</h2>
-          <p>
-            If you have any questions about this Privacy Policy, please contact us at:
-          </p>
-          <p>
-            Email: <a href="mailto:privacy@sdeal.com">privacy@sdeal.com</a><br />
-            Address: SDeal BV<br />
-            Osloweg 110<br />
-            9723 BX Groningen<br />
-            Netherlands
-          </p>
-        </section>
+        <h3>Purposes for Processing Personal Data</h3>
+        <p>SDeal processes your personal data for, among others, the following purposes:</p>
+
+        <h4>Improving Services</h4>
+        <p>To provide the best possible service, we use your data for analysis, contact, and possibly surveys. We analyze click behavior and newsletter activity to optimize our content.</p>
+
+        <h4>Account</h4>
+        <p>Your personal data (e.g., name, address, phone) are stored in your "My SDeal" account. This helps you avoid entering your details repeatedly and speeds up our service in case of questions.</p>
+
+        <h4>Newsletter</h4>
+        <p>You can sign up for our newsletter, which may be personalized. You can unsubscribe anytime via the link at the bottom of each email.</p>
+
+        <h4>Reviews</h4>
+        <p>When you write a review, it helps other customers. These are stored in your account.</p>
+
+        <h4>Advertisements</h4>
+        <p>We process IP address, cookie ID, social ID, and browsing behavior to display relevant ads, including through social media targeting. We don't share personal data with third parties unless you consent.</p>
+
+        <h4>Partners</h4>
+        <p>When you buy from a third party on our platform, they process your data. See their privacy policy for details.</p>
+
+        <h4>Promotions</h4>
+        <p>If you win a prize, we'll contact you using your provided data.</p>
+
+        <h4>Recruitment</h4>
+        <p>When you apply for a job, we collect your contact details to get in touch about your application.</p>
+
+        <h4>Fraud Prevention</h4>
+        <p>We may use customer data to investigate fraud and may share it with authorities.</p>
+
+        <p>We may collect: name, address, ZIP code, city, phone number, email, date of birth, payment data, gender.</p>
+
+        <h3>Special Categories of Data</h3>
+        <p>SDeal does not intend to collect special categories of data such as those regarding political views, race, religion, health, or criminal records. If we do, we'll ask for your explicit consent.</p>
+
+        <h3>Sharing with Third Parties</h3>
+        <p>We only share data when necessary for the agreement or when legally required. We only share with parties we have processor agreements with. We do not share data outside the EU.</p>
+
+        <h3>Minors</h3>
+        <p>We only process data from minors (under 16) with written parental or guardian consent.</p>
+
+        <h3>Retention Period</h3>
+        <p>We do not store your data longer than necessary unless the law requires otherwise.</p>
+
+        <h3>Cookies</h3>
+        <p>Cookies enhance your experience. They remember settings, enable login, store your cart, and allow us to analyze visits.</p>
+
+        <h4>Functional Cookies</h4>
+        <p>Used for sessions, cart, and login preferences.</p>
+
+        <h4>Analytics Cookies</h4>
+        <p>Google Analytics, New Relic: for visitor statistics. You can opt out via your browser or specific plugins.</p>
+
+        <h4>Advertising Cookies</h4>
+        <p>Used by Google Ads and Facebook to show relevant ads. You can opt out on their platforms.</p>
+
+        <h3>Security</h3>
+        <p>We take measures like encrypted backups, user access controls, and staff training to protect your data.</p>
+
+        <h3>Data Breaches</h3>
+        <p>SDeal has a protocol for data breaches and handles them with care.</p>
+
+        <h3>Your Rights</h3>
+        <p>You have the right to access, correct, delete, object to processing, or transfer your data. We may ask for identification.</p>
+
+        <h3>Accuracy</h3>
+        <p>You guarantee the accuracy of your data. SDeal may deny access in case of false or incomplete data.</p>
+
+        <h3>Complaints</h3>
+        <p>If you have a complaint, contact us. You also have the right to file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens).</p>
+
+        <h3>Contact</h3>
+        <p>SDeal B.V.<br />Osloweg 110<br />9723 BX Groningen<br />Email: <a href="mailto:customerservice@sdeal.com">customerservice@sdeal.com</a></p>
+
+        <h3>Partners</h3>
+        <p>We share your data with the following partners when you give consent. See their websites for privacy statements:</p>
+        <ul>
+          <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google</a></li>
+          <li><a href="https://privacy.microsoft.com/en-us/privacystatement" target="_blank" rel="noopener noreferrer">Microsoft</a></li>
+          <li><a href="https://www.facebook.com/privacy/policy" target="_blank" rel="noopener noreferrer">Meta/Facebook</a></li>
+        </ul>
+
+        <h3>Third-Party Websites</h3>
+        <p>This privacy statement does not apply to third-party websites linked from ours.</p>
+
+        <h3>Updates</h3>
+        <p>We reserve the right to change this privacy statement. Please check it regularly.</p>
+
+        <h3>Commitment</h3>
+        <p>SDeal takes data protection seriously. GDPR is embedded in our internal processes, training, systems, and documentation.</p>
+
+        <p><em>Last updated: Groningen, 19 November 2024</em></p>
       </div>
     </div>
   );

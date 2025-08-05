@@ -12,37 +12,44 @@ const Home = () => {
     {
       name: 'Netherlands',
       url: 'https://www.sdeal.nl',
-      image: '/images/image-1.jpg'
+      image: '/images/image-1.jpg',
+      flag: 'https://www.sdeal.nl/media/images/Nederlandse_vlag.png'
     },
     {
       name: 'Germany',
       url: 'https://www.sdeal.de',
-      image: '/images/image-2.jpg'
+      image: '/images/image-2.jpg',
+      flag: 'https://www.sdeal.nl/media/images/duitse_vlag.png'
     },
     {
       name: 'France',
       url: 'https://www.sdeal.fr',
-      image: '/images/image-3.jpg'
+      image: '/images/image-3.jpg',
+      flag: 'https://www.sdeal.nl/media/images/franse_vlag.png'
     },
     {
       name: 'Belgium',
       url: 'https://www.sdeal.be',
-      image: '/images/image-4.jpg'
+      image: '/images/image-4.jpg',
+      flag: 'https://www.sdeal.nl/media/images/Belgie.png'
     },
     {
       name: 'Italy',
       url: 'https://www.sdeal.it',
-      image: '/images/image-5.jpg'
+      image: '/images/image-5.jpg',
+      flag: 'https://www.sdeal.nl/media/images/Flag-IT.png'
     },
     {
       name: 'Denmark',
       url: 'https://www.sdeal.dk',
-      image: '/images/image-6.jpg'
+      image: '/images/image-6.jpg',
+      flag: 'https://www.sdeal.nl/media/images/Flag-DK.png'
     },
     {
       name: 'Austria',
       url: 'https://www.sdeal.at',
-      image: '/images/image-7.jpg'
+      image: '/images/image-7.jpg',
+      flag: 'https://www.sdeal.nl/media/images/Flag-AT.png'
     }
   ];
 

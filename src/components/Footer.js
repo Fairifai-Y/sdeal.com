@@ -32,7 +32,7 @@ const Footer = () => {
               <li><a href="https://onboarding.sdeal.com" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Sell on SDeal</a></li>
               <li><Link to="/connections" className="w3-hover-text-red">Connections</Link></li>
               <li><Link to="/partners" className="w3-hover-text-red">Partners</Link></li>
-              <li><a href="#ads" className="w3-hover-text-red">Advertising</a></li>
+
               <li><Link to="/jobs" className="w3-hover-text-red">Jobs</Link></li>
             </ul>
           </div>
@@ -40,7 +40,7 @@ const Footer = () => {
           <div className="w3-col s12 m2 w3-margin-bottom">
             <h4>Trustmark</h4>
             <ul className="w3-ul no-lines">
-              <li><a href="https://www.google.com/storepages?q=sportdeal.nl&c=NL&v=19&hl=nl&so=NEWEST" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Customer Reviews</a></li>
+              <li><a href="https://www.google.com/storepages?q=sdeal.com&c=NL&v=19&hl=nl&so=NEWEST" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Customer Reviews</a></li>
               <li><a href="https://www.thuiswinkel.org/leden/sdeal/platformcertificaat/" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Certifications</a></li>
               <li><Link to="/privacy-policy" className="w3-hover-text-red">Privacy Policy</Link></li>
               <li><Link to="/terms-and-conditions" className="w3-hover-text-red">Terms and conditions</Link></li>

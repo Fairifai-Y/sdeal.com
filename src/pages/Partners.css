@@ -7,27 +7,74 @@
   --sdeal-orange-light: #f5ae4c;
 }
 
+.partners-container {
+  padding-top: 80px;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.partners-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.partners-header h1 {
+  margin-bottom: 20px;
+}
+
+.language-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sdeal-dark-blue);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.globe-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.language-name {
+  font-weight: 600;
+}
+
+.partners-intro {
+  max-width: 800px;
+  margin: 0 auto 40px auto;
+}
+
+.partners-intro p {
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
 .partners-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
-  margin-top: 2rem;
+  margin-bottom: 3rem;
 }
 
 .partner-card {
-  padding: 2rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  transition: all 0.3s ease;
   background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   border: 3px solid transparent;
 }
 
 .partner-card:hover {
-  box-shadow: 0 8px 20px rgba(226, 96, 63, 0.2);
-  transform: translateY(-5px);
-  border: 3px solid var(--sdeal-orange);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 3px solid transparent;
 }
 
 .partner-header {
@@ -41,86 +88,69 @@
   height: 50px;
   max-width: 150px;
   object-fit: contain;
-  transition: all 0.3s ease;
-}
-
-.partner-card:hover .partner-logo {
-  transform: scale(1.05);
 }
 
 .partner-category {
   background: var(--sdeal-orange);
   color: white;
-  padding: 4px 12px;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .partner-card h4 {
   color: var(--sdeal-dark-blue);
-  margin: 1rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.partner-card:hover h4 {
-  color: var(--sdeal-orange);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
 }
 
 .partner-card p {
-  margin: 0 0 1.5rem 0;
-  line-height: 1.6;
   color: #666;
-  transition: color 0.3s ease;
-}
-
-.partner-card:hover p {
-  color: var(--sdeal-orange);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .partner-link {
-  color: var(--sdeal-orange);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  padding: 8px 16px;
-  border: 2px solid var(--sdeal-orange);
-  border-radius: 6px;
   display: inline-block;
+  background: #f0f0f0;
+  color: var(--sdeal-dark-blue);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid #f0f0f0;
 }
 
 .partner-link:hover {
-  background: var(--sdeal-orange);
-  color: white;
-  text-decoration: none;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(226, 96, 63, 0.3);
+  background: #e0e0e0;
+  border-color: #e0e0e0;
+  color: var(--sdeal-dark-blue);
 }
 
 .partnership-info {
-  margin-top: 4rem;
-  padding: 2rem;
-  background: #f8f9fa;
+  background: white;
   border-radius: 12px;
+  padding: 2rem;
   text-align: center;
-  border: 2px solid var(--sdeal-orange);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
 }
 
 .partnership-info h4 {
   color: var(--sdeal-dark-blue);
   margin-bottom: 1rem;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .partnership-info p {
   color: #666;
   line-height: 1.6;
   margin-bottom: 1.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .w3-button.w3-orange {
@@ -140,23 +170,51 @@
   box-shadow: 0 4px 8px rgba(226, 96, 63, 0.3);
 }
 
+.partnership-contact-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 24px !important;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.contact-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 @media (max-width: 768px) {
+  .partners-container {
+    padding-top: 60px;
+  }
+  
   .partners-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
+    padding: 0 20px;
   }
   
   .partner-card {
     padding: 1.5rem;
   }
   
-  .partner-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .partnership-info {
+    margin: 2rem 20px 0 20px;
+    padding: 1.5rem;
   }
   
-  .partner-logo {
-    height: 40px;
+  .language-indicator {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .globe-icon {
+    width: 16px;
+    height: 16px;
   }
 } 
