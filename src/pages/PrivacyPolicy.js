@@ -1,9 +1,11 @@
 import React from 'react';
+import SEOHead from '../components/SEOHead';
 import './PrivacyPolicy.css';
 
 const PrivacyPolicy = () => {
   return (
     <div className="privacy-container">
+      <SEOHead type="article" />
       <div className="w3-content w3-padding-64">
         <h1>Privacy Policy</h1>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import './Jobs.css';
@@ -631,8 +632,32 @@ const Jobs = () => {
     setSelectedJob(null);
   };
 
+  // Minimal JobPosting structured data for the first listed full-time role
+  const firstJob = jobs.find(j => j.category === 'Full-time');
+  const jobStructuredData = firstJob ? {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: (firstJob.title[currentLanguage] || firstJob.title.en),
+    description: (firstJob.description[currentLanguage] || firstJob.description.en),
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Groningen',
+        addressCountry: 'NL'
+      }
+    },
+    employmentType: 'FULL_TIME',
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: 'SDeal',
+      sameAs: 'https://www.sdeal.com'
+    }
+  } : null;
+
   return (
     <div className="jobs-container">
+      <SEOHead type="website" structuredData={jobStructuredData} />
       <div className="w3-content w3-padding-64">
                  <h1 className="w3-center">{getTranslation(currentLanguage, 'joinOurTeam')}</h1>
          

@@ -34,7 +34,17 @@ const SEOHead = ({
   // Always enforce the requested title format; allow description override if provided
   const seoTitle = `SDeal.com - ${tagline}`;
   const seoDescription = description || tagline;
-  const seoImage = image || `${origin}/images/sdeal-logo-social.png`;
+  // Use existing public image as default social image
+  const seoImage = image || `${origin}/images/Logo.png`;
+
+  // Map to valid Open Graph locale codes
+  const ogLocaleMap = {
+    en: 'en_US',
+    nl: 'nl_NL',
+    de: 'de_DE',
+    fr: 'fr_FR'
+  };
+  const ogLocale = ogLocaleMap[currentLanguage] || 'en_US';
 
   // Generate hreflang tags for all languages
   const hreflangTags = [];
@@ -61,7 +71,7 @@ const SEOHead = ({
   }
 
   return (
-    <Helmet>
+    <Helmet htmlAttributes={{ lang: currentLanguage }}>
       {/* Basic Meta Tags */}
       <title>{seoTitle}</title>
       <meta name="description" content={seoDescription} />
@@ -76,8 +86,9 @@ const SEOHead = ({
       <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={seoDescription} />
       <meta property="og:image" content={seoImage} />
+      <meta property="og:image:secure_url" content={seoImage} />
       <meta property="og:site_name" content="SDeal" />
-      <meta property="og:locale" content={currentLanguage} />
+      <meta property="og:locale" content={ogLocale} />
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -85,10 +96,15 @@ const SEOHead = ({
       <meta name="twitter:title" content={seoTitle} />
       <meta name="twitter:description" content={seoDescription} />
       <meta name="twitter:image" content={seoImage} />
+      <meta name="twitter:image:alt" content="SDeal logo" />
       
       {/* Language Alternates */}
       {hreflangTags.map((tag, index) => (
         <link key={index} rel={tag.rel} hreflang={tag.hreflang} href={tag.href} />
+      ))}
+      {/* Open Graph locale alternates */}
+      {Object.keys(allLanguageUrls || {}).map((lang) => (
+        <meta key={`og-alt-${lang}`} property="og:locale:alternate" content={ogLocaleMap[lang] || 'en_US'} />
       ))}
       
       {/* Canonical URL */}
@@ -101,7 +117,7 @@ const SEOHead = ({
         </script>
       )}
       
-             {/* Default Structured Data for Organization */}
+       {/* Default Structured Data for Organization */}
        <script type="application/ld+json">
          {JSON.stringify({
            "@context": "https://schema.org",
@@ -117,7 +133,22 @@ const SEOHead = ({
              "https://www.sdeal.it",
              "https://www.sdeal.dk",
              "https://www.sdeal.at"
-           ]
+           ],
+           "contactPoint": [{
+             "@type": "ContactPoint",
+             "telephone": "+31 850 250 182",
+             "contactType": "customer service",
+             "email": "customerservice@sdeal.com",
+             "areaServed": ["NL","DE","FR","EU"],
+             "availableLanguage": ["en","nl","de","fr"]
+           }],
+           "address": {
+             "@type": "PostalAddress",
+             "streetAddress": "Osloweg 110",
+             "postalCode": "9723 BX",
+             "addressLocality": "Groningen",
+             "addressCountry": "NL"
+           }
          })}
        </script>
     </Helmet>

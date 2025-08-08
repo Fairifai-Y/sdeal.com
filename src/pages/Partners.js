@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SEOHead from '../components/SEOHead';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
@@ -82,6 +83,7 @@ const Partners = () => {
 
   return (
     <div className="partners-container">
+      <SEOHead />
       <div className="w3-content w3-padding-64">
         <div className="partners-header">
           <h1 className="w3-center">

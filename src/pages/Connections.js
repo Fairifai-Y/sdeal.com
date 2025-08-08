@@ -1,4 +1,5 @@
 import React from 'react';
+import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import './Connections.css';
@@ -153,6 +154,7 @@ const Connections = () => {
 
   return (
     <div className="connections-container">
+      <SEOHead />
       <div className="w3-content w3-padding-64">
         <div className="connections-header">
           <h1 className="w3-center">

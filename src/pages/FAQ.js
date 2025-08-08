@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import './FAQ.css';
@@ -155,8 +156,24 @@ const FAQ = () => {
 
   const categories = [...new Set(faqData.map(item => item.category[currentLanguage] || item.category.en))];
 
+  // Build JSON-LD for FAQ rich results
+  const stripHtml = (html) => (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqData.map((item) => ({
+      '@type': 'Question',
+      name: (item.question[currentLanguage] || item.question.en),
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: stripHtml(item.answer[currentLanguage] || item.answer.en)
+      }
+    }))
+  };
+
   return (
     <div className="faq-container">
+      <SEOHead type="FAQPage" structuredData={faqStructuredData} />
       <div className="w3-content w3-padding-64">
         <div className="faq-header">
           <h1 className="w3-center">

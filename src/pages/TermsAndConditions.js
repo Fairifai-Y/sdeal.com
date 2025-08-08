@@ -1,9 +1,11 @@
 import React from 'react';
+import SEOHead from '../components/SEOHead';
 import './TermsAndConditions.css';
 
 const TermsAndConditions = () => {
   return (
     <div className="terms-container">
+      <SEOHead type="article" />
       <div className="w3-content w3-padding-64">
         <h1>Terms and Conditions</h1>
 
@@ -21,7 +23,7 @@ const TermsAndConditions = () => {
           <li><strong>GDPR</strong>: General Data Protection Regulation (EU Regulation 2016/679).</li>
           <li><strong>Shopping Cart Option</strong>: The feature on the Platform that allows Customers to complete purchases for products ordered from Sellers via the Platform and facilitates onward payment to the Seller.</li>
           <li><strong>Order</strong>: The submission of one or more purchase requests through the Platform, which SDeal forwards to the Seller while also facilitating the payment process.</li>
-        </ul>
+          </ul>
 
         <h3>Article 2. Applicability</h3>
         <p>2.1 These Terms apply to the use of the Platform by the User, all offers made on the Platform, as well as to all (remote) orders and purchases made by the Customer from the Seller via the Platform, whether or not the Shopping Cart Option is used.</p>

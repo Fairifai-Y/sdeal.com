@@ -1,4 +1,5 @@
 import React from 'react';
+import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import './Contact.css';
@@ -65,8 +66,14 @@ const Contact = () => {
     return emails[lang] || emails.en;
   };
 
+  const contactStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage'
+  };
+
   return (
     <div className="contact-container">
+      <SEOHead type="ContactPage" structuredData={contactStructuredData} />
       <div className="w3-content w3-padding-64">
         <div className="contact-header">
           <h1 className="w3-center">
