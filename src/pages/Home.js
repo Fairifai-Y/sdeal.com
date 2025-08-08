@@ -91,7 +91,7 @@ const Home = () => {
       <div className="w3-content w3-padding" style={{ maxWidth: '1564px' }}>
       
       {/* Country Section */}
-      <div className="w3-container w3-padding-32" id="country">
+      <div className="w3-container w3-padding-16" id="country">
         <div className="w3-row-padding">
           {countries.map((country, index) => (
             <div key={index} className="w3-col l3 m6 w3-margin-bottom">
@@ -102,7 +102,7 @@ const Home = () => {
       </div>
 
       {/* Products Section */}
-      <div className="w3-container w3-padding-32" id="products">
+      <div className="w3-container w3-padding-16" id="products">
         <h3 className="w3-border-bottom w3-border-light-grey w3-padding-16">
           {getTranslation(currentLanguage, 'products')}
         </h3>
@@ -144,7 +144,7 @@ const Home = () => {
       </div>
 
       {/* About Section */}
-      <div className="w3-container w3-padding-32" id="about">
+      <div className="w3-container w3-padding-16" id="about">
         <h3 className="w3-border-bottom w3-border-light-grey w3-padding-16">
           {getTranslation(currentLanguage, 'about')}
         </h3>
