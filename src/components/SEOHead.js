@@ -21,12 +21,19 @@ const SEOHead = ({
   const currentUrl = origin + location.pathname;
   const allLanguageUrls = getAllLanguageUrls(location.pathname);
 
-  // Default SEO values
-  const defaultTitle = getTranslation(currentLanguage, 'welcome');
-  const defaultDescription = getTranslation(currentLanguage, 'subtitle');
-  
-  const seoTitle = title || defaultTitle;
-  const seoDescription = description || defaultDescription;
+  // Uniform title/description across the site per requested tagline
+  const taglineByLang = {
+    en: 'Your reliable shopping connection',
+    nl: 'Jouw betrouwbare winkelverbinding',
+    de: 'Deine zuverlässige Einkaufverbindung',
+    fr: 'Votre connexion shopping fiable'
+  };
+
+  const tagline = taglineByLang[currentLanguage] || taglineByLang.en;
+
+  // Always enforce the requested title format; allow description override if provided
+  const seoTitle = `SDeal.com - ${tagline}`;
+  const seoDescription = description || tagline;
   const seoImage = image || `${origin}/images/sdeal-logo-social.png`;
 
   // Generate hreflang tags for all languages
