@@ -27,6 +27,39 @@
   </url>
   
   <url>
+    <loc>https://www.sdeal.com/partners</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/partners"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/partners"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/partners"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/partners"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/faq</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/faq"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/faq"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/faq"/>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/contact</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.sdeal.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.sdeal.com/nl/contact"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.sdeal.com/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.sdeal.com/fr/contact"/>
+  </url>
+  
+  <url>
     <loc>https://www.sdeal.com/jobs</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -75,6 +108,27 @@
   </url>
   
   <url>
+    <loc>https://www.sdeal.com/nl/partners</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/faq</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/nl/contact</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://www.sdeal.com/nl/jobs</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -111,6 +165,27 @@
   </url>
   
   <url>
+    <loc>https://www.sdeal.com/de/partners</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/faq</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/de/contact</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://www.sdeal.com/de/jobs</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -144,6 +219,27 @@
     <lastmod>2024-01-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/partners</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/faq</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sdeal.com/fr/contact</loc>
+    <lastmod>2024-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   
   <url>

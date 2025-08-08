@@ -154,7 +154,10 @@ const Connections = () => {
 
   return (
     <div className="connections-container">
-      <SEOHead />
+      <SEOHead 
+        description="Connect your e-commerce platform with SDeal. Integrate Shopify, WooCommerce, Magento, and more for seamless marketplace operations across Europe."
+        keywords="e-commerce integration, Shopify, WooCommerce, Magento, marketplace API, SDeal connections, platform integration"
+      />
       <div className="w3-content w3-padding-64">
         <div className="connections-header">
           <h1 className="w3-center">

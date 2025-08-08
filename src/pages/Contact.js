@@ -68,12 +68,54 @@ const Contact = () => {
 
   const contactStructuredData = {
     '@context': 'https://schema.org',
-    '@type': 'ContactPage'
+    '@type': 'ContactPage',
+    'breadcrumb': {
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': 'https://www.sdeal.com'
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Contact',
+          'item': 'https://www.sdeal.com/contact'
+        }
+      ]
+    },
+    'mainEntity': {
+      '@type': 'LocalBusiness',
+      'name': 'SDeal',
+      'address': {
+        '@type': 'PostalAddress',
+        'streetAddress': 'Osloweg 110',
+        'postalCode': '9723 BX',
+        'addressLocality': 'Groningen',
+        'addressCountry': 'NL'
+      },
+      'telephone': '+31 850 250 182',
+      'email': 'customerservice@sdeal.com',
+      'url': 'https://www.sdeal.com',
+      'openingHours': 'Mo-Fr 09:00-17:00',
+      'geo': {
+        '@type': 'GeoCoordinates',
+        'latitude': 53.2194,
+        'longitude': 6.5665
+      }
+    }
   };
 
   return (
     <div className="contact-container">
-      <SEOHead type="ContactPage" structuredData={contactStructuredData} />
+      <SEOHead 
+        type="ContactPage" 
+        description="Contact SDeal for seller support, Fairifai information, and partnership opportunities. Get in touch with our team in Groningen, Netherlands."
+        keywords="contact SDeal, seller support, Fairifai, partnership, customer service, Groningen office"
+        structuredData={contactStructuredData} 
+      />
       <div className="w3-content w3-padding-64">
         <div className="contact-header">
           <h1 className="w3-center">

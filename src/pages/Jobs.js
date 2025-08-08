@@ -657,7 +657,12 @@ const Jobs = () => {
 
   return (
     <div className="jobs-container">
-      <SEOHead type="website" structuredData={jobStructuredData} />
+      <SEOHead 
+        type="website" 
+        description="Join SDeal's growing team in Groningen. Explore career opportunities in development, sales, finance, and data content. Remote and hybrid positions available."
+        keywords="SDeal careers, jobs Groningen, developer positions, sales traineeship, finance jobs, remote work, startup careers"
+        structuredData={jobStructuredData} 
+      />
       <div className="w3-content w3-padding-64">
                  <h1 className="w3-center">{getTranslation(currentLanguage, 'joinOurTeam')}</h1>
          

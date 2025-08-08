@@ -83,7 +83,10 @@ const Partners = () => {
 
   return (
     <div className="partners-container">
-      <SEOHead />
+      <SEOHead 
+        description="Discover SDeal's trusted partners including Fairifai AI review analysis and Thuiswinkel certification. Partner with us for reliable e-commerce solutions."
+        keywords="SDeal partners, Fairifai, Thuiswinkel, AI reviews, e-commerce partnerships, trusted marketplace partners"
+      />
       <div className="w3-content w3-padding-64">
         <div className="partners-header">
           <h1 className="w3-center">

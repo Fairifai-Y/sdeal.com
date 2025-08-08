@@ -87,6 +87,9 @@ const SEOHead = ({
       <meta property="og:description" content={seoDescription} />
       <meta property="og:image" content={seoImage} />
       <meta property="og:image:secure_url" content={seoImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="SDeal - Your reliable shopping connection across Europe" />
       <meta property="og:site_name" content="SDeal" />
       <meta property="og:locale" content={ogLocale} />
       
@@ -117,40 +120,70 @@ const SEOHead = ({
         </script>
       )}
       
-       {/* Default Structured Data for Organization */}
-       <script type="application/ld+json">
-         {JSON.stringify({
-           "@context": "https://schema.org",
-           "@type": "Organization",
-           "name": "SDeal",
-           "url": origin,
-           "logo": `${origin}/images/logo_sdeal_navbar.svg`,
-           "description": seoDescription,
-           "sameAs": [
-             "https://www.sdeal.nl",
-             "https://www.sdeal.de",
-             "https://www.sdeal.fr",
-             "https://www.sdeal.it",
-             "https://www.sdeal.dk",
-             "https://www.sdeal.at"
-           ],
-           "contactPoint": [{
-             "@type": "ContactPoint",
-             "telephone": "+31 850 250 182",
-             "contactType": "customer service",
-             "email": "customerservice@sdeal.com",
-             "areaServed": ["NL","DE","FR","EU"],
-             "availableLanguage": ["en","nl","de","fr"]
-           }],
-           "address": {
-             "@type": "PostalAddress",
-             "streetAddress": "Osloweg 110",
-             "postalCode": "9723 BX",
-             "addressLocality": "Groningen",
-             "addressCountry": "NL"
-           }
-         })}
-       </script>
+             {/* Default Structured Data for Organization */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "SDeal",
+          "url": origin,
+          "logo": `${origin}/images/logo_sdeal_navbar.svg`,
+          "description": seoDescription,
+          "sameAs": [
+            "https://www.sdeal.nl",
+            "https://www.sdeal.de",
+            "https://www.sdeal.fr",
+            "https://www.sdeal.it",
+            "https://www.sdeal.dk",
+            "https://www.sdeal.at"
+          ],
+          "contactPoint": [{
+            "@type": "ContactPoint",
+            "telephone": "+31 850 250 182",
+            "contactType": "customer service",
+            "email": "customerservice@sdeal.com",
+            "areaServed": ["NL","DE","FR","EU"],
+            "availableLanguage": ["en","nl","de","fr"]
+          }],
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Osloweg 110",
+            "postalCode": "9723 BX",
+            "addressLocality": "Groningen",
+            "addressCountry": "NL"
+          },
+          "foundingDate": "2020",
+          "numberOfEmployees": "10-50",
+          "industry": "E-commerce",
+          "knowsAbout": ["Marketplace", "E-commerce", "European retail", "Online shopping"]
+        })}
+      </script>
+      
+      {/* WebSite structured data for homepage */}
+      {location.pathname === '/' && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "SDeal",
+            "url": origin,
+            "description": seoDescription,
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": `${origin}/search?q={search_term_string}`,
+              "query-input": "required name=search_term_string"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "SDeal",
+              "logo": {
+                "@type": "ImageObject",
+                "url": `${origin}/images/logo_sdeal_navbar.svg`
+              }
+            }
+          })}
+        </script>
+      )}
     </Helmet>
   );
 };

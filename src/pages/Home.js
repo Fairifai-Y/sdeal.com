@@ -69,6 +69,22 @@ const Home = () => {
             "@type": "SearchAction",
             "target": `${typeof window !== 'undefined' ? window.location.origin : 'https://www.sdeal.com'}/search?q={search_term_string}`,
             "query-input": "required name=search_term_string"
+          },
+          "sameAs": [
+            "https://www.sdeal.nl",
+            "https://www.sdeal.de", 
+            "https://www.sdeal.fr",
+            "https://www.sdeal.it",
+            "https://www.sdeal.dk",
+            "https://www.sdeal.at"
+          ],
+          "publisher": {
+            "@type": "Organization",
+            "name": "SDeal",
+            "logo": {
+              "@type": "ImageObject",
+              "url": `${typeof window !== 'undefined' ? window.location.origin : 'https://www.sdeal.com'}/images/logo_sdeal_navbar.svg`
+            }
           }
         }}
       />
