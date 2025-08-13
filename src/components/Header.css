@@ -61,6 +61,12 @@
   z-index: 100002;
 }
 
+/* FairifaiBadge specific styling in header */
+.nav-links .fairifai-badge {
+  margin: 0;
+  align-self: center;
+}
+
 .language-selector {
   position: relative;
   display: inline-block;
@@ -254,6 +260,13 @@
 
 .mobile-menu-item:hover {
   color: var(--sdeal-orange);
+}
+
+.mobile-fairifai-badge {
+  display: flex;
+  justify-content: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .mobile-language-section {

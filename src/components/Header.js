@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
+import FairifaiBadge from './FairifaiBadge';
 import './Header.css';
 
 const Header = () => {
@@ -70,6 +71,7 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <div className="nav-links w3-hide-small">
+          <FairifaiBadge />
           <button className="w3-bar-item w3-button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
             {getTranslation(currentLanguage, 'about')}
           </button>
@@ -154,6 +156,9 @@ const Header = () => {
           }}>
             {getTranslation(currentLanguage, 'about')}
           </button>
+          <div className="mobile-fairifai-badge">
+            <FairifaiBadge />
+          </div>
           <Link to="/contact" className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'contact')}
           </Link>
