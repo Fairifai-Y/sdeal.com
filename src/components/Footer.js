@@ -40,7 +40,7 @@ const Footer = () => {
           <div className="w3-col s12 m2 w3-margin-bottom">
             <h4>Trustmark</h4>
             <ul className="w3-ul no-lines">
-              <li><a href="https://www.google.com/storepages?q=sdeal.com&c=NL&v=19&hl=nl&so=NEWEST" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Customer Reviews</a></li>
+              <li><a href="https://fairifai.com/site/sdeal.com/review" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Customer Reviews</a></li>
               <li><a href="https://www.thuiswinkel.org/leden/sdeal/platformcertificaat/" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Certifications</a></li>
               <li><Link to="/privacy-policy" className="w3-hover-text-red">Privacy Policy</Link></li>
               <li><Link to="/terms-and-conditions" className="w3-hover-text-red">Terms and conditions</Link></li>
