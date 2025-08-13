@@ -147,21 +147,18 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
-      <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        <div className="mobile-menu-content">
-          <button className="mobile-menu-item" onClick={() => {
-            document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
-            handleMobileLinkClick();
-          }}>
-            {getTranslation(currentLanguage, 'about')}
-          </button>
-          <div className="mobile-fairifai-badge">
-            <FairifaiBadge />
-          </div>
-          <Link to="/contact" className="mobile-menu-item" onClick={handleMobileLinkClick}>
-            {getTranslation(currentLanguage, 'contact')}
-          </Link>
+             {/* Mobile Navigation Menu */}
+       <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+         <div className="mobile-menu-content">
+           <button className="mobile-menu-item" onClick={() => {
+             document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+             handleMobileLinkClick();
+           }}>
+             {getTranslation(currentLanguage, 'about')}
+           </button>
+           <Link to="/contact" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+             {getTranslation(currentLanguage, 'contact')}
+           </Link>
           <Link to="/connections" className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'connections')}
           </Link>
@@ -172,30 +169,35 @@ const Header = () => {
             {getTranslation(currentLanguage, 'faq')}
           </Link>
           
-          {/* Mobile Language Selector */}
-          <div className="mobile-language-section">
-            <h4>Language / Taal / Sprache / Langue</h4>
-            <div className="mobile-language-options">
-              <button className="mobile-language-option" onClick={() => handleLanguageChange('en')}>
-                <span className="language-code">EN</span>
-                <span className="language-name">English</span>
-              </button>
-              <button className="mobile-language-option" onClick={() => handleLanguageChange('nl')}>
-                <span className="language-code">NL</span>
-                <span className="language-name">Nederlands</span>
-              </button>
-              <button className="mobile-language-option" onClick={() => handleLanguageChange('de')}>
-                <span className="language-code">DE</span>
-                <span className="language-name">Deutsch</span>
-              </button>
-              <button className="mobile-language-option" onClick={() => handleLanguageChange('fr')}>
-                <span className="language-code">FR</span>
-                <span className="language-name">Français</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+                     {/* Mobile Language Selector */}
+           <div className="mobile-language-section">
+             <h4>Language / Taal / Sprache / Langue</h4>
+             <div className="mobile-language-options">
+               <button className="mobile-language-option" onClick={() => handleLanguageChange('en')}>
+                 <span className="language-code">EN</span>
+                 <span className="language-name">English</span>
+               </button>
+               <button className="mobile-language-option" onClick={() => handleLanguageChange('nl')}>
+                 <span className="language-code">NL</span>
+                 <span className="language-name">Nederlands</span>
+               </button>
+               <button className="mobile-language-option" onClick={() => handleLanguageChange('de')}>
+                 <span className="language-code">DE</span>
+                 <span className="language-name">Deutsch</span>
+               </button>
+               <button className="mobile-language-option" onClick={() => handleLanguageChange('fr')}>
+                 <span className="language-code">FR</span>
+                 <span className="language-name">Français</span>
+               </button>
+             </div>
+           </div>
+           
+           {/* Mobile Fairifai Badge */}
+           <div className="mobile-fairifai-badge">
+             <FairifaiBadge />
+           </div>
+         </div>
+       </div>
     </div>
   );
 };
