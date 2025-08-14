@@ -113,9 +113,9 @@
                 document.getElementById('error').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
                 
-                // Redirect naar de AdWords tool
+                // Redirect naar de geïntegreerde AdWords tool
                 setTimeout(() => {
-                    window.location.href = 'http://localhost:8081';
+                    window.location.href = '/adwords-tool/app';
                 }, 1000);
             } else {
                 document.getElementById('error').style.display = 'block';
