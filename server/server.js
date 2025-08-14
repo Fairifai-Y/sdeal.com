@@ -479,16 +479,16 @@ app.post('/adwords-tool/api/discover-labels', async (req, res) => {
     });
     
     // For now, return demo data
-    const output = \`'electronics': 1250 impressions
+    const output = `'electronics': 1250 impressions
 'clothing': 890 impressions
 'books': 567 impressions
 'home': 432 impressions
-'garden': 234 impressions\`;
+'garden': 234 impressions`;
     
     res.json({
       success: true,
       output: output,
-      command: \`GAQL query for customer \${customer_id}, label_index \${label_index}\`
+      command: `GAQL query for customer ${customer_id}, label_index ${label_index}`
     });
     
   } catch (error) {
@@ -503,21 +503,21 @@ app.post('/adwords-tool/api/preview-campaigns', async (req, res) => {
   try {
     const { customer_id, prefix, daily_budget, selected_labels } = req.body;
     
-    const output = \`Preview van campagnes die aangemaakt gaan worden:
+    const output = `Preview van campagnes die aangemaakt gaan worden:
 
-Customer ID: \${customer_id}
-Campaign Prefix: \${prefix}
-Daily Budget: €\${daily_budget}
+Customer ID: ${customer_id}
+Campaign Prefix: ${prefix}
+Daily Budget: €${daily_budget}
 
 Campagnes:
-\${selected_labels.map((label, i) => \`\${i+1}. \${prefix} - \${label}\`).join('\\n')}
+${selected_labels.map((label, i) => `${i+1}. ${prefix} - ${label}`).join('\n')}
 
-Totaal: \${selected_labels.length} campagnes\`;
+Totaal: ${selected_labels.length} campagnes`;
     
     res.json({
       success: true,
       output: output,
-      command: \`Preview mode - would create \${selected_labels.length} campaigns\`
+      command: `Preview mode - would create ${selected_labels.length} campaigns`
     });
     
   } catch (error) {
@@ -532,22 +532,22 @@ app.post('/adwords-tool/api/create-campaigns', async (req, res) => {
   try {
     const { customer_id, prefix, daily_budget, selected_labels } = req.body;
     
-    const output = \`✅ Demo Mode - Campaign Creation Successful!
+    const output = `✅ Demo Mode - Campaign Creation Successful!
 
-Customer ID: \${customer_id}
-Campaign Prefix: \${prefix}
-Labels: \${selected_labels.join(', ')}
+Customer ID: ${customer_id}
+Campaign Prefix: ${prefix}
+Labels: ${selected_labels.join(', ')}
 
 Campagnes aangemaakt:
-\${selected_labels.map((label, i) => \`\${i+1}. \${prefix} - \${label}\`).join('\\n')}
+${selected_labels.map((label, i) => `${i+1}. ${prefix} - ${label}`).join('\n')}
 
 📝 Note: This is a demo mode.
-For full functionality, implement Google Ads API integration.\`;
+For full functionality, implement Google Ads API integration.`;
     
     res.json({
       success: true,
       output: output,
-      command: \`Demo mode - created \${selected_labels.length} campaigns\`
+      command: `Demo mode - created ${selected_labels.length} campaigns`
     });
     
   } catch (error) {
