@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdWords Tool - SDeal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 400px;
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .logo {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+            display: none;
+        }
+        .success {
+            color: #51cf66;
+            margin-top: 10px;
+            display: none;
+        }
+        .tool-info {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 SDeal AdWords Tool</div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="password">Wachtwoord:</label>
+                <input type="password" id="password" placeholder="Voer het wachtwoord in" required>
+            </div>
+            
+            <button type="submit">Toegang tot AdWords Tool</button>
+        </form>
+        
+        <div id="error" class="error">❌ Onjuist wachtwoord</div>
+        <div id="success" class="success">✅ Toegang verleend, wordt doorgestuurd...</div>
+        
+        <div class="tool-info">
+            <p>🔒 Beveiligde toegang tot Google Ads campagne tools</p>
+            <p>💡 Neem contact op met de beheerder voor toegang</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            // Veilig wachtwoord - verander dit!
+            const correctPassword = 'SDealAdWords2024!'; // Verander dit naar een veilig wachtwoord
+            
+            if (password === correctPassword) {
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('success').style.display = 'block';
+                
+                // Redirect naar de AdWords tool
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:8081';
+                }, 1000);
+            } else {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('success').style.display = 'none';
+                document.getElementById('password').value = '';
+            }
+        });
+        
+        // Focus op password field
+        document.getElementById('password').focus();
+    </script>
+</body>
+</html>

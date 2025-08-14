@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const path = require('path');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
 
 const app = express();
@@ -153,6 +154,17 @@ app.get('/api/integrations', (req, res) => {
   ];
   res.json(integrations);
 });
+
+// AdWords Tool Proxy
+const adwordsProxy = createProxyMiddleware({
+  target: 'http://localhost:8081',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/adwords-tool': ''
+  }
+});
+
+app.use('/adwords-tool', adwordsProxy);
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {
