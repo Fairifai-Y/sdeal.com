@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "simple_web.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/adwords-tool/(.*)",
+      "dest": "/simple_web.py"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/simple_web.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/simple_web.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": ".",
+    "FLASK_ENV": "production"
+  },
+  "functions": {
+    "simple_web.py": {
+      "maxDuration": 30
+    }
+  }
+}

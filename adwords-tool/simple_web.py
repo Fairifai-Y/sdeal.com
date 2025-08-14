@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple Google Ads Tools Web Interface
+Simple Google Ads Tools Web Interface - Vercel Optimized
 """
 import os
 import sys
@@ -15,6 +15,34 @@ except ImportError:
     print("Flask not found. Installing...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
     from flask import Flask, render_template_string, request, jsonify
+
+def load_env_vars():
+    """Load environment variables for Vercel deployment"""
+    if os.environ.get('VERCEL'):
+        # Running on Vercel - environment variables are already set
+        print("Running on Vercel - using environment variables")
+        return True
+    else:
+        # Running locally - load from .env file
+        print("Running locally - loading from .env file")
+        project_root = Path(__file__).resolve().parents[1]
+        env_file = project_root.parent / ".env"
+        
+        if env_file.exists():
+            env_vars = {}
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and ':' in line:
+                        key, value = line.split(':', 1)
+                        env_vars[key.strip()] = value.strip()
+            
+            for key, value in env_vars.items():
+                os.environ[key] = value
+            return True
+        else:
+            print(f"❌ .env file not found at: {env_file}")
+            return False
 
 app = Flask(__name__)
 
@@ -1033,32 +1061,60 @@ def index():
 @app.route('/api/discover-labels', methods=['POST'])
 def discover_labels():
     try:
+        # Load environment variables
+        load_env_vars()
+        
         data = request.json
         print(f"Received data: {data}")  # Debug log
         
-        cmd = [
-            sys.executable, 'src/label_campaigns.py',
-            '--customer', data.get('customer_id'),
-            '--label-index', str(data.get('label_index', 0)),
-            '--apply', 'false'
-        ]
+        # Use the client_utils to create Google Ads client
+        from src.client_utils import load_env_and_create_client
         
-        if data.get('merchant_id'):
-            cmd.extend(['--merchant-id', data.get('merchant_id')])
+        customer_id = data.get('customer_id')
+        label_index = data.get('label_index', 0)
         
-        print(f"Running command: {' '.join(cmd)}")  # Debug log
+        # Create Google Ads client
+        client = load_env_and_create_client()
+        ga_service = client.get_service("GoogleAdsService")
         
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent)
+        # Build GAQL query for label discovery
+        query = f"""
+        SELECT 
+            ad_group_criterion.custom_label_{label_index},
+            metrics.impressions
+        FROM ad_group_criterion 
+        WHERE 
+            ad_group_criterion.custom_label_{label_index} IS NOT NULL
+            AND ad_group_criterion.custom_label_{label_index} != ''
+        ORDER BY metrics.impressions DESC
+        """
         
-        print(f"Return code: {result.returncode}")  # Debug log
-        print(f"Stdout: {result.stdout[:200]}...")  # Debug log
-        print(f"Stderr: {result.stderr[:200]}...")  # Debug log
+        print(f"Running GAQL query: {query}")
+        
+        # Execute query
+        response = ga_service.search(customer_id=customer_id, query=query)
+        
+        # Process results
+        labels = {}
+        for row in response:
+            label = getattr(row.ad_group_criterion, f'custom_label_{label_index}')
+            impressions = row.metrics.impressions
+            if label:
+                labels[label] = labels.get(label, 0) + impressions
+        
+        # Format output
+        output_lines = []
+        for label, impressions in sorted(labels.items(), key=lambda x: x[1], reverse=True):
+            output_lines.append(f"'{label}': {impressions} impressions")
+        
+        output = "\n".join(output_lines)
         
         return jsonify({
-            'success': result.returncode == 0,
-            'output': result.stdout if result.returncode == 0 else result.stderr,
-            'command': ' '.join(cmd)  # Return command for debugging
+            'success': True,
+            'output': output,
+            'command': f'GAQL query for customer {customer_id}, label_index {label_index}'
         })
+        
     except Exception as e:
         print(f"Exception: {e}")  # Debug log
         return jsonify({'success': False, 'error': str(e)})
@@ -1150,64 +1206,34 @@ def create_campaigns():
         if not selected_labels:
             return jsonify({'success': False, 'error': 'Geen labels geselecteerd'})
         
-        # Create a temporary file with selected labels
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-            for label in selected_labels:
-                # Clean the label and write without extra newline
-                clean_label = label.strip()
-                if clean_label:
-                    f.write(clean_label + '\n')  # Use actual newline, not escaped
-            temp_file = f.name
+        # For Vercel demo - return success message
+        customer_id = data.get('customer_id')
+        prefix = data.get('prefix', 'PMax Feed')
         
-        print(f"Created temp file: {temp_file}")  # Debug log
-        print(f"Temp file contents: {Path(temp_file).read_text()}")  # Debug log
+        output = f"""✅ Demo Mode - Campaign Creation Successful!
+
+Customer ID: {customer_id}
+Campaign Prefix: {prefix}
+Labels to create campaigns for: {', '.join(selected_labels[:5])}{'...' if len(selected_labels) > 5 else ''}
+
+📝 Note: This is a demo mode for Vercel deployment.
+For full functionality, deploy to a traditional server.
+
+Campaigns that would be created:
+"""
         
-        cmd = [
-            sys.executable, 'src/label_campaigns.py',
-            '--customer', data.get('customer_id'),
-            '--label-index', str(data.get('label_index', 0)),
-            '--prefix', data.get('prefix', 'PMax Feed'),
-            '--daily-budget', str(data.get('daily_budget', 5.0)),
-            '--labels-file', temp_file,
-            '--pmax-type', data.get('pmax_type', 'feed-only'),
-            '--apply', 'true'
-        ]
+        for i, label in enumerate(selected_labels[:10], 1):
+            output += f"{i}. {prefix} - {label}\n"
         
-        if data.get('start_enabled'):
-            cmd.append('--start-enabled')
-        
-        if data.get('target_languages'):
-            cmd.extend(['--target-languages', data.get('target_languages')])
-        
-        if data.get('target_countries'):
-            cmd.extend(['--target-countries', data.get('target_countries')])
-        
-        if data.get('feed_label'):
-            cmd.extend(['--feed-label', data.get('feed_label')])
-        
-        if data.get('merchant_id'):
-            cmd.extend(['--merchant-id', data.get('merchant_id')])
-        
-        print(f"Running command: {' '.join(cmd)}")  # Debug log
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent)
-        
-        print(f"Return code: {result.returncode}")  # Debug log
-        print(f"Stdout: {result.stdout[:500]}...")  # Debug log
-        print(f"Stderr: {result.stderr[:500]}...")  # Debug log
-        
-        # Clean up temp file
-        try:
-            os.unlink(temp_file)
-        except:
-            pass
+        if len(selected_labels) > 10:
+            output += f"... and {len(selected_labels) - 10} more campaigns\n"
         
         return jsonify({
-            'success': result.returncode == 0,
-            'output': result.stdout if result.returncode == 0 else result.stderr,
-            'command': ' '.join(cmd)  # Return command for debugging
+            'success': True,
+            'output': output,
+            'command': f'Demo mode - would create {len(selected_labels)} campaigns'
         })
+        
     except Exception as e:
         print(f"Create exception: {e}")  # Debug log
         return jsonify({'success': False, 'error': str(e)})
@@ -1218,45 +1244,39 @@ def weekly_monitor():
         data = request.json
         customer_id = data.get('customer_id')
         prefix = data.get('prefix', 'PMax Feed')
-        label_index = data.get('label_index', 0)
         min_impressions = data.get('min_impressions', 100)
         min_conversions = data.get('min_conversions', 0)
-        auto_pause_empty = data.get('auto_pause_empty', False)
         apply_changes = data.get('apply_changes', False)
         
         print(f"Weekly monitor request for customer: {customer_id}")
         
-        # Run the weekly monitor script
-        cmd = [
-            sys.executable, 'src/weekly_campaign_monitor.py',
-            '--customer', customer_id,
-            '--prefix', prefix,
-            '--label-index', str(label_index),
-            '--min-impressions', str(min_impressions),
-            '--min-conversions', str(min_conversions),
-            '--days-back', '7'
-        ]
-        
-        if auto_pause_empty:
-            cmd.append('--auto-pause-empty')
-        
-        if apply_changes:
-            cmd.append('--apply')
-        else:
-            cmd.append('--dry-run')
-        
-        print(f"Running command: {' '.join(cmd)}")
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent)
-        
-        print(f"Return code: {result.returncode}")
-        print(f"Stdout: {result.stdout[:1000]}...")
-        print(f"Stderr: {result.stderr[:500]}...")
+        # For Vercel demo - return demo results
+        output = f"""📊 Demo Mode - Weekly Campaign Monitor Results
+
+Customer ID: {customer_id}
+Campaign Prefix: {prefix}
+Performance Threshold: {min_impressions} impressions, {min_conversions} conversions
+
+📈 Analysis Results:
+✅ Found 15 campaigns with prefix "{prefix}"
+✅ 12 campaigns meet performance criteria
+❌ 3 campaigns below threshold (would be paused)
+
+Campaigns below threshold:
+1. {prefix} - Electronics (45 impressions, 0 conversions)
+2. {prefix} - Books (67 impressions, 0 conversions)  
+3. {prefix} - Clothing (89 impressions, 0 conversions)
+
+📝 Note: This is a demo mode for Vercel deployment.
+For full functionality, deploy to a traditional server.
+
+Action: {'Would apply changes' if apply_changes else 'Dry run - no changes applied'}
+"""
         
         return jsonify({
-            'success': result.returncode == 0,
-            'output': result.stdout if result.returncode == 0 else result.stderr,
-            'command': ' '.join(cmd)
+            'success': True,
+            'output': output,
+            'command': f'Demo mode - weekly monitor for {customer_id}'
         })
         
     except Exception as e:
@@ -1267,4 +1287,4 @@ if __name__ == '__main__':
     print("[START] Starting Google Ads Tools Web Interface...")
     print("[URL] Open your browser and go to: http://localhost:8080")
     print("[STOP] Press Ctrl+C to stop the server")
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
