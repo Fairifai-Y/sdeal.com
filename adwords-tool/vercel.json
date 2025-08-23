@@ -8,6 +8,14 @@
   ],
   "routes": [
     {
+      "src": "/adwords-tool",
+      "dest": "/simple_web.py"
+    },
+    {
+      "src": "/adwords-tool/",
+      "dest": "/simple_web.py"
+    },
+    {
       "src": "/adwords-tool/(.*)",
       "dest": "/simple_web.py"
     },

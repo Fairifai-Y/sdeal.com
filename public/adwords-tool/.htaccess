@@ -8,11 +8,11 @@
 # Allow from ::1
 # Allow from YOUR_IP_ADDRESS_HERE
 
-# Of gebruik basis authenticatie
+# Basis authenticatie
 AuthType Basic
 AuthName "SDeal AdWords Tool"
 AuthUserFile .htpasswd
-Require user admin
+Require valid-user
 
 # Voorkom directory listing
 Options -Indexes

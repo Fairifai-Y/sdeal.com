@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/App.js",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "adwords-tool/simple_web.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/adwords-tool",
+      "dest": "/adwords-tool/simple_web.py"
+    },
+    {
+      "src": "/adwords-tool/",
+      "dest": "/adwords-tool/simple_web.py"
+    },
+    {
+      "src": "/adwords-tool/(.*)",
+      "dest": "/adwords-tool/simple_web.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/App.js"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "adwords-tool"
+  }
+}
