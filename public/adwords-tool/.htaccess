@@ -12,7 +12,7 @@
 AuthType Basic
 AuthName "SDeal AdWords Tool"
 AuthUserFile .htpasswd
-Require valid-user
+Require user admin
 
 # Voorkom directory listing
 Options -Indexes
