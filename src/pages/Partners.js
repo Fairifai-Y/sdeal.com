@@ -109,7 +109,6 @@ const Partners = () => {
                     src={partner.image} 
                     alt={partner.name} 
                     className="partner-logo"
-                    onError={() => handleImageError(partner.name)}
                   />
                 </a>
                 <span className="partner-category">{partner.category[currentLanguage] || partner.category.en}</span>
