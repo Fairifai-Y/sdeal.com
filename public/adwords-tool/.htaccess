@@ -11,7 +11,7 @@
 # Of gebruik basis authenticatie
 AuthType Basic
 AuthName "SDeal AdWords Tool"
-AuthUserFile /path/to/.htpasswd
+AuthUserFile .htpasswd
 Require valid-user
 
 # Voorkom directory listing
