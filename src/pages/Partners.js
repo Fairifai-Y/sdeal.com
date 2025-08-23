@@ -7,7 +7,6 @@ import './Partners.css';
 
 const Partners = () => {
   const { currentLanguage } = useLanguage();
-  const [imageErrors, setImageErrors] = useState({});
 
   const getLanguageName = (lang) => {
     const names = {
@@ -19,12 +18,7 @@ const Partners = () => {
     return names[lang] || 'English';
   };
 
-  const handleImageError = (partnerName) => {
-    setImageErrors(prev => ({
-      ...prev,
-      [partnerName]: true
-    }));
-  };
+
 
   const partners = [
     {

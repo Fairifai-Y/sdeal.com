@@ -52,7 +52,7 @@ const Footer = () => {
             <ul className="w3-ul no-lines">
               <li><a href="https://www.linkedin.com/company/sdeal" target="_blank" rel="noopener noreferrer" className="w3-hover-text-red">LinkedIn</a></li>
               <li><a href="https://www.instagram.com/sdeal.nl/" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Instagram</a></li>
-              <li><a href="#" className="w3-hover-text-red">YouTube</a></li>
+              <li><a href="https://www.youtube.com/@sdeal" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">YouTube</a></li>
             </ul>
           </div>
 

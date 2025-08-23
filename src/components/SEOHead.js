@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLanguage } from '../context/LanguageContext';
-import { getTranslation } from '../translations/translations';
+
 import { getAllLanguageUrls } from '../utils/languageUtils';
 import { useLocation } from 'react-router-dom';
 
