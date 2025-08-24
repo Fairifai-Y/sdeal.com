@@ -17,7 +17,7 @@
     },
     {
       "src": "/adwords-tool/",
-      "dest": "/adwords-tool/index.html"
+      "dest": "/adwords-tool/tool.html"
     },
     {
       "src": "/static/(.*)",

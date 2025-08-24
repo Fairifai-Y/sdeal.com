@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdWords Tool - SDeal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tool-card { border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 25px; }
+        .btn-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); border: none; border-radius: 25px; }
+        .btn-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; border-radius: 25px; }
+        .result-box { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .label-checkbox { margin: 5px 0; }
+        .label-checkbox input[type="checkbox"] { margin-right: 8px; }
+        .preview-box { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 10px; padding: 15px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">SDeal Google Ads Tools</span>
+            <a href="/adwords-tool" class="btn btn-outline-light btn-sm">← Terug naar login</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Google Ads Campaign Tools</h1>
+        
+        <div class="row">
+            <!-- Label Discovery -->
+            <div class="col-md-6">
+                <div class="card tool-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Label Discovery</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="discoverForm">
+                            <div class="mb-3">
+                                <label class="form-label">Customer ID *</label>
+                                <input type="text" class="form-control" id="customerId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Label Index</label>
+                                <select class="form-select" id="labelIndex">
+                                    <option value="0">custom_label_0</option>
+                                    <option value="1">custom_label_1</option>
+                                    <option value="2">custom_label_2</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="discoverLabels()">Discover Labels</button>
+                        </form>
+                        <div id="discoverResults" class="result-box" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campaign Creation -->
+            <div class="col-md-6">
+                <div class="card tool-card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Campaign Creation</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="createForm">
+                            <div class="mb-3">
+                                <label class="form-label">Customer ID *</label>
+                                <input type="text" class="form-control" id="createCustomerId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Select Labels</label>
+                                <div id="labelSelection" class="border rounded p-3" style="background: #f8f9fa;">
+                                    <small class="text-muted">Eerst labels ontdekken om ze hier te kunnen selecteren</small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Campaign Prefix</label>
+                                <input type="text" class="form-control" id="campaignPrefix" value="PMax Feed">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Daily Budget (€)</label>
+                                <input type="number" class="form-control" id="dailyBudget" value="5.0" step="0.1">
+                            </div>
+                            <button type="button" class="btn btn-warning me-2" onclick="previewCampaigns()">Preview Campagnes</button>
+                            <button type="submit" class="btn btn-success">Create Selected Campaigns</button>
+                        </form>
+                        <div id="previewResults" class="preview-box" style="display: none;"></div>
+                        <div id="createResults" class="result-box" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo functionaliteit
+        function discoverLabels() {
+            const customerId = document.getElementById('customerId').value;
+            if (!customerId) {
+                alert('Vul een Customer ID in');
+                return;
+            }
+            
+            // Simuleer label discovery
+            const results = document.getElementById('discoverResults');
+            results.innerHTML = `
+                <h6>Labels gevonden voor Customer ID: ${customerId}</h6>
+                <div class="label-checkbox">
+                    <input type="checkbox" id="label1" value="uksoccershop">
+                    <label for="label1">uksoccershop (12,650 impressions)</label>
+                </div>
+                <div class="label-checkbox">
+                    <input type="checkbox" id="label2" value="sportsgear">
+                    <label for="label2">sportsgear (8,420 impressions)</label>
+                </div>
+                <div class="label-checkbox">
+                    <input type="checkbox" id="label3" value="football">
+                    <label for="label3">football (6,180 impressions)</label>
+                </div>
+            `;
+            results.style.display = 'block';
+            
+            // Update label selection
+            updateLabelSelection();
+        }
+        
+        function updateLabelSelection() {
+            const labelSelection = document.getElementById('labelSelection');
+            const checkboxes = document.querySelectorAll('.label-checkbox input[type="checkbox"]');
+            
+            labelSelection.innerHTML = '';
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const div = document.createElement('div');
+                    div.className = 'badge bg-primary me-2 mb-2';
+                    div.textContent = checkbox.value;
+                    labelSelection.appendChild(div);
+                }
+            });
+            
+            if (labelSelection.children.length === 0) {
+                labelSelection.innerHTML = '<small class="text-muted">Eerst labels ontdekken om ze hier te kunnen selecteren</small>';
+            }
+        }
+        
+        function previewCampaigns() {
+            const selectedLabels = Array.from(document.querySelectorAll('.label-checkbox input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedLabels.length === 0) {
+                alert('Selecteer eerst labels');
+                return;
+            }
+            
+            const previewResults = document.getElementById('previewResults');
+            previewResults.innerHTML = `
+                <h6>Preview van campagnes:</h6>
+                <ul>
+                    ${selectedLabels.map(label => `<li>PMax Feed - ${label}</li>`).join('')}
+                </ul>
+                <small class="text-muted">Dit is een demo. Echte campagnes worden niet aangemaakt.</small>
+            `;
+            previewResults.style.display = 'block';
+        }
+        
+        // Event listeners
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox') {
+                updateLabelSelection();
+            }
+        });
+        
+        document.getElementById('createForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Demo modus: Campagnes worden niet echt aangemaakt. Dit is een voorbeeld van de interface.');
+        });
+    </script>
+</body>
+</html>
