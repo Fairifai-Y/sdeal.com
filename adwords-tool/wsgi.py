@@ -11,8 +11,10 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
-# Set environment variables
-os.environ["GOOGLE_ADS_CONFIGURATION_FILE"] = str(project_root / "config" / "google-ads.yaml")
+# Set environment variables if config file exists
+config_file = project_root / "config" / "google-ads.yaml"
+if config_file.exists():
+    os.environ["GOOGLE_ADS_CONFIGURATION_FILE"] = str(config_file)
 
 # Import the Flask app
 from simple_web import app

@@ -20,12 +20,15 @@
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
             <span class="navbar-brand">SDeal Google Ads Tools</span>
-            <a href="/adwords-tool" class="btn btn-outline-light btn-sm">← Terug naar login</a>
+            <div class="d-flex align-items-center">
+                <a href="/adwords-tool" class="btn btn-outline-light btn-sm">← Terug naar login</a>
+            </div>
         </div>
     </nav>
 
     <div class="container mt-4">
         <h1 class="mb-4">Google Ads Campaign Tools</h1>
+
         
         <div class="row">
             <!-- Label Discovery -->
@@ -110,7 +113,7 @@
             
             try {
                 // Roep de echte Google Ads API aan
-                const response = await fetch('/adwords-tool/api/discover-labels', {
+                const response = await fetch('/api/discover-labels', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -220,7 +223,7 @@
             previewResults.style.display = 'block';
             
             try {
-                const response = await fetch('/adwords-tool/api/preview-campaigns', {
+                const response = await fetch('/api/preview-campaigns', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -286,7 +289,7 @@
             createResults.style.display = 'block';
             
             try {
-                const response = await fetch('/adwords-tool/api/create-campaigns', {
+                const response = await fetch('/api/create-campaigns', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

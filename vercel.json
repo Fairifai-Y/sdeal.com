@@ -8,9 +8,17 @@
         "distDir": "build",
         "buildCommand": "npm run build"
       }
+    },
+    {
+      "src": "adwords-tool/wsgi.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/adwords-tool/wsgi.py"
+    },
     {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/index.html"
@@ -35,5 +43,14 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONPATH": "adwords-tool",
+    "FLASK_ENV": "production"
+  },
+  "functions": {
+    "adwords-tool/wsgi.py": {
+      "maxDuration": 30
+    }
+  }
 }
