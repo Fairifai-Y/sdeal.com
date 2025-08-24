@@ -46,6 +46,25 @@ def load_env_vars():
 
 app = Flask(__name__)
 
+# Configure app for Vercel deployment
+if os.environ.get('VERCEL'):
+    print("DEBUG: Running on Vercel")
+    # Vercel automatically handles URL routing
+    app.config['APPLICATION_ROOT'] = None
+else:
+    # Configure app for URL prefix if running behind a proxy
+    url_prefix = None
+    if os.environ.get('HTTP_X_FORWARDED_PREFIX'):
+        url_prefix = os.environ.get('HTTP_X_FORWARDED_PREFIX')
+    elif os.environ.get('X_FORWARDED_PREFIX'):
+        url_prefix = os.environ.get('X_FORWARDED_PREFIX')
+
+    if url_prefix:
+        app.config['APPLICATION_ROOT'] = url_prefix
+        print(f"DEBUG: Configured with URL prefix: {url_prefix}")
+    else:
+        print("DEBUG: No URL prefix configured")
+
 # HTML template for the interface
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -435,6 +454,9 @@ HTML_TEMPLATE = """
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Detect base URL for API calls
+        const baseUrl = window.location.pathname.includes('/adwords-tool') ? '/adwords-tool' : '';
+        
         let discoveredLabels = [];
         
         // Handle PMax type change
@@ -466,7 +488,7 @@ HTML_TEMPLATE = """
             };
 
             try {
-                const response = await fetch('/api/discover-labels', {
+                const response = await fetch('/adwords-tool/api/discover-labels', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(formData)
@@ -543,7 +565,7 @@ HTML_TEMPLATE = """
             try {
                 updateProgress(10, 'Versturen van campagne data...');
                 
-                const response = await fetch('/api/create-campaigns', {
+                const response = await fetch('/adwords-tool/api/create-campaigns', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(formData)
@@ -783,7 +805,7 @@ HTML_TEMPLATE = """
             }
 
             try {
-                const response = await fetch('/api/discover-labels', {
+                const response = await fetch('/adwords-tool/api/discover-labels', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(formData)
@@ -877,7 +899,7 @@ HTML_TEMPLATE = """
             try {
                 updateProgress(25, 'Preview wordt gegenereerd...');
                 
-                const response = await fetch('/api/preview-campaigns', {
+                const response = await fetch('/adwords-tool/api/preview-campaigns', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(formData)
@@ -927,7 +949,7 @@ HTML_TEMPLATE = """
             resultsContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-warning" role="status"></div><br><small>Weekly monitor wordt uitgevoerd...</small></div>';
             
             try {
-                const response = await fetch('/api/weekly-monitor', {
+                const response = await fetch('/adwords-tool/api/weekly-monitor', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -994,7 +1016,7 @@ HTML_TEMPLATE = """
             resultsContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-success" role="status"></div><br><small>Wijzigingen worden doorgevoerd...</small></div>';
             
             try {
-                const response = await fetch('/api/weekly-monitor', {
+                const response = await fetch('/adwords-tool/api/weekly-monitor', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -1056,11 +1078,21 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def index():
+    print(f"DEBUG: Index route called")
+    print(f"DEBUG: Request path: {request.path}")
+    print(f"DEBUG: Request url: {request.url}")
     return render_template_string(HTML_TEMPLATE)
+
+@app.route('/api/test', methods=['GET'])
+def test_api():
+    return jsonify({'success': True, 'message': 'API is working'})
 
 @app.route('/api/discover-labels', methods=['POST'])
 def discover_labels():
     try:
+        print(f"DEBUG: discover_labels endpoint called")  # Debug log
+        print(f"DEBUG: Request method: {request.method}")  # Debug log
+        print(f"DEBUG: Request headers: {dict(request.headers)}")  # Debug log
         data = request.json
         print(f"Received data: {data}")  # Debug log
         
@@ -1299,6 +1331,10 @@ Action: {'Would apply changes' if apply_changes else 'Dry run - no changes appli
     except Exception as e:
         print(f"Weekly monitor exception: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+# Vercel serverless function handler
+def handler(request, context):
+    return app(request, context)
 
 if __name__ == '__main__':
     print("[START] Starting Google Ads Tools Web Interface...")
