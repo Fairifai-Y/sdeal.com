@@ -93,35 +93,89 @@
     </div>
 
     <script>
-        // Demo functionaliteit
-        function discoverLabels() {
+        // Echte Google Ads API functionaliteit
+        async function discoverLabels() {
             const customerId = document.getElementById('customerId').value;
+            const labelIndex = document.getElementById('labelIndex').value;
+            
             if (!customerId) {
                 alert('Vul een Customer ID in');
                 return;
             }
             
-            // Simuleer label discovery
+            // Toon loading state
             const results = document.getElementById('discoverResults');
-            results.innerHTML = `
-                <h6>Labels gevonden voor Customer ID: ${customerId}</h6>
-                <div class="label-checkbox">
-                    <input type="checkbox" id="label1" value="uksoccershop">
-                    <label for="label1">uksoccershop (12,650 impressions)</label>
-                </div>
-                <div class="label-checkbox">
-                    <input type="checkbox" id="label2" value="sportsgear">
-                    <label for="label2">sportsgear (8,420 impressions)</label>
-                </div>
-                <div class="label-checkbox">
-                    <input type="checkbox" id="label3" value="football">
-                    <label for="label3">football (6,180 impressions)</label>
-                </div>
-            `;
+            results.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Labels ontdekken...</p></div>';
             results.style.display = 'block';
+            
+            try {
+                // Roep de echte Google Ads API aan
+                const response = await fetch('/adwords-tool/api/discover-labels', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        label_index: parseInt(labelIndex)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Parse de labels uit de API response
+                    const labels = parseLabelsFromOutput(data.output);
+                    
+                    if (labels.length > 0) {
+                        results.innerHTML = `
+                            <h6>Labels gevonden voor Customer ID: ${customerId}</h6>
+                            <p class="text-muted">${labels.length} labels ontdekt</p>
+                            ${labels.map((item, index) => `
+                                <div class="label-checkbox">
+                                    <input type="checkbox" id="label${index}" value="${item.label}">
+                                    <label for="label${index}">${item.label} (${item.impressions.toLocaleString()} impressions)</label>
+                                </div>
+                            `).join('')}
+                        `;
+                    } else {
+                        results.innerHTML = '<p class="text-muted">Geen labels gevonden voor deze Customer ID.</p>';
+                    }
+                } else {
+                    results.innerHTML = `<p class="text-danger">Fout: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                results.innerHTML = '<p class="text-danger">Er is een fout opgetreden bij het ophalen van de labels.</p>';
+            }
             
             // Update label selection
             updateLabelSelection();
+        }
+        
+        function parseLabelsFromOutput(output) {
+            const labels = [];
+            const lines = output.split('\n');
+            
+            for (const line of lines) {
+                if (line.includes("impressions") && line.includes("'")) {
+                    try {
+                        const parts = line.split("':");
+                        if (parts.length === 2) {
+                            const label = parts[0].trim().replace(/'/g, '');
+                            const impressions = parseInt(parts[1].split(' ')[0].replace(/,/g, ''));
+                            if (label && !isNaN(impressions)) {
+                                labels.push({ label, impressions });
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Kon label niet parsen:', line);
+                    }
+                }
+            }
+            
+            // Sorteer op impressions (hoogste eerst)
+            return labels.sort((a, b) => b.impressions - a.impressions);
         }
         
         function updateLabelSelection() {
@@ -143,7 +197,9 @@
             }
         }
         
-        function previewCampaigns() {
+
+        
+        async function previewCampaigns() {
             const selectedLabels = Array.from(document.querySelectorAll('.label-checkbox input[type="checkbox"]:checked'))
                 .map(cb => cb.value);
             
@@ -152,15 +208,49 @@
                 return;
             }
             
+            const customerId = document.getElementById('createCustomerId').value;
+            if (!customerId) {
+                alert('Vul een Customer ID in');
+                return;
+            }
+            
+            // Toon loading state
             const previewResults = document.getElementById('previewResults');
-            previewResults.innerHTML = `
-                <h6>Preview van campagnes:</h6>
-                <ul>
-                    ${selectedLabels.map(label => `<li>PMax Feed - ${label}</li>`).join('')}
-                </ul>
-                <small class="text-muted">Dit is een demo. Echte campagnes worden niet aangemaakt.</small>
-            `;
+            previewResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Campagnes preview genereren...</p></div>';
             previewResults.style.display = 'block';
+            
+            try {
+                const response = await fetch('/adwords-tool/api/preview-campaigns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        selected_labels: selectedLabels
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    previewResults.innerHTML = `
+                        <h6>Preview van campagnes:</h6>
+                        <div class="alert alert-info">
+                            <strong>${selectedLabels.length} campagnes zullen worden aangemaakt:</strong>
+                            <ul class="mb-0 mt-2">
+                                ${selectedLabels.map(label => `<li>PMax Feed - ${label}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <small class="text-muted">Dit is een preview. Klik op "Create Selected Campaigns" om de campagnes daadwerkelijk aan te maken.</small>
+                    `;
+                } else {
+                    previewResults.innerHTML = `<p class="text-danger">Fout bij preview: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                previewResults.innerHTML = '<p class="text-danger">Er is een fout opgetreden bij het genereren van de preview.</p>';
+            }
         }
         
         // Event listeners
@@ -170,9 +260,69 @@
             }
         });
         
-        document.getElementById('createForm').addEventListener('submit', function(e) {
+        document.getElementById('createForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            alert('Demo modus: Campagnes worden niet echt aangemaakt. Dit is een voorbeeld van de interface.');
+            
+            const selectedLabels = Array.from(document.querySelectorAll('.label-checkbox input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedLabels.length === 0) {
+                alert('Selecteer eerst labels');
+                return;
+            }
+            
+            const customerId = document.getElementById('createCustomerId').value;
+            const campaignPrefix = document.getElementById('campaignPrefix').value;
+            const dailyBudget = document.getElementById('dailyBudget').value;
+            
+            if (!customerId) {
+                alert('Vul een Customer ID in');
+                return;
+            }
+            
+            // Toon loading state
+            const createResults = document.getElementById('createResults');
+            createResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Campagnes aanmaken...</p></div>';
+            createResults.style.display = 'block';
+            
+            try {
+                const response = await fetch('/adwords-tool/api/create-campaigns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        selected_labels: selectedLabels,
+                        campaign_prefix: campaignPrefix,
+                        daily_budget: parseFloat(dailyBudget)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    createResults.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6>✅ Campagnes succesvol aangemaakt!</h6>
+                            <p><strong>${selectedLabels.length} campagnes</strong> zijn aangemaakt voor Customer ID: ${customerId}</p>
+                            <ul class="mb-0">
+                                ${selectedLabels.map(label => `<li>${campaignPrefix} - ${label}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    createResults.innerHTML = `<p class="text-danger">Fout bij aanmaken campagnes: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                createResults.innerHTML = '<p class="text-danger">Er is een fout opgetreden bij het aanmaken van de campagnes.</p>';
+            }
+        });
+        
+        // Initialiseer de pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('AdWords Tool geladen - klaar voor gebruik');
         });
     </script>
 </body>
