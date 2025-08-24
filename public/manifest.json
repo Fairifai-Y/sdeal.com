@@ -3,7 +3,7 @@
   "name": "SDeal.com – Your Reliable Shopping Connection",
   "icons": [
     {
-      "src": "images/Favicon_Sdeal.svg",
+      "src": "/images/Favicon_Sdeal.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
