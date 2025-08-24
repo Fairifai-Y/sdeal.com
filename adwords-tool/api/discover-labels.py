@@ -52,7 +52,7 @@ def handler(request, context):
         
         # Parse JSON body
         try:
-            data = json.loads(request.body)
+            data = json.loads(request.body) if hasattr(request, 'body') else json.loads(request.get('body', '{}'))
         except:
             return {
                 'statusCode': 400,
