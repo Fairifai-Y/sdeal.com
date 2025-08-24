@@ -7,31 +7,12 @@
       "config": {
         "distDir": "build"
       }
-    },
-    {
-      "src": "adwords-tool/simple_web.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/adwords-tool",
-      "dest": "/adwords-tool/simple_web.py"
-    },
-    {
-      "src": "/adwords-tool/",
-      "dest": "/adwords-tool/simple_web.py"
-    },
-    {
-      "src": "/adwords-tool/(.*)",
-      "dest": "/adwords-tool/simple_web.py"
-    },
-    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "adwords-tool"
-  }
+  ]
 }
