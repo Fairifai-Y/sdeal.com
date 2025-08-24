@@ -16,7 +16,7 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/adwords-tool/api/(.*)",
       "dest": "/adwords-tool/wsgi.py"
     },
     {

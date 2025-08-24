@@ -113,7 +113,7 @@
             
             try {
                 // Roep de echte Google Ads API aan
-                const response = await fetch('/api/discover-labels', {
+                const response = await fetch('/adwords-tool/api/discover-labels', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -223,7 +223,7 @@
             previewResults.style.display = 'block';
             
             try {
-                const response = await fetch('/api/preview-campaigns', {
+                const response = await fetch('/adwords-tool/api/preview-campaigns', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -289,7 +289,7 @@
             createResults.style.display = 'block';
             
             try {
-                const response = await fetch('/api/create-campaigns', {
+                const response = await fetch('/adwords-tool/api/create-campaigns', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
