@@ -12,6 +12,14 @@
   ],
   "routes": [
     {
+      "src": "/adwords-tool",
+      "dest": "/adwords-tool/index.html"
+    },
+    {
+      "src": "/adwords-tool/",
+      "dest": "/adwords-tool/index.html"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },
