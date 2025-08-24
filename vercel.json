@@ -11,10 +11,7 @@
     },
     {
       "src": "adwords-tool/simple_web.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -31,29 +28,8 @@
       "dest": "/adwords-tool/simple_web.py"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/images/(.*)",
-      "dest": "/images/$1"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
-    },
-    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "adwords-tool",
-    "FLASK_ENV": "production"
-  },
-  "functions": {
-    "adwords-tool/simple_web.py": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }

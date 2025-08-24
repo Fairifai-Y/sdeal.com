@@ -46,13 +46,8 @@ def load_env_vars():
 
 app = Flask(__name__)
 
-# Configure app for Vercel deployment
-if os.environ.get('VERCEL'):
-    print("DEBUG: Running on Vercel")
-    # Vercel automatically handles URL routing
-    app.config['APPLICATION_ROOT'] = None
-else:
-    print("DEBUG: Running locally")
+# Simple app configuration
+app.config['APPLICATION_ROOT'] = None
 
 # HTML template for the interface
 HTML_TEMPLATE = """
@@ -1067,9 +1062,6 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def index():
-    print(f"DEBUG: Index route called")
-    print(f"DEBUG: Request path: {request.path}")
-    print(f"DEBUG: Request url: {request.url}")
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/api/test', methods=['GET'])
@@ -1079,9 +1071,6 @@ def test_api():
 @app.route('/api/discover-labels', methods=['POST'])
 def discover_labels():
     try:
-        print(f"DEBUG: discover_labels endpoint called")  # Debug log
-        print(f"DEBUG: Request method: {request.method}")  # Debug log
-        print(f"DEBUG: Request headers: {dict(request.headers)}")  # Debug log
         data = request.json
         print(f"Received data: {data}")  # Debug log
         
@@ -1321,9 +1310,7 @@ Action: {'Would apply changes' if apply_changes else 'Dry run - no changes appli
         print(f"Weekly monitor exception: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-# Vercel serverless function handler
-def handler(request, context):
-    return app(request, context)
+
 
 if __name__ == '__main__':
     print("[START] Starting Google Ads Tools Web Interface...")
