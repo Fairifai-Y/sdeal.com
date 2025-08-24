@@ -1,0 +1,12 @@
+# Exclude unnecessary files from Vercel deployment
+adwords-tool/*.bat
+adwords-tool/*.service
+adwords-tool/apache-config*.conf
+adwords-tool/temp_*.txt
+adwords-tool/test_*.py
+adwords-tool/__pycache__/
+adwords-tool/src/__pycache__/
+adwords-tool/.env
+adwords-tool/config/
+adwords-tool/logs/
+adwords-tool/temp/

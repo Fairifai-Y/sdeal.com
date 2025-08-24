@@ -52,18 +52,7 @@ if os.environ.get('VERCEL'):
     # Vercel automatically handles URL routing
     app.config['APPLICATION_ROOT'] = None
 else:
-    # Configure app for URL prefix if running behind a proxy
-    url_prefix = None
-    if os.environ.get('HTTP_X_FORWARDED_PREFIX'):
-        url_prefix = os.environ.get('HTTP_X_FORWARDED_PREFIX')
-    elif os.environ.get('X_FORWARDED_PREFIX'):
-        url_prefix = os.environ.get('X_FORWARDED_PREFIX')
-
-    if url_prefix:
-        app.config['APPLICATION_ROOT'] = url_prefix
-        print(f"DEBUG: Configured with URL prefix: {url_prefix}")
-    else:
-        print("DEBUG: No URL prefix configured")
+    print("DEBUG: Running locally")
 
 # HTML template for the interface
 HTML_TEMPLATE = """

@@ -8,16 +8,19 @@
         "distDir": "build",
         "buildCommand": "npm run build"
       }
+    },
+    {
+      "src": "adwords-tool/simple_web.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/adwords-tool/api/discover-labels",
-      "dest": "/adwords-tool/api/discover-labels.py"
-    },
-    {
-      "src": "/adwords-tool/api/create-campaigns",
-      "dest": "/adwords-tool/api/create-campaigns.py"
+      "src": "/adwords-tool/api/(.*)",
+      "dest": "/adwords-tool/simple_web.py"
     },
     {
       "src": "/adwords-tool",
@@ -49,12 +52,6 @@
     "FLASK_ENV": "production"
   },
   "functions": {
-    "adwords-tool/api/discover-labels.py": {
-      "maxDuration": 30
-    },
-    "adwords-tool/api/create-campaigns.py": {
-      "maxDuration": 30
-    },
     "adwords-tool/simple_web.py": {
       "maxDuration": 30
     }
