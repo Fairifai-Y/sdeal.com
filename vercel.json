@@ -10,14 +10,14 @@
       }
     },
     {
-      "src": "adwords-tool/simple_web.py",
+      "src": "adwords-tool/api.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/adwords-tool/api/(.*)",
-      "dest": "/adwords-tool/simple_web.py"
+      "dest": "/adwords-tool/api.py"
     },
     {
       "src": "/adwords-tool",
@@ -45,8 +45,8 @@
     }
   ],
   "functions": {
-    "adwords-tool/simple_web.py": {
-      "maxDuration": 30
+    "adwords-tool/api.py": {
+      "maxDuration": 60
     }
   }
 }
