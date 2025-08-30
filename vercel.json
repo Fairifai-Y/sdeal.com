@@ -8,10 +8,6 @@
         "distDir": "build",
         "buildCommand": "npm run build"
       }
-    },
-    {
-      "src": "adwords-tool/simple_web.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -21,11 +17,11 @@
     },
     {
       "src": "/adwords-tool",
-      "dest": "/adwords-tool/simple_web.py"
+      "dest": "/adwords-tool/tool.html"
     },
     {
       "src": "/adwords-tool/",
-      "dest": "/adwords-tool/simple_web.py"
+      "dest": "/adwords-tool/tool.html"
     },
     {
       "src": "/static/(.*)",
