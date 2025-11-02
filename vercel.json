@@ -8,17 +8,9 @@
         "distDir": "build",
         "buildCommand": "npm install && npm run setup-images && npm run build"
       }
-    },
-    {
-      "src": "adwords-tool/api.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
-    {
-      "src": "/adwords-tool/api/(.*)",
-      "dest": "/adwords-tool/api.py"
-    },
     {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
@@ -43,10 +35,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "functions": {
-    "adwords-tool/api.py": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
