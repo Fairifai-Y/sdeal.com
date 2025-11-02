@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import CountryCard from '../components/CountryCard';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +8,7 @@ import './Home.css';
 
 const Home = () => {
   const { currentLanguage } = useLanguage();
+  const navigate = useNavigate();
   
   const countries = [
     {
@@ -93,11 +95,14 @@ const Home = () => {
       <div className="hero-section">
         <div className="hero-content">
           <img 
-            src="/images/logo_sdeal_navbar.svg" 
+            src="/images/logo_sdeal_hero.svg" 
             alt="SDeal Logo" 
             className="hero-logo" 
           />
           <h1 className="hero-title">Real deals, without the noise</h1>
+          <button className="hero-button" onClick={() => navigate('/contact')}>
+            Start selling
+          </button>
         </div>
       </div>
 
