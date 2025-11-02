@@ -95,7 +95,7 @@ const Home = () => {
       <div className="hero-section">
         <div className="hero-content">
           <img 
-            src="/images/logo_sdeal_hero.svg" 
+            src="/images/smiley_sdeal.png" 
             alt="SDeal Logo" 
             className="hero-logo" 
           />
