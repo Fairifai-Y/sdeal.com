@@ -88,6 +88,19 @@ const Home = () => {
           }
         }}
       />
+      
+      {/* Hero Section */}
+      <div className="hero-section">
+        <div className="hero-content">
+          <img 
+            src="/images/logo_sdeal_navbar.svg" 
+            alt="SDeal Logo" 
+            className="hero-logo" 
+          />
+          <h1 className="hero-title">Real deals, without the noise</h1>
+        </div>
+      </div>
+
       <div className="w3-content w3-padding" style={{ maxWidth: '1564px' }}>
       
       {/* Country Section */}
