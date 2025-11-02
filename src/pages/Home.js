@@ -150,11 +150,11 @@ const Home = () => {
           <div className="w3-col l4 m6 w3-margin-bottom">
             <div className="w3-card w3-white w3-padding">
               <div className="w3-center">
-                <i className="fa fa-users w3-xxlarge"></i>
+                <i className="fa fa-percent w3-xxlarge"></i>
               </div>
-              <h4 className="w3-center">{getTranslation(currentLanguage, 'support')}</h4>
+              <h4 className="w3-center">DEAL CSS</h4>
               <p className="w3-center">
-                {getTranslation(currentLanguage, 'supportDesc')}
+                20% discount on your google ad spend with our deal CSS
               </p>
             </div>
           </div>
