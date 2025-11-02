@@ -110,6 +110,9 @@ const Home = () => {
       
       {/* Country Section */}
       <div className="w3-container w3-padding-16" id="country">
+        <h3 className="w3-border-bottom w3-border-light-grey w3-padding-16">
+          Countries we're live
+        </h3>
         <div className="w3-row-padding">
           {countries.map((country, index) => (
             <div key={index} className="w3-col l3 m6 w3-margin-bottom">

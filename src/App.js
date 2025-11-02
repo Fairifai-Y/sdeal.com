@@ -12,6 +12,8 @@ import Contact from './pages/Contact';
 import Jobs from './pages/Jobs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
+import Products from './pages/Products';
+import Pricing from './pages/Pricing';
 import './App.css';
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/jobs" element={<Jobs />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                 
@@ -40,6 +44,8 @@ function App() {
                 <Route path="/nl/faq" element={<FAQ />} />
                 <Route path="/nl/contact" element={<Contact />} />
                 <Route path="/nl/jobs" element={<Jobs />} />
+                <Route path="/nl/products" element={<Products />} />
+                <Route path="/nl/pricing" element={<Pricing />} />
                 <Route path="/nl/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/nl/terms-and-conditions" element={<TermsAndConditions />} />
                 
@@ -50,6 +56,8 @@ function App() {
                 <Route path="/de/faq" element={<FAQ />} />
                 <Route path="/de/contact" element={<Contact />} />
                 <Route path="/de/jobs" element={<Jobs />} />
+                <Route path="/de/products" element={<Products />} />
+                <Route path="/de/pricing" element={<Pricing />} />
                 <Route path="/de/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/de/terms-and-conditions" element={<TermsAndConditions />} />
                 
@@ -60,6 +68,8 @@ function App() {
                 <Route path="/fr/faq" element={<FAQ />} />
                 <Route path="/fr/contact" element={<Contact />} />
                 <Route path="/fr/jobs" element={<Jobs />} />
+                <Route path="/fr/products" element={<Products />} />
+                <Route path="/fr/pricing" element={<Pricing />} />
                 <Route path="/fr/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/fr/terms-and-conditions" element={<TermsAndConditions />} />
               </Routes>

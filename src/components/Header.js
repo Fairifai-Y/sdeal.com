@@ -72,6 +72,12 @@ const Header = () => {
         {/* Desktop Navigation */}
         <div className="nav-links w3-hide-small">
           <FairifaiBadge />
+          <Link to="/products" className="w3-bar-item w3-button">
+            Products
+          </Link>
+          <Link to="/pricing" className="w3-bar-item w3-button">
+            Pricing
+          </Link>
           <button className="w3-bar-item w3-button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
             {getTranslation(currentLanguage, 'about')}
           </button>
@@ -150,7 +156,13 @@ const Header = () => {
              {/* Mobile Navigation Menu */}
        <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
          <div className="mobile-menu-content">
-           <button className="mobile-menu-item" onClick={() => {
+          <Link to="/products" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+            Products
+          </Link>
+          <Link to="/pricing" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+            Pricing
+          </Link>
+          <button className="mobile-menu-item" onClick={() => {
              document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
              handleMobileLinkClick();
            }}>
