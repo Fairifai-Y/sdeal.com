@@ -1,11 +1,8 @@
 import React from 'react';
 import SEOHead from '../components/SEOHead';
-import { useLanguage } from '../context/LanguageContext';
 import './Pricing.css';
 
 const Pricing = () => {
-  const { currentLanguage } = useLanguage();
-
   return (
     <>
       <SEOHead 
