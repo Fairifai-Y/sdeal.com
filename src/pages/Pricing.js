@@ -29,7 +29,6 @@ const Pricing = () => {
       period: getTranslation(currentLanguage, 'perMonth'),
       features: [
         getTranslation(currentLanguage, 'packageBFeature2'),
-        getTranslation(currentLanguage, 'packageBFeature3'),
         getTranslation(currentLanguage, 'packageBFeature4'),
         getTranslation(currentLanguage, 'packageBFeature5')
       ]
@@ -43,7 +42,6 @@ const Pricing = () => {
       features: [
         getTranslation(currentLanguage, 'packageCFeature2'),
         getTranslation(currentLanguage, 'packageCFeature3'),
-        getTranslation(currentLanguage, 'packageCFeature4'),
         getTranslation(currentLanguage, 'packageCFeature5'),
         getTranslation(currentLanguage, 'packageCFeature6'),
         getTranslation(currentLanguage, 'packageCFeature7'),
@@ -60,11 +58,8 @@ const Pricing = () => {
     },
     {
       name: getTranslation(currentLanguage, 'addonDEALCSS'),
-      price: getTranslation(currentLanguage, 'addonDEALCSSPrice')
-    },
-    {
-      name: getTranslation(currentLanguage, 'addonTranslations'),
-      price: getTranslation(currentLanguage, 'addonTranslationsPrice')
+      price: getTranslation(currentLanguage, 'addonDEALCSSPrice'),
+      description: getTranslation(currentLanguage, 'addonDEALCSSDescription')
     },
     {
       name: getTranslation(currentLanguage, 'addonCPC'),
@@ -119,6 +114,9 @@ const Pricing = () => {
                 <div key={index} className="addon-card">
                   <h4 className="addon-name">{addon.name}</h4>
                   <p className="addon-price">{addon.price}</p>
+                  {addon.description && (
+                    <p className="addon-description">{addon.description}</p>
+                  )}
                 </div>
               ))}
             </div>
