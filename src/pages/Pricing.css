@@ -1,4 +1,252 @@
-.pricing-content {
-  padding: 40px 0;
+.pricing-page {
+  width: 100%;
+  min-height: calc(100vh - 64px);
+  background: white;
+  padding: 80px 20px 60px;
+  margin-top: 64px;
 }
 
+.pricing-hero {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 60px;
+}
+
+.pricing-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--sdeal-dark-blue);
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+.pricing-subtitle {
+  font-size: 20px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pricing-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pricing-packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 80px;
+}
+
+.pricing-card {
+  background: white;
+  border-radius: 16px;
+  padding: 40px 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.pricing-card.highlighted {
+  border-color: var(--sdeal-orange);
+  transform: scale(1.05);
+}
+
+.pricing-card.highlighted::before {
+  content: 'POPULAR';
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--sdeal-orange);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.package-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--sdeal-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.package-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--sdeal-dark-blue);
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.package-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 30px 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.package-price {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.price-amount {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--sdeal-dark-blue);
+}
+
+.price-period {
+  font-size: 18px;
+  color: #666;
+  font-weight: 400;
+}
+
+.package-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.feature-check {
+  color: var(--sdeal-orange);
+  font-weight: bold;
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  color: #333;
+  flex: 1;
+}
+
+.addons-section {
+  margin-top: 80px;
+  padding-top: 60px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.addons-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--sdeal-dark-blue);
+  text-align: center;
+  margin: 0 0 40px 0;
+}
+
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+}
+
+.addon-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.addon-card:hover {
+  border-color: var(--sdeal-orange);
+  background: white;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.addon-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--sdeal-dark-blue);
+  margin: 0 0 10px 0;
+}
+
+.addon-price {
+  font-size: 18px;
+  color: var(--sdeal-orange);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .pricing-packages {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  .pricing-card.highlighted {
+    transform: scale(1.02);
+  }
+}
+
+@media (max-width: 768px) {
+  .pricing-page {
+    padding: 60px 15px 40px;
+  }
+  
+  .pricing-title {
+    font-size: 36px;
+  }
+  
+  .pricing-subtitle {
+    font-size: 18px;
+  }
+  
+  .pricing-packages {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .pricing-card.highlighted {
+    transform: none;
+  }
+  
+  .addons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-title {
+    font-size: 28px;
+  }
+  
+  .package-title {
+    font-size: 26px;
+  }
+  
+  .price-amount {
+    font-size: 36px;
+  }
+}
