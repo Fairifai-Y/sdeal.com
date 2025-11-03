@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import CountryCard from '../components/CountryCard';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,7 +7,6 @@ import './Home.css';
 
 const Home = () => {
   const { currentLanguage } = useLanguage();
-  const navigate = useNavigate();
   
   const countries = [
     {
