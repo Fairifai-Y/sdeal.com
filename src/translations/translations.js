@@ -74,6 +74,7 @@ export const translations = {
     addonDEALCSSDescription: 'When an advertiser bids 1 euro per click via Google Shopping CSS, only 80 cents of that bid is allocated to the auction. However, with Bigshopper CSS, 100% of your bid goes to the auction. This results in a 25% bid increase without extra bidding effort.',
     addonCPC: 'CPC (Your products link to your own site)',
     addonCPCPrice: '€39,95 p/m',
+    addonCPCDescription: 'As a platform, we cannot advertise on CPC items, but we can display them.',
     
     // About
     ourMission: 'Our Mission',
@@ -190,6 +191,7 @@ export const translations = {
     addonDEALCSSDescription: 'Wanneer een adverteerder 1 euro per klik biedt via Google Shopping CSS, wordt slechts 80 cent van dat bod toegewezen aan de veiling. Echter, met Bigshopper CSS gaat 100% van je bod naar de veiling. Dit resulteert in een bodverhoging van 25% zonder extra biedinspanning.',
     addonCPC: 'CPC (Jouw producten laten doorklikken naar jouw eigen site)',
     addonCPCPrice: '€39,95 p/m',
+    addonCPCDescription: 'Als platform kunnen wij niet adverteren op CPC items, maar we kunnen ze wel tonen.',
     
     // About
     ourMission: 'Onze Missie',
@@ -306,6 +308,7 @@ export const translations = {
     addonDEALCSSDescription: 'Wenn ein Werbetreibender 1 Euro pro Klick über Google Shopping CSS bietet, werden nur 80 Cent dieses Gebots der Auktion zugewiesen. Bei Bigshopper CSS geht jedoch 100% Ihres Gebots an die Auktion. Dies führt zu einer Gebotserhöhung von 25% ohne zusätzlichen Gebotsaufwand.',
     addonCPC: 'CPC (Ihre Produkte verlinken zu Ihrer eigenen Website)',
     addonCPCPrice: '€39,95 p.m.',
+    addonCPCDescription: 'Als Plattform können wir nicht auf CPC-Artikeln werben, aber wir können sie anzeigen.',
     
     // About
     ourMission: 'Unsere Mission',
@@ -422,6 +425,7 @@ export const translations = {
     addonDEALCSSDescription: 'Lorsqu\'un annonceur enchérit 1 euro par clic via Google Shopping CSS, seulement 80 centimes de cette enchère sont alloués à la vente aux enchères. Cependant, avec Bigshopper CSS, 100% de votre enchère va à la vente aux enchères. Cela se traduit par une augmentation d\'enchère de 25% sans effort d\'enchère supplémentaire.',
     addonCPC: 'CPC (Vos produits redirigent vers votre propre site)',
     addonCPCPrice: '€39,95 p.m.',
+    addonCPCDescription: 'En tant que plateforme, nous ne pouvons pas faire de publicité sur les articles CPC, mais nous pouvons les afficher.',
     
     // About
     ourMission: 'Notre Mission',

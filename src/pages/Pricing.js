@@ -66,19 +66,26 @@ const Pricing = () => {
     }
   ];
 
+  const calculateAddOnPrice = (monthlyPrice) => {
+    if (!monthlyPrice) return '';
+    if (billingPeriod === 'yearly') {
+      const yearly = monthlyPrice * 12 * 0.75; // 25% korting
+      return `€${yearly.toFixed(2)} ${getTranslation(currentLanguage, 'perYear')}`;
+    }
+    return `€${monthlyPrice.toFixed(2)} ${getTranslation(currentLanguage, 'perMonth')}`;
+  };
+
   const addOns = [
     {
-      name: getTranslation(currentLanguage, 'addonFairifAI'),
-      price: getTranslation(currentLanguage, 'addonFairifAIPrice')
-    },
-    {
       name: getTranslation(currentLanguage, 'addonDEALCSS'),
+      monthlyPrice: null, // Special pricing format
       price: getTranslation(currentLanguage, 'addonDEALCSSPrice'),
       description: getTranslation(currentLanguage, 'addonDEALCSSDescription')
     },
     {
       name: getTranslation(currentLanguage, 'addonCPC'),
-      price: getTranslation(currentLanguage, 'addonCPCPrice')
+      monthlyPrice: 39.95,
+      description: getTranslation(currentLanguage, 'addonCPCDescription')
     }
   ];
 
@@ -145,7 +152,13 @@ const Pricing = () => {
               {addOns.map((addon, index) => (
                 <div key={index} className="addon-card">
                   <h4 className="addon-name">{addon.name}</h4>
-                  <p className="addon-price">{addon.price}</p>
+                  <div className="addon-price-container">
+                    {addon.monthlyPrice ? (
+                      <span className="addon-price">{calculateAddOnPrice(addon.monthlyPrice)}</span>
+                    ) : (
+                      <span className="addon-price">{addon.price}</span>
+                    )}
+                  </div>
                   {addon.description && (
                     <p className="addon-description">{addon.description}</p>
                   )}
