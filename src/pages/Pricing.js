@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
@@ -6,14 +6,25 @@ import './Pricing.css';
 
 const Pricing = () => {
   const { currentLanguage } = useLanguage();
+  const [billingPeriod, setBillingPeriod] = useState('monthly');
+
+  const calculatePrice = (monthlyPrice) => {
+    if (billingPeriod === 'yearly') {
+      const yearly = monthlyPrice * 12 * 0.75; // 25% korting
+      return `€${yearly.toFixed(2)}`;
+    }
+    return `€${monthlyPrice.toFixed(2)}`;
+  };
 
   const packages = [
     {
       id: 'A',
       title: getTranslation(currentLanguage, 'packageA'),
       subtitle: getTranslation(currentLanguage, 'packageASubtitle'),
-      price: '€29,00',
-      period: getTranslation(currentLanguage, 'perMonth'),
+      monthlyPrice: 29.00,
+      period: billingPeriod === 'yearly' 
+        ? getTranslation(currentLanguage, 'perYear') 
+        : getTranslation(currentLanguage, 'perMonth'),
       features: [
         getTranslation(currentLanguage, 'packageAFeature2'),
         getTranslation(currentLanguage, 'packageAFeature3'),
@@ -25,8 +36,10 @@ const Pricing = () => {
       id: 'B',
       title: getTranslation(currentLanguage, 'packageB'),
       subtitle: getTranslation(currentLanguage, 'packageBSubtitle'),
-      price: '€49,00',
-      period: getTranslation(currentLanguage, 'perMonth'),
+      monthlyPrice: 49.00,
+      period: billingPeriod === 'yearly' 
+        ? getTranslation(currentLanguage, 'perYear') 
+        : getTranslation(currentLanguage, 'perMonth'),
       features: [
         getTranslation(currentLanguage, 'packageBFeature2'),
         getTranslation(currentLanguage, 'packageBFeature4'),
@@ -37,8 +50,10 @@ const Pricing = () => {
       id: 'C',
       title: getTranslation(currentLanguage, 'packageC'),
       subtitle: getTranslation(currentLanguage, 'packageCSubtitle'),
-      price: '€99,00',
-      period: getTranslation(currentLanguage, 'perMonth'),
+      monthlyPrice: 99.00,
+      period: billingPeriod === 'yearly' 
+        ? getTranslation(currentLanguage, 'perYear') 
+        : getTranslation(currentLanguage, 'perMonth'),
       features: [
         getTranslation(currentLanguage, 'packageCFeature2'),
         getTranslation(currentLanguage, 'packageCFeature3'),
@@ -78,6 +93,23 @@ const Pricing = () => {
         <div className="pricing-hero">
           <h1 className="pricing-title">{getTranslation(currentLanguage, 'pricingTitle')}</h1>
           <p className="pricing-subtitle">{getTranslation(currentLanguage, 'pricingSubtitle')}</p>
+          
+          <div className="billing-period-selector">
+            <span className="billing-label">{getTranslation(currentLanguage, 'billingPeriod')}:</span>
+            <button 
+              className={`billing-btn ${billingPeriod === 'monthly' ? 'active' : ''}`}
+              onClick={() => setBillingPeriod('monthly')}
+            >
+              {getTranslation(currentLanguage, 'monthly')}
+            </button>
+            <button 
+              className={`billing-btn ${billingPeriod === 'yearly' ? 'active' : ''}`}
+              onClick={() => setBillingPeriod('yearly')}
+            >
+              {getTranslation(currentLanguage, 'yearly')}
+              <span className="discount-badge">-25%</span>
+            </button>
+          </div>
         </div>
 
         <div className="pricing-container">
@@ -92,7 +124,7 @@ const Pricing = () => {
                 <h3 className="package-title">{pkg.title}</h3>
                 <p className="package-subtitle">{pkg.subtitle}</p>
                 <div className="package-price">
-                  <span className="price-amount">{pkg.price}</span>
+                  <span className="price-amount">{calculatePrice(pkg.monthlyPrice)}</span>
                   <span className="price-period"> {pkg.period}</span>
                 </div>
                 <ul className="package-features">
