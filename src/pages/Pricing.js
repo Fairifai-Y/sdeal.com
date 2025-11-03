@@ -78,8 +78,7 @@ const Pricing = () => {
   const addOns = [
     {
       name: getTranslation(currentLanguage, 'addonDEALCSS'),
-      monthlyPrice: null, // Special pricing format
-      price: getTranslation(currentLanguage, 'addonDEALCSSPrice'),
+      monthlyPrice: 24.95,
       description: getTranslation(currentLanguage, 'addonDEALCSSDescription')
     },
     {
@@ -153,11 +152,7 @@ const Pricing = () => {
                 <div key={index} className="addon-card">
                   <h4 className="addon-name">{addon.name}</h4>
                   <div className="addon-price-container">
-                    {addon.monthlyPrice ? (
-                      <span className="addon-price">{calculateAddOnPrice(addon.monthlyPrice)}</span>
-                    ) : (
-                      <span className="addon-price">{addon.price}</span>
-                    )}
+                    <span className="addon-price">{calculateAddOnPrice(addon.monthlyPrice)}</span>
                   </div>
                   {addon.description && (
                     <p className="addon-description">{addon.description}</p>
