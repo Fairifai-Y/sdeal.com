@@ -11,7 +11,10 @@ const Pricing = () => {
   const calculatePrice = (monthlyPrice) => {
     if (billingPeriod === 'yearly') {
       const yearly = monthlyPrice * 12 * 0.75; // 25% korting
-      return `€${yearly.toFixed(2)}`;
+      // Rond af naar beneden op tientallen en eindig op .95
+      const roundedDown = Math.ceil(yearly / 10) * 10;
+      const finalPrice = roundedDown - 0.05;
+      return `€${finalPrice.toFixed(2)}`;
     }
     return `€${monthlyPrice.toFixed(2)}`;
   };
@@ -70,7 +73,10 @@ const Pricing = () => {
     if (!monthlyPrice) return '';
     if (billingPeriod === 'yearly') {
       const yearly = monthlyPrice * 12 * 0.75; // 25% korting
-      return `€${yearly.toFixed(2)} ${getTranslation(currentLanguage, 'perYear')}`;
+      // Rond af naar boven op tientallen en eindig op .95
+      const roundedUp = Math.ceil(yearly / 10) * 10;
+      const finalPrice = roundedUp - 0.05;
+      return `€${finalPrice.toFixed(2)} ${getTranslation(currentLanguage, 'perYear')}`;
     }
     return `€${monthlyPrice.toFixed(2)} ${getTranslation(currentLanguage, 'perMonth')}`;
   };
