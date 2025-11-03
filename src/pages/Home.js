@@ -100,9 +100,15 @@ const Home = () => {
             className="hero-logo" 
           />
           <h1 className="hero-title">Real deals, without the noise</h1>
-          <button className="hero-button" onClick={() => navigate('/contact')}>
+          <a 
+            href="https://onboarding.sdeal.com" 
+            className="hero-button" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', display: 'inline-block' }}
+          >
             Start selling
-          </button>
+          </a>
         </div>
       </div>
 
