@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
+import { getLocalizedUrl } from '../utils/languageUtils';
 import './Pricing.css';
 
 const Pricing = () => {
@@ -81,16 +83,34 @@ const Pricing = () => {
     return `€${monthlyPrice.toFixed(2)} ${getTranslation(currentLanguage, 'perMonth')}`;
   };
 
+  const contactUrl = getLocalizedUrl('/contact', currentLanguage);
+
   const addOns = [
     {
       name: getTranslation(currentLanguage, 'addonDEALCSS'),
       monthlyPrice: 24.95,
-      description: getTranslation(currentLanguage, 'addonDEALCSSDescription')
+      description: getTranslation(currentLanguage, 'addonDEALCSSDescription'),
+      linkToContact: false
     },
     {
       name: getTranslation(currentLanguage, 'addonCPC'),
       monthlyPrice: 39.95,
-      description: getTranslation(currentLanguage, 'addonCPCDescription')
+      description: getTranslation(currentLanguage, 'addonCPCDescription'),
+      linkToContact: false
+    },
+    {
+      name: getTranslation(currentLanguage, 'addonMagentoDevelopment'),
+      monthlyPrice: null,
+      customPrice: getTranslation(currentLanguage, 'addonMagentoDevelopmentPrice'),
+      description: getTranslation(currentLanguage, 'addonMagentoDevelopmentDescription'),
+      linkToContact: true
+    },
+    {
+      name: getTranslation(currentLanguage, 'addonOwnMagentoStore'),
+      monthlyPrice: null,
+      customPrice: getTranslation(currentLanguage, 'addonOwnMagentoStorePrice'),
+      description: getTranslation(currentLanguage, 'addonOwnMagentoStoreDescription'),
+      linkToContact: true
     }
   ];
 
@@ -154,17 +174,35 @@ const Pricing = () => {
           <div className="addons-section">
             <h2 className="addons-title">{getTranslation(currentLanguage, 'addonsTitle')}</h2>
             <div className="addons-grid">
-              {addOns.map((addon, index) => (
-                <div key={index} className="addon-card">
-                  <h4 className="addon-name">{addon.name}</h4>
-                  <div className="addon-price-container">
-                    <span className="addon-price">{calculateAddOnPrice(addon.monthlyPrice)}</span>
+              {addOns.map((addon, index) => {
+                const cardContent = (
+                  <>
+                    <h4 className="addon-name">{addon.name}</h4>
+                    <div className="addon-price-container">
+                      <span className="addon-price">
+                        {addon.customPrice ? addon.customPrice : calculateAddOnPrice(addon.monthlyPrice)}
+                      </span>
+                    </div>
+                    {addon.description && (
+                      <p className="addon-description">{addon.description}</p>
+                    )}
+                  </>
+                );
+
+                if (addon.linkToContact) {
+                  return (
+                    <Link key={index} to={contactUrl} className="addon-card addon-card-link">
+                      {cardContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={index} className="addon-card">
+                    {cardContent}
                   </div>
-                  {addon.description && (
-                    <p className="addon-description">{addon.description}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

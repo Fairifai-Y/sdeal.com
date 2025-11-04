@@ -86,6 +86,12 @@ export const translations = {
     addonCPC: 'CPC (Cost per click)',
     addonCPCPrice: '€39,95 p/m',
     addonCPCDescription: 'CAAS (Clicks as a Service). With CAAS, sellers can place products that are not billed through SDeal, but lead directly to their own webshop. Instead of a commission per sale, they pay a fixed monthly amount for visibility and traffic via SDeal.',
+    addonMagentoDevelopment: 'Magento Development',
+    addonMagentoDevelopmentPrice: 'Contact for pricing',
+    addonMagentoDevelopmentDescription: 'Professional Magento development services. Custom modules, integrations, maintenance, and optimization for your e-commerce platform.',
+    addonOwnMagentoStore: 'Own Magento Store',
+    addonOwnMagentoStorePrice: '€1,995 setup + €199 p/m',
+    addonOwnMagentoStoreDescription: 'Complete Magento store solutions. From setup to customization, we help you build and maintain your own powerful e-commerce store.',
     
     // About
     ourMission: 'Our Mission',
@@ -214,6 +220,12 @@ export const translations = {
     addonCPC: 'CPC (Cost per click)',
     addonCPCPrice: '€39,95 p/m',
     addonCPCDescription: 'CAAS (Clicks as a Service). Met CAAS kunnen sellers producten plaatsen die niet via SDeal worden afgerekend, maar rechtstreeks leiden naar hun eigen webshop. In plaats van een commissie per verkoop betalen zij een vast maandbedrag voor zichtbaarheid en verkeer via SDeal.',
+    addonMagentoDevelopment: 'Magento Development',
+    addonMagentoDevelopmentPrice: 'Contact voor prijs',
+    addonMagentoDevelopmentDescription: 'Professionele Magento ontwikkelingsdiensten. Aangepaste modules, integraties, onderhoud en optimalisatie voor jouw e-commerce platform.',
+    addonOwnMagentoStore: 'Eigen Magento Store',
+    addonOwnMagentoStorePrice: '€1.995 opstart + €199 p/m',
+    addonOwnMagentoStoreDescription: 'Complete Magento store oplossingen. Van opzet tot aanpassing, wij helpen je bij het bouwen en onderhouden van je eigen krachtige e-commerce store.',
     
     // About
     ourMission: 'Onze Missie',
@@ -342,6 +354,12 @@ export const translations = {
     addonCPC: 'CPC (Cost per click)',
     addonCPCPrice: '€39,95 p.m.',
     addonCPCDescription: 'CAAS (Clicks as a Service). Mit CAAS können Verkäufer Produkte platzieren, die nicht über SDeal abgerechnet werden, sondern direkt zu ihrem eigenen Webshop führen. Anstelle einer Provision pro Verkauf zahlen sie einen festen Monatsbetrag für Sichtbarkeit und Traffic über SDeal.',
+    addonMagentoDevelopment: 'Magento Entwicklung',
+    addonMagentoDevelopmentPrice: 'Preis auf Anfrage',
+    addonMagentoDevelopmentDescription: 'Professionelle Magento-Entwicklungsdienste. Benutzerdefinierte Module, Integrationen, Wartung und Optimierung für Ihre E-Commerce-Plattform.',
+    addonOwnMagentoStore: 'Eigener Magento Store',
+    addonOwnMagentoStorePrice: '€1.995 Einrichtung + €199 p.m.',
+    addonOwnMagentoStoreDescription: 'Komplette Magento Store-Lösungen. Von der Einrichtung bis zur Anpassung helfen wir Ihnen beim Aufbau und der Wartung Ihres eigenen leistungsstarken E-Commerce-Stores.',
     
     // About
     ourMission: 'Unsere Mission',
@@ -470,6 +488,12 @@ export const translations = {
     addonCPC: 'CPC (Cost per click)',
     addonCPCPrice: '€39,95 p.m.',
     addonCPCDescription: 'CAAS (Clicks as a Service). Avec CAAS, les vendeurs peuvent placer des produits qui ne sont pas facturés via SDeal, mais qui mènent directement à leur propre boutique en ligne. Au lieu d\'une commission par vente, ils paient un montant mensuel fixe pour la visibilité et le trafic via SDeal.',
+    addonMagentoDevelopment: 'Développement Magento',
+    addonMagentoDevelopmentPrice: 'Contacter pour prix',
+    addonMagentoDevelopmentDescription: 'Services de développement Magento professionnels. Modules personnalisés, intégrations, maintenance et optimisation pour votre plateforme e-commerce.',
+    addonOwnMagentoStore: 'Boutique Magento Propre',
+    addonOwnMagentoStorePrice: '€1 995 installation + €199 p.m.',
+    addonOwnMagentoStoreDescription: 'Solutions complètes de boutique Magento. De la configuration à la personnalisation, nous vous aidons à construire et maintenir votre propre boutique e-commerce puissante.',
     
     // About
     ourMission: 'Notre Mission',

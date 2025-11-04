@@ -217,8 +217,16 @@
 
 .addons-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .addons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .addon-card {
@@ -235,6 +243,22 @@
   background: white;
   transform: translateY(-3px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.addon-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.addon-card-link:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.addon-card-link:hover .addon-name {
+  color: var(--sdeal-orange);
 }
 
 .addon-name {
