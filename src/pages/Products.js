@@ -66,7 +66,104 @@ const Products = () => {
           
           <div className="products-grid">
             {products.map(product => (
-              <ProductCard key={product.id} product={product} />
+              <React.Fragment key={product.id}>
+                <ProductCard product={product} />
+                {product.id === 1 && (
+                  <div className="marketplace-details">
+                    <div className="marketplace-content">
+                      {getTranslation(currentLanguage, 'marketplaceDetailed')
+                        .split('\n')
+                        .map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+                          if (index === 0) {
+                            return <h2 key={index} className="marketplace-title">{line}</h2>;
+                          }
+                          return <p key={index} className="marketplace-paragraph">{line}</p>;
+                        })}
+                    </div>
+                  </div>
+                )}
+                {product.id === 2 && (
+                  <div className="marketplace-details">
+                    <div className="marketplace-content">
+                      {getTranslation(currentLanguage, 'dealCSSDetailed')
+                        .split('\n')
+                        .map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+                          if (index === 0) {
+                            return <h2 key={index} className="marketplace-title">{line}</h2>;
+                          }
+                          // Check if line is a heading (starts with "Waarom", "Wat is", "Samengevat", etc.)
+                          const isHeading = line.match(/^(Waarom|Why|Warum|Pourquoi|Wat is|What is|Was ist|Qu'est-ce|Samengevat|In summary|Zusammenfassend|En résumé)/i);
+                          if (isHeading) {
+                            return <h3 key={index} className="marketplace-subtitle">{line}</h3>;
+                          }
+                          return <p key={index} className="marketplace-paragraph">{line}</p>;
+                        })}
+                    </div>
+                  </div>
+                )}
+                {product.id === 3 && (
+                  <div className="marketplace-details">
+                    <div className="marketplace-content">
+                      {getTranslation(currentLanguage, 'cpcDetailed')
+                        .split('\n')
+                        .map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+                          if (index === 0) {
+                            return <h2 key={index} className="marketplace-title">{line}</h2>;
+                          }
+                          // Check if line is a heading (starts with "Wat het inhoudt", "Samengevat", etc.)
+                          const isHeading = line.match(/^(Wat het inhoudt|What it entails|Was es beinhaltet|Ce que cela implique|Samengevat|In summary|Zusammenfassend|En résumé)/i);
+                          if (isHeading) {
+                            return <h3 key={index} className="marketplace-subtitle">{line}</h3>;
+                          }
+                          return <p key={index} className="marketplace-paragraph">{line}</p>;
+                        })}
+                    </div>
+                  </div>
+                )}
+                {product.id === 5 && (
+                  <div className="marketplace-details">
+                    <div className="marketplace-content">
+                      {getTranslation(currentLanguage, 'magentoDevelopmentDetailed')
+                        .split('\n')
+                        .map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+                          if (index === 0) {
+                            return <h2 key={index} className="marketplace-title">{line}</h2>;
+                          }
+                          // Check if line is a heading (starts with "Wat je krijgt", "Voor wie", "Samengevat", etc.)
+                          const isHeading = line.match(/^(Wat je krijgt|What you get|Was Sie bekommen|Ce que vous obtenez|Voor wie|For whom|Für wen|Pour qui|Samengevat|In summary|Zusammenfassend|En résumé)/i);
+                          if (isHeading) {
+                            return <h3 key={index} className="marketplace-subtitle">{line}</h3>;
+                          }
+                          return <p key={index} className="marketplace-paragraph">{line}</p>;
+                        })}
+                    </div>
+                  </div>
+                )}
+                {product.id === 6 && (
+                  <div className="marketplace-details">
+                    <div className="marketplace-content">
+                      {getTranslation(currentLanguage, 'ownMagentoStoreDetailed')
+                        .split('\n')
+                        .map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+                          if (index === 0) {
+                            return <h2 key={index} className="marketplace-title">{line}</h2>;
+                          }
+                          // Check if line is a heading (starts with "Wat je krijgt", "Kosten", "Samengevat", etc.)
+                          const isHeading = line.match(/^(Wat je krijgt|What you get|Was Sie bekommen|Ce que vous obtenez|Kosten|Costs|Coûts|Samengevat|In summary|Zusammenfassend|En résumé)/i);
+                          if (isHeading) {
+                            return <h3 key={index} className="marketplace-subtitle">{line}</h3>;
+                          }
+                          return <p key={index} className="marketplace-paragraph">{line}</p>;
+                        })}
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         </div>
