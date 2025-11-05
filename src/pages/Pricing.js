@@ -47,6 +47,7 @@ const Pricing = () => {
         : getTranslation(currentLanguage, 'perMonth'),
       features: [
         getTranslation(currentLanguage, 'packageBFeature2'),
+        getTranslation(currentLanguage, 'packageBFeature3'),
         getTranslation(currentLanguage, 'packageBFeature4'),
         getTranslation(currentLanguage, 'packageBFeature5')
       ]
@@ -62,6 +63,7 @@ const Pricing = () => {
       features: [
         getTranslation(currentLanguage, 'packageCFeature2'),
         getTranslation(currentLanguage, 'packageCFeature3'),
+        getTranslation(currentLanguage, 'packageCFeature4'),
         getTranslation(currentLanguage, 'packageCFeature5'),
         getTranslation(currentLanguage, 'packageCFeature6'),
         getTranslation(currentLanguage, 'packageCFeature7'),
