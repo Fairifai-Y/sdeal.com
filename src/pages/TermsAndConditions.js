@@ -79,7 +79,7 @@ const TermsAndConditions = () => {
         <p>10.5 The User and Customer must comply with these Terms and all applicable laws and regulations at all times. SDeal reserves the right to take appropriate action in response to offensive or inappropriate behavior, including restricting access to the Platform.</p>
 
         <h3>Article 11. Complaints</h3>
-        <p>If you have a complaint regarding our service or platform, please contact us at <a href="mailto:customerservice@sdeal.com">customerservice@sdeal.com</a>. We aim to respond to all complaints within 14 calendar days. If your complaint requires more time, we will inform you accordingly.</p>
+        <p>If you have a complaint regarding our service or platform, please contact us at <a href="mailto:info@sdeal.com">info@sdeal.com</a>. We aim to respond to all complaints within 14 calendar days. If your complaint requires more time, we will inform you accordingly.</p>
 
         <h3>Article 12. Dispute Resolution</h3>
         <p>In case of disputes between a customer and SDeal, we recommend contacting us directly first. If the issue cannot be resolved, consumers may use the EU's Online Dispute Resolution platform at <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a>.</p>
@@ -88,7 +88,7 @@ const TermsAndConditions = () => {
         <p>SDeal B.V.<br />
         Osloweg 110<br />
         9723 BX Groningen<br />
-        Email: <a href="mailto:customerservice@sdeal.com">customerservice@sdeal.com</a></p>
+        Email: <a href="mailto:info@sdeal.com">info@sdeal.com</a></p>
 
         <p><em>Last updated: Groningen, June 2025</em></p>
       </div>
