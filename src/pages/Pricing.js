@@ -49,7 +49,8 @@ const Pricing = () => {
         getTranslation(currentLanguage, 'packageBFeature2'),
         getTranslation(currentLanguage, 'packageBFeature3'),
         getTranslation(currentLanguage, 'packageBFeature4'),
-        getTranslation(currentLanguage, 'packageBFeature5')
+        getTranslation(currentLanguage, 'packageBFeature5'),
+        getTranslation(currentLanguage, 'packageBFeature6')
       ]
     },
     {
