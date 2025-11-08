@@ -44,6 +44,7 @@ const Footer = () => {
               <li><a href="https://www.thuiswinkel.org/leden/sdeal/platformcertificaat/" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Certifications</a></li>
               <li><Link to="/privacy-policy" className="w3-hover-text-red">Privacy Policy</Link></li>
               <li><Link to="/terms-and-conditions" className="w3-hover-text-red">Terms and conditions</Link></li>
+              <li><Link to="/terms-sellers" className="w3-hover-text-red">Seller Terms & Conditions</Link></li>
             </ul>
           </div>
 

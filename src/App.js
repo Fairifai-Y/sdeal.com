@@ -12,6 +12,7 @@ import Contact from './pages/Contact';
 import Jobs from './pages/Jobs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
+import TermsSellers from './pages/TermsSellers';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Pricing from './pages/Pricing';
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/terms-sellers" element={<TermsSellers />} />
                 
                 {/* Dutch routes */}
                 <Route path="/nl" element={<Home />} />
@@ -51,6 +53,7 @@ function App() {
                 <Route path="/nl/pricing" element={<Pricing />} />
                 <Route path="/nl/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/nl/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/nl/terms-sellers" element={<TermsSellers />} />
                 
                 {/* German routes */}
                 <Route path="/de" element={<Home />} />
@@ -64,6 +67,7 @@ function App() {
                 <Route path="/de/pricing" element={<Pricing />} />
                 <Route path="/de/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/de/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/de/terms-sellers" element={<TermsSellers />} />
                 
                 {/* French routes */}
                 <Route path="/fr" element={<Home />} />
@@ -77,6 +81,7 @@ function App() {
                 <Route path="/fr/pricing" element={<Pricing />} />
                 <Route path="/fr/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/fr/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/fr/terms-sellers" element={<TermsSellers />} />
               </Routes>
             </main>
             <Footer />
