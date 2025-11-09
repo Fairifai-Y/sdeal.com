@@ -88,6 +88,17 @@ const Pricing = () => {
 
   const contactUrl = getLocalizedUrl('/contact', currentLanguage);
 
+  // Map add-on names to product slugs
+  const getAddOnSlug = (addonName) => {
+    const addonSlugMap = {
+      [getTranslation(currentLanguage, 'addonDEALCSS')]: 'deal-css',
+      [getTranslation(currentLanguage, 'addonCPC')]: 'cpc',
+      [getTranslation(currentLanguage, 'addonMagentoDevelopment')]: 'magento-development',
+      [getTranslation(currentLanguage, 'addonOwnMagentoStore')]: 'own-magento-store'
+    };
+    return addonSlugMap[addonName] || null;
+  };
+
   const addOns = [
     {
       name: getTranslation(currentLanguage, 'addonDEALCSS'),
@@ -178,6 +189,9 @@ const Pricing = () => {
             <h2 className="addons-title">{getTranslation(currentLanguage, 'addonsTitle')}</h2>
             <div className="addons-grid">
               {addOns.map((addon, index) => {
+                const productSlug = getAddOnSlug(addon.name);
+                const productUrl = productSlug ? getLocalizedUrl(`/products/${productSlug}`, currentLanguage) : null;
+                
                 const cardContent = (
                   <>
                     <h4 className="addon-name">{addon.name}</h4>
@@ -189,14 +203,19 @@ const Pricing = () => {
                     {addon.description && (
                       <p className="addon-description">{addon.description}</p>
                     )}
+                    {productUrl && (
+                      <Link to={productUrl} className="addon-more-info-btn">
+                        {getTranslation(currentLanguage, 'moreInfo')}
+                      </Link>
+                    )}
                   </>
                 );
 
                 if (addon.linkToContact) {
                   return (
-                    <Link key={index} to={contactUrl} className="addon-card addon-card-link">
+                    <div key={index} className="addon-card">
                       {cardContent}
-                    </Link>
+                    </div>
                   );
                 }
 

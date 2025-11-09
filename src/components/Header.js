@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import FairifaiBadge from './FairifaiBadge';
@@ -7,6 +7,8 @@ import './Header.css';
 
 const Header = () => {
   const { currentLanguage, changeLanguage } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 70, right: 20 });
@@ -62,6 +64,49 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
+  // Handle About button click - works from any page
+  const handleAboutClick = () => {
+    const isHomePage = location.pathname === '/' || 
+                      location.pathname === '/nl' || 
+                      location.pathname === '/de' || 
+                      location.pathname === '/fr';
+    
+    if (isHomePage) {
+      // If on homepage, scroll to about section
+      const aboutElement = document.getElementById('about');
+      if (aboutElement) {
+        aboutElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // If not on homepage, navigate to homepage with hash
+      const homePath = location.pathname.startsWith('/nl') ? '/nl' :
+                      location.pathname.startsWith('/de') ? '/de' :
+                      location.pathname.startsWith('/fr') ? '/fr' : '/';
+      navigate(`${homePath}#about`);
+      
+      // Scroll to about section after navigation
+      setTimeout(() => {
+        const aboutElement = document.getElementById('about');
+        if (aboutElement) {
+          aboutElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+    setIsMobileMenuOpen(false);
+  };
+
+  // Handle hash navigation when component mounts or location changes
+  useEffect(() => {
+    if (location.hash === '#about') {
+      setTimeout(() => {
+        const aboutElement = document.getElementById('about');
+        if (aboutElement) {
+          aboutElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location]);
+
   return (
     <div className="w3-top">
       <div className="w3-bar w3-white w3-padding">
@@ -78,7 +123,7 @@ const Header = () => {
           <Link to="/pricing" className="w3-bar-item w3-button">
             Pricing
           </Link>
-          <button className="w3-bar-item w3-button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
+          <button className="w3-bar-item w3-button" onClick={handleAboutClick}>
             {getTranslation(currentLanguage, 'about')}
           </button>
           <Link to="/contact" className="w3-bar-item w3-button">
@@ -162,10 +207,7 @@ const Header = () => {
           <Link to="/pricing" className="mobile-menu-item" onClick={handleMobileLinkClick}>
             Pricing
           </Link>
-          <button className="mobile-menu-item" onClick={() => {
-             document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
-             handleMobileLinkClick();
-           }}>
+          <button className="mobile-menu-item" onClick={handleAboutClick}>
              {getTranslation(currentLanguage, 'about')}
            </button>
            <Link to="/contact" className="mobile-menu-item" onClick={handleMobileLinkClick}>

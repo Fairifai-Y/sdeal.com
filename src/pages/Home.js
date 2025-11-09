@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import CountryCard from '../components/CountryCard';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +8,19 @@ import './Home.css';
 
 const Home = () => {
   const { currentLanguage } = useLanguage();
+  const location = useLocation();
+
+  // Scroll to about section if hash is present in URL
+  useEffect(() => {
+    if (location.hash === '#about') {
+      setTimeout(() => {
+        const aboutElement = document.getElementById('about');
+        if (aboutElement) {
+          aboutElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location]);
   
   const countries = [
     {
