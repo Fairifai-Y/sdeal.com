@@ -86,8 +86,6 @@ const Pricing = () => {
     return `€${monthlyPrice.toFixed(2)} ${getTranslation(currentLanguage, 'perMonth')}`;
   };
 
-  const contactUrl = getLocalizedUrl('/contact', currentLanguage);
-
   // Map add-on names to product slugs
   const getAddOnSlug = (addonName) => {
     const addonSlugMap = {
