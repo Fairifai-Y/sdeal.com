@@ -265,7 +265,7 @@ const Package = () => {
             <h2>{getTranslation(currentLanguage, 'packageConfirmTitle')}</h2>
             <p>{getTranslation(currentLanguage, 'packageConfirmText')}</p>
             <div className="agreement-links">
-              <a href={getLocalizedUrl('/terms-sellers', currentLanguage)} target="_blank" rel="noopener noreferrer">
+              <a href="/images/SDeal Agreement.pdf" target="_blank" rel="noopener noreferrer">
                 📄 {getTranslation(currentLanguage, 'packageAgreementLink')}
               </a>
               <a href={getLocalizedUrl('/terms-sellers', currentLanguage)} target="_blank" rel="noopener noreferrer">
