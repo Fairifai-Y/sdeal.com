@@ -17,7 +17,7 @@ model PackageSelection {
   addonCAAS         Boolean  @default(false)
   addonFairifAI     Boolean  @default(false)
   agreementAccepted Boolean
-  agreementVersion  String   @default("SellerAgreement_7.0_2026-01")
+  agreementVersion  String   @default("SellerAgreement_6.3_2026-01")
   termsVersion      String   @default("SellerTerms_2026-01")
   language          String   // en, nl, de, fr
   ipAddress         String?
