@@ -64,24 +64,6 @@ const Package = () => {
 
     setIsSubmitting(true);
 
-    // Prepare data for database storage
-    const submissionData = {
-      package: selectedPackage,
-      addons: {
-        dealCSS: selectedAddons.dealCSS,
-        caas: selectedAddons.caas,
-        fairifAI: selectedAddons.fairifAI
-      },
-      agreementAccepted: agreementAccepted,
-      timestamp: new Date().toISOString(),
-      // IP address will be captured on the backend
-      // For now, we'll prepare the structure
-      ipAddress: null, // Will be set by backend
-      agreementVersion: 'SellerAgreement_7.0_2026-01',
-      termsVersion: 'SellerTerms_2026-01',
-      language: currentLanguage
-    };
-
     // Submit to API
     try {
       const response = await fetch('/api/package/submit', {
@@ -181,7 +163,7 @@ const Package = () => {
                     onChange={() => handlePackageChange('A')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageA')}</h3>
+                    <h3>{getTranslation(currentLanguage, 'packageSelectA')}</h3>
                     <p className="package-price">{getTranslation(currentLanguage, 'packageAPrice')}</p>
                     <ul>
                       <li>{getTranslation(currentLanguage, 'packageADesc1')}</li>
@@ -204,7 +186,7 @@ const Package = () => {
                     onChange={() => handlePackageChange('B')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageB')}</h3>
+                    <h3>{getTranslation(currentLanguage, 'packageSelectB')}</h3>
                     <p className="package-price">{getTranslation(currentLanguage, 'packageBPrice')}</p>
                     <ul>
                       <li>{getTranslation(currentLanguage, 'packageBDesc1')}</li>
@@ -227,7 +209,7 @@ const Package = () => {
                     onChange={() => handlePackageChange('C')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageC')}</h3>
+                    <h3>{getTranslation(currentLanguage, 'packageSelectC')}</h3>
                     <p className="package-price">{getTranslation(currentLanguage, 'packageCPrice')}</p>
                     <ul>
                       <li>{getTranslation(currentLanguage, 'packageCDesc1')}</li>
@@ -279,7 +261,7 @@ const Package = () => {
             <h2>{getTranslation(currentLanguage, 'packageConfirmTitle')}</h2>
             <p>{getTranslation(currentLanguage, 'packageConfirmText')}</p>
             <div className="agreement-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">
+              <a href={getLocalizedUrl('/terms-sellers', currentLanguage)} target="_blank" rel="noopener noreferrer">
                 📄 {getTranslation(currentLanguage, 'packageAgreementLink')}
               </a>
               <a href={getLocalizedUrl('/terms-sellers', currentLanguage)} target="_blank" rel="noopener noreferrer">
