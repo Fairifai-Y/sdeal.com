@@ -1,0 +1,5 @@
+# Prevent accidental commits of secrets
+*.env filter=git-crypt diff=git-crypt
+server/.env filter=git-crypt diff=git-crypt
+**/.env* filter=git-crypt diff=git-crypt
+
