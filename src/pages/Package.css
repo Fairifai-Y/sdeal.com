@@ -45,11 +45,19 @@
   color: #333;
 }
 
-.package-why p {
+.package-why-text {
+  margin-bottom: 20px;
+}
+
+.package-why-text p {
   font-size: 16px;
   line-height: 1.8;
   color: #666;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.package-why-text p:last-of-type {
+  margin-bottom: 0;
 }
 
 .package-note {

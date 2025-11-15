@@ -137,10 +137,13 @@ const Package = () => {
       <section className="package-why">
         <div className="package-content">
           <h2>{getTranslation(currentLanguage, 'packageWhyTitle')}</h2>
-          <p>{getTranslation(currentLanguage, 'packageWhyText')}</p>
-          <p>{getTranslation(currentLanguage, 'packageWhyBullet1')}</p>
-          <p>{getTranslation(currentLanguage, 'packageWhyBullet2')}</p>
-          <p>{getTranslation(currentLanguage, 'packageWhyBullet3')}</p>
+          <div className="package-why-text">
+            {getTranslation(currentLanguage, 'packageWhyText')
+              .split('\n\n')
+              .map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+          </div>
           <p className="package-note">{getTranslation(currentLanguage, 'packageWhyNote')}</p>
         </div>
       </section>
