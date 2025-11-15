@@ -34,7 +34,7 @@ const ProductDetail = () => {
       translationKey: 'magentoDevelopmentDetailed',
       titleKey: 'magentoDevelopment',
       icon: '⚙️',
-      headingPattern: /^(Wat je krijgt|What you get|Was Sie bekommen|Ce que vous obtenez|Voor wie|For whom|Für wen|Pour qui|Samengevat|In summary|Zusammenfassend|En résumé)/i
+      headingPattern: /^(Wat je krijgt|What you get|Was Sie bekommen|Ce que vous obtenez|Ondersteunde Platforms|Supported Platforms|Unterstützte Plattformen|Plateformes Supportées|Voor wie|For whom|Für wen|Pour qui|Samengevat|In summary|Zusammenfassend|En résumé)/i
     },
     'own-magento-store': {
       translationKey: 'ownMagentoStoreDetailed',

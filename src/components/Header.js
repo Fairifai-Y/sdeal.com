@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
+import { getLocalizedUrl } from '../utils/languageUtils';
 import FairifaiBadge from './FairifaiBadge';
 import './Header.css';
 
@@ -66,10 +67,12 @@ const Header = () => {
 
   // Handle About button click - works from any page
   const handleAboutClick = () => {
+    const homeUrl = getLocalizedUrl('/', currentLanguage);
     const isHomePage = location.pathname === '/' || 
                       location.pathname === '/nl' || 
                       location.pathname === '/de' || 
-                      location.pathname === '/fr';
+                      location.pathname === '/fr' ||
+                      location.pathname === homeUrl;
     
     if (isHomePage) {
       // If on homepage, scroll to about section
@@ -79,10 +82,7 @@ const Header = () => {
       }
     } else {
       // If not on homepage, navigate to homepage with hash
-      const homePath = location.pathname.startsWith('/nl') ? '/nl' :
-                      location.pathname.startsWith('/de') ? '/de' :
-                      location.pathname.startsWith('/fr') ? '/fr' : '/';
-      navigate(`${homePath}#about`);
+      navigate(`${homeUrl}#about`);
       
       // Scroll to about section after navigation
       setTimeout(() => {
@@ -107,35 +107,43 @@ const Header = () => {
     }
   }, [location]);
 
+  const homeUrl = getLocalizedUrl('/', currentLanguage);
+  const productsUrl = getLocalizedUrl('/products', currentLanguage);
+  const pricingUrl = getLocalizedUrl('/pricing', currentLanguage);
+  const contactUrl = getLocalizedUrl('/contact', currentLanguage);
+  const connectionsUrl = getLocalizedUrl('/connections', currentLanguage);
+  const partnersUrl = getLocalizedUrl('/partners', currentLanguage);
+  const faqUrl = getLocalizedUrl('/faq', currentLanguage);
+
   return (
     <div className="w3-top">
       <div className="w3-bar w3-white w3-padding">
-        <Link to="/" className="w3-bar-item w3-button w3-padding-large">
+        <Link to={homeUrl} className="w3-bar-item w3-button w3-padding-large">
           <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="navbar-logo" />
         </Link>
         
         {/* Desktop Navigation */}
         <div className="nav-links w3-hide-small">
           <FairifaiBadge />
-          <Link to="/products" className="w3-bar-item w3-button">
+          <Link to={productsUrl} className="w3-bar-item w3-button">
             Products
           </Link>
-          <Link to="/pricing" className="w3-bar-item w3-button">
+          <Link to={pricingUrl} className="w3-bar-item w3-button">
             Pricing
           </Link>
           <button className="w3-bar-item w3-button" onClick={handleAboutClick}>
             {getTranslation(currentLanguage, 'about')}
           </button>
-          <Link to="/contact" className="w3-bar-item w3-button">
+          <Link to={contactUrl} className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'contact')}
           </Link>
-          <Link to="/connections" className="w3-bar-item w3-button">
+          <Link to={connectionsUrl} className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'connections')}
           </Link>
-          <Link to="/partners" className="w3-bar-item w3-button">
+          <Link to={partnersUrl} className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'partners')}
           </Link>
-          <Link to="/faq" className="w3-bar-item w3-button">
+          <Link to={faqUrl} className="w3-bar-item w3-button">
             {getTranslation(currentLanguage, 'faq')}
           </Link>
           <div className="language-selector">
@@ -201,25 +209,25 @@ const Header = () => {
              {/* Mobile Navigation Menu */}
        <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
          <div className="mobile-menu-content">
-          <Link to="/products" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+          <Link to={productsUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
             Products
           </Link>
-          <Link to="/pricing" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+          <Link to={pricingUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
             Pricing
           </Link>
           <button className="mobile-menu-item" onClick={handleAboutClick}>
              {getTranslation(currentLanguage, 'about')}
            </button>
-           <Link to="/contact" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+           <Link to={contactUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
              {getTranslation(currentLanguage, 'contact')}
            </Link>
-          <Link to="/connections" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+          <Link to={connectionsUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'connections')}
           </Link>
-          <Link to="/partners" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+          <Link to={partnersUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'partners')}
           </Link>
-          <Link to="/faq" className="mobile-menu-item" onClick={handleMobileLinkClick}>
+          <Link to={faqUrl} className="mobile-menu-item" onClick={handleMobileLinkClick}>
             {getTranslation(currentLanguage, 'faq')}
           </Link>
           

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
+import { getLocalizedUrl } from '../utils/languageUtils';
 import './Footer.css';
 
 const Footer = () => {
+  const { currentLanguage } = useLanguage();
   const countries = [
     { name: 'Netherlands', url: 'https://www.sdeal.nl', flag: 'https://www.sdeal.nl/media/images/Nederlandse_vlag.png' },
     { name: 'Germany', url: 'https://www.sdeal.de', flag: 'https://www.sdeal.nl/media/images/duitse_vlag.png' },
@@ -21,8 +24,8 @@ const Footer = () => {
           <div className="w3-col s12 m2 w3-margin-bottom">
             <h4>Service</h4>
             <ul className="w3-ul no-lines">
-              <li><Link to="/faq" className="w3-hover-text-red">FAQ</Link></li>
-              <li><Link to="/contact" className="w3-hover-text-red">Contact</Link></li>
+              <li><Link to={getLocalizedUrl('/faq', currentLanguage)} className="w3-hover-text-red">FAQ</Link></li>
+              <li><Link to={getLocalizedUrl('/contact', currentLanguage)} className="w3-hover-text-red">Contact</Link></li>
             </ul>
           </div>
 
@@ -30,10 +33,10 @@ const Footer = () => {
             <h4>Business</h4>
             <ul className="w3-ul no-lines">
               <li><a href="https://onboarding.sdeal.com" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Sell on SDeal</a></li>
-              <li><Link to="/connections" className="w3-hover-text-red">Connections</Link></li>
-              <li><Link to="/partners" className="w3-hover-text-red">Partners</Link></li>
+              <li><Link to={getLocalizedUrl('/connections', currentLanguage)} className="w3-hover-text-red">Connections</Link></li>
+              <li><Link to={getLocalizedUrl('/partners', currentLanguage)} className="w3-hover-text-red">Partners</Link></li>
 
-              <li><Link to="/jobs" className="w3-hover-text-red">Jobs</Link></li>
+              <li><Link to={getLocalizedUrl('/jobs', currentLanguage)} className="w3-hover-text-red">Jobs</Link></li>
             </ul>
           </div>
 
@@ -42,9 +45,9 @@ const Footer = () => {
             <ul className="w3-ul no-lines">
               <li><a href="https://fairifai.com/site/sdeal.com/review" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Customer Reviews</a></li>
               <li><a href="https://www.thuiswinkel.org/leden/sdeal/platformcertificaat/" className="w3-hover-text-red" target="_blank" rel="noopener noreferrer">Certifications</a></li>
-              <li><Link to="/privacy-policy" className="w3-hover-text-red">Privacy Policy</Link></li>
-              <li><Link to="/terms-and-conditions" className="w3-hover-text-red">Terms and conditions</Link></li>
-              <li><Link to="/terms-sellers" className="w3-hover-text-red">Seller Terms & Conditions</Link></li>
+              <li><Link to={getLocalizedUrl('/privacy-policy', currentLanguage)} className="w3-hover-text-red">Privacy Policy</Link></li>
+              <li><Link to={getLocalizedUrl('/terms-and-conditions', currentLanguage)} className="w3-hover-text-red">Terms and conditions</Link></li>
+              <li><Link to={getLocalizedUrl('/terms-sellers', currentLanguage)} className="w3-hover-text-red">Seller Terms & Conditions</Link></li>
             </ul>
           </div>
 
