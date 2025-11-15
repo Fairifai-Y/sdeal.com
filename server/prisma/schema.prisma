@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PackageSelection {
+  id                String   @id @default(cuid())
+  package           String   // A, B, or C
+  addonDealCSS      Boolean  @default(false)
+  addonCAAS         Boolean  @default(false)
+  addonFairifAI     Boolean  @default(false)
+  agreementAccepted Boolean
+  agreementVersion  String   @default("SellerAgreement_7.0_2026-01")
+  termsVersion      String   @default("SellerTerms_2026-01")
+  language          String   // en, nl, de, fr
+  ipAddress         String?
+  sellerEmail       String?  // Optional: if you want to track seller email
+  sellerId          String?  // Optional: if you have seller IDs
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([package])
+  @@index([createdAt])
+  @@index([language])
+}
+

@@ -29,6 +29,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SDeal API is running' });
 });
 
+// Package selection routes
+const packageRoutes = require('./routes/package');
+app.use('/api/package', packageRoutes);
+
 app.get('/api/countries', (req, res) => {
   const countries = [
     {

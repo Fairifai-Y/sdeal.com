@@ -16,6 +16,8 @@ import TermsSellers from './pages/TermsSellers';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Pricing from './pages/Pricing';
+import Admin from './pages/Admin';
+import Package from './pages/Package';
 import './App.css';
 
 function App() {
@@ -24,11 +26,18 @@ function App() {
       <Router>
         <LanguageProvider>
           <div className="App">
-            <Header />
-            <main style={{ marginTop: '64px' }}>
-              <Routes>
-                {/* English routes (default) */}
-                <Route path="/" element={<Home />} />
+            <Routes>
+              {/* Admin route - no header/footer */}
+              <Route path="/admin" element={<Admin />} />
+              
+              {/* All other routes with header/footer */}
+              <Route path="*" element={
+                <>
+                  <Header />
+                  <main style={{ marginTop: '64px' }}>
+                    <Routes>
+                      {/* English routes (default) */}
+                      <Route path="/" element={<Home />} />
                 <Route path="/connections" element={<Connections />} />
                 <Route path="/partners" element={<Partners />} />
                 <Route path="/faq" element={<FAQ />} />
@@ -40,6 +49,7 @@ function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/terms-sellers" element={<TermsSellers />} />
+                <Route path="/package" element={<Package />} />
                 
                 {/* Dutch routes */}
                 <Route path="/nl" element={<Home />} />
@@ -54,6 +64,7 @@ function App() {
                 <Route path="/nl/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/nl/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/nl/terms-sellers" element={<TermsSellers />} />
+                <Route path="/nl/package" element={<Package />} />
                 
                 {/* German routes */}
                 <Route path="/de" element={<Home />} />
@@ -68,6 +79,7 @@ function App() {
                 <Route path="/de/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/de/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/de/terms-sellers" element={<TermsSellers />} />
+                <Route path="/de/package" element={<Package />} />
                 
                 {/* French routes */}
                 <Route path="/fr" element={<Home />} />
@@ -82,9 +94,13 @@ function App() {
                 <Route path="/fr/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/fr/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/fr/terms-sellers" element={<TermsSellers />} />
-              </Routes>
-            </main>
-            <Footer />
+                <Route path="/fr/package" element={<Package />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </>
+              } />
+            </Routes>
           </div>
         </LanguageProvider>
       </Router>
