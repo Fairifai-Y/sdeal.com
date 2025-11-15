@@ -36,7 +36,7 @@
 /* Why Section */
 .package-why-section {
   background: #f5f5f5;
-  padding: 40px 0;
+  padding: 40px 0 0 0;
 }
 
 .package-why-card {
@@ -44,7 +44,7 @@
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
+  margin-bottom: 0;
 }
 
 .package-why-card h2 {
@@ -71,7 +71,7 @@
 /* Package Form */
 .package-form {
   background: #f5f5f5;
-  padding: 40px 0;
+  padding: 30px 0 40px 0;
 }
 
 /* Package Selection */
