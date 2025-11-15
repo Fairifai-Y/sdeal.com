@@ -34,19 +34,27 @@
 }
 
 /* Why Section */
-.package-why {
-  background: white;
-  padding: 60px 0;
+.package-why-section {
+  background: #f5f5f5;
+  padding: 40px 0;
 }
 
-.package-why h2 {
-  font-size: 32px;
-  margin-bottom: 20px;
+.package-why-card {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.package-why-card h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
   color: #333;
 }
 
 .package-why-text {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .package-why-text p {
@@ -58,15 +66,6 @@
 
 .package-why-text p:last-of-type {
   margin-bottom: 0;
-}
-
-.package-note {
-  background: #fff9e6;
-  border-left: 4px solid #ffc107;
-  padding: 15px 20px;
-  margin-top: 20px;
-  border-radius: 4px;
-  font-weight: 500;
 }
 
 /* Package Form */
