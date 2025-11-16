@@ -34,6 +34,7 @@ const Package = () => {
     if (urlSellerId) {
       setSellerId(urlSellerId);
       setShowSellerInfo(false);
+      // Note: sellerEmail still needs to be filled in the form below
     }
   }, [urlSellerId]);
 

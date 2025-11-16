@@ -58,8 +58,19 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
     return false;
   }
   
-  if (!sellerEmail) {
-    console.error('Email not sent: sellerEmail is missing');
+  if (!sellerEmail || !sellerEmail.trim() || sellerEmail.trim() === '') {
+    console.error('Email not sent: sellerEmail is missing or empty');
+    console.error('sellerEmail value:', sellerEmail);
+    console.error('sellerEmail type:', typeof sellerEmail);
+    return false;
+  }
+  
+  // Ensure email is trimmed
+  const trimmedEmail = sellerEmail.trim();
+  
+  // Basic email validation
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    console.error('Email not sent: Invalid email format:', trimmedEmail);
     return false;
   }
 
@@ -188,7 +199,7 @@ www.sdeal.com
     `;
 
     const msg = {
-      to: sellerEmail,
+      to: trimmedEmail,
       from: process.env.FROM_EMAIL,
       subject: emailSubject,
       text: emailText,
@@ -237,12 +248,19 @@ module.exports = async (req, res) => {
       addons,
       agreementAccepted,
       language,
-      sellerEmail,
+      sellerEmail: sellerEmailParam,
       sellerId: sellerIdParam,
       startDate,
       commissionPercentage,
       billingPeriod
     } = req.body;
+    
+    // Ensure sellerEmail is a string and trim it
+    const sellerEmail = sellerEmailParam ? String(sellerEmailParam).trim() : '';
+    
+    console.log('Received sellerEmail:', sellerEmail);
+    console.log('sellerEmail type:', typeof sellerEmail);
+    console.log('sellerEmail length:', sellerEmail ? sellerEmail.length : 0);
 
     // Validation
     if (!packageType || !['A', 'B', 'C'].includes(packageType)) {
@@ -348,13 +366,25 @@ module.exports = async (req, res) => {
     // Send confirmation email (non-blocking - don't fail if email fails)
     console.log('Package selection saved, checking email...');
     console.log('sellerEmail from request:', sellerEmail);
+    console.log('sellerEmail type:', typeof sellerEmail);
+    console.log('sellerEmail trimmed:', sellerEmail ? sellerEmail.trim() : 'null/undefined');
     console.log('sellerEmail from database:', packageSelection.sellerEmail);
     
-    const emailToSend = sellerEmail || packageSelection.sellerEmail;
+    // Use sellerEmail from request first, then from database, but ensure it's not empty
+    // sellerEmail should always be provided from the frontend form
+    const emailToSend = sellerEmail && sellerEmail.trim() !== '' 
+      ? sellerEmail.trim() 
+      : (packageSelection.sellerEmail && packageSelection.sellerEmail.trim() !== '' 
+          ? packageSelection.sellerEmail.trim() 
+          : null);
     
-    if (emailToSend) {
+    console.log('Final emailToSend:', emailToSend);
+    console.log('emailToSend truthy:', !!emailToSend);
+    console.log('emailToSend length:', emailToSend ? emailToSend.length : 0);
+    
+    if (emailToSend && emailToSend.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim())) {
       console.log('Sending email to:', emailToSend);
-      sendConfirmationEmail(packageSelection, emailToSend, sellerId.trim(), language)
+      sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
         .then(success => {
           if (success) {
             console.log('Email sent successfully to:', emailToSend);
@@ -372,6 +402,8 @@ module.exports = async (req, res) => {
         });
     } else {
       console.log('No email address provided, skipping email send');
+      console.log('sellerEmail value:', sellerEmail);
+      console.log('packageSelection.sellerEmail value:', packageSelection.sellerEmail);
     }
 
     res.json({
