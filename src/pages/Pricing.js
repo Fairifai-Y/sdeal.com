@@ -24,7 +24,7 @@ const Pricing = () => {
   const packages = [
     {
       id: 'A',
-      title: getTranslation(currentLanguage, 'packageA'),
+      title: getTranslation(currentLanguage, 'packageSelectA'),
       subtitle: getTranslation(currentLanguage, 'packageASubtitle'),
       monthlyPrice: 29.00,
       period: billingPeriod === 'yearly' 
@@ -39,7 +39,7 @@ const Pricing = () => {
     },
     {
       id: 'B',
-      title: getTranslation(currentLanguage, 'packageB'),
+      title: getTranslation(currentLanguage, 'packageSelectB'),
       subtitle: getTranslation(currentLanguage, 'packageBSubtitle'),
       monthlyPrice: 49.00,
       period: billingPeriod === 'yearly' 
@@ -55,7 +55,7 @@ const Pricing = () => {
     },
     {
       id: 'C',
-      title: getTranslation(currentLanguage, 'packageC'),
+      title: getTranslation(currentLanguage, 'packageSelectC'),
       subtitle: getTranslation(currentLanguage, 'packageCSubtitle'),
       monthlyPrice: 99.00,
       period: billingPeriod === 'yearly' 

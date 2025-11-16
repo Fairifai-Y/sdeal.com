@@ -93,7 +93,13 @@ const Package = () => {
     const newErrors = {};
     
     if (!selectedPackage) {
-      newErrors.package = 'Please select a package';
+      newErrors.package = currentLanguage === 'nl' 
+        ? 'Selecteer een pakket' 
+        : currentLanguage === 'de'
+        ? 'Wählen Sie ein Paket'
+        : currentLanguage === 'fr'
+        ? 'Sélectionnez un forfait'
+        : 'Please select a package';
     }
     
     if (!sellerId || sellerId.trim() === '') {
@@ -108,21 +114,47 @@ const Package = () => {
     
     // Validate commission percentage based on package
     if (selectedPackage === 'A') {
-      // Package A requires commission (minimum 12%)
+      // Pakket A vereist commissie (minimaal 12%)
       if (!commissionPercentage || isNaN(parseFloat(commissionPercentage))) {
-        newErrors.commissionPercentage = 'Commission percentage is required for Package A';
+        newErrors.commissionPercentage = currentLanguage === 'nl'
+          ? 'Commissie percentage is verplicht voor Pakket A'
+          : currentLanguage === 'de'
+          ? 'Provisionsprozentsatz ist für Paket A erforderlich'
+          : currentLanguage === 'fr'
+          ? 'Le pourcentage de commission est requis pour le forfait A'
+          : 'Commission percentage is required for Package A';
       } else {
         const commission = parseFloat(commissionPercentage);
         if (commission < 12) {
-          newErrors.commissionPercentage = 'Commission must be at least 12% for Package A';
+          newErrors.commissionPercentage = currentLanguage === 'nl'
+            ? 'Commissie moet minimaal 12% zijn voor Pakket A'
+            : currentLanguage === 'de'
+            ? 'Provision muss mindestens 12% für Paket A betragen'
+            : currentLanguage === 'fr'
+            ? 'La commission doit être d\'au moins 12% pour le forfait A'
+            : 'Commission must be at least 12% for Package A';
         }
       }
     } else if (selectedPackage === 'B' || selectedPackage === 'C') {
       const commission = parseFloat(commissionPercentage);
       if (!commissionPercentage || isNaN(commission) || commission < 4) {
-        newErrors.commissionPercentage = selectedPackage === 'B' 
-          ? 'Commission must be at least 4% for Package B'
-          : 'Commission must be at least 4% for Package C';
+        if (currentLanguage === 'nl') {
+          newErrors.commissionPercentage = selectedPackage === 'B'
+            ? 'Commissie moet minimaal 4% zijn voor Pakket B'
+            : 'Commissie moet minimaal 4% zijn voor Pakket C';
+        } else if (currentLanguage === 'de') {
+          newErrors.commissionPercentage = selectedPackage === 'B'
+            ? 'Provision muss mindestens 4% für Paket B betragen'
+            : 'Provision muss mindestens 4% für Paket C betragen';
+        } else if (currentLanguage === 'fr') {
+          newErrors.commissionPercentage = selectedPackage === 'B'
+            ? 'La commission doit être d\'au moins 4% pour le forfait B'
+            : 'La commission doit être d\'au moins 4% pour le forfait C';
+        } else {
+          newErrors.commissionPercentage = selectedPackage === 'B'
+            ? 'Commission must be at least 4% for Package B'
+            : 'Commission must be at least 4% for Package C';
+        }
       }
     }
     
@@ -447,26 +479,24 @@ const Package = () => {
             </div>
           </section>
 
-          {/* Seller Information Section - Only show email if not already set */}
-          {!sellerEmail && (
-            <section className="package-seller-info">
-              <h2>{getTranslation(currentLanguage, 'sellerEmailLabel')}</h2>
-              <div className="form-group">
-                <input
-                  type="email"
-                  className={`form-input ${errors.sellerEmail ? 'error' : ''}`}
-                  placeholder={getTranslation(currentLanguage, 'sellerEmailPlaceholder')}
-                  value={sellerEmail}
-                  onChange={(e) => {
-                    setSellerEmail(e.target.value);
-                    setErrors({ ...errors, sellerEmail: '' });
-                  }}
-                  required
-                />
-                {errors.sellerEmail && <div className="error-message">{errors.sellerEmail}</div>}
-              </div>
-            </section>
-          )}
+          {/* Seller Information Section - Email */}
+          <section className="package-seller-info">
+            <h2>{getTranslation(currentLanguage, 'sellerEmailLabel')}</h2>
+            <div className="form-group">
+              <input
+                type="email"
+                className={`form-input ${errors.sellerEmail ? 'error' : ''}`}
+                placeholder={getTranslation(currentLanguage, 'sellerEmailPlaceholder')}
+                value={sellerEmail}
+                onChange={(e) => {
+                  setSellerEmail(e.target.value);
+                  setErrors({ ...errors, sellerEmail: '' });
+                }}
+                required
+              />
+              {errors.sellerEmail && <div className="error-message">{errors.sellerEmail}</div>}
+            </div>
+          </section>
           
           {/* Seller ID Display - Read-only if from URL */}
           <section className="package-seller-info">
@@ -608,7 +638,7 @@ const Package = () => {
               <div className="summary-grid">
                 <div className="summary-item">
                   <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryPackage')}:</span>
-                  <span className="summary-value">{getTranslation(currentLanguage, `package${selectedPackage}`)}</span>
+                  <span className="summary-value">{getTranslation(currentLanguage, `packageSelect${selectedPackage}`)}</span>
                 </div>
                 {sellerId && (
                   <div className="summary-item">
