@@ -738,8 +738,8 @@
   align-items: center;
   text-align: center;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: white;
+  color: #333;
 }
 
 .success-icon {
@@ -759,11 +759,12 @@
 .package-success h1 {
   font-size: 32px;
   margin-bottom: 20px;
+  color: #333;
 }
 
 .package-success p {
   font-size: 18px;
-  opacity: 0.9;
+  color: #666;
 }
 
 /* Error Message */

@@ -98,7 +98,7 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
     
     const addonsText = addons.length > 0 ? addons.join('\n• ') : 'None';
     
-    const emailSubject = `Package Selection Confirmation - ${packageName}`;
+    const emailSubject = `SDeal - Package Selection Confirmation - ${packageName}`;
     
     const emailHtml = `
       <!DOCTYPE html>
