@@ -42,8 +42,24 @@ const getPackageName = (packageType) => {
 
 // Send confirmation email
 const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, language = 'en') => {
-  if (!process.env.SENDGRID_API_KEY || !process.env.FROM_EMAIL || !sellerEmail) {
-    console.log('Email not sent: Missing SENDGRID_API_KEY, FROM_EMAIL, or sellerEmail');
+  console.log('Attempting to send email...');
+  console.log('SENDGRID_API_KEY present:', !!process.env.SENDGRID_API_KEY);
+  console.log('FROM_EMAIL present:', !!process.env.FROM_EMAIL);
+  console.log('FROM_EMAIL value:', process.env.FROM_EMAIL);
+  console.log('sellerEmail:', sellerEmail);
+  
+  if (!process.env.SENDGRID_API_KEY) {
+    console.error('Email not sent: SENDGRID_API_KEY is missing');
+    return false;
+  }
+  
+  if (!process.env.FROM_EMAIL) {
+    console.error('Email not sent: FROM_EMAIL is missing');
+    return false;
+  }
+  
+  if (!sellerEmail) {
+    console.error('Email not sent: sellerEmail is missing');
     return false;
   }
 
@@ -179,11 +195,28 @@ www.sdeal.com
       html: emailHtml,
     };
 
-    await sgMail.send(msg);
-    console.log(`Confirmation email sent to ${sellerEmail}`);
+    console.log('Sending email via SendGrid...');
+    console.log('Email message:', JSON.stringify({
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      hasHtml: !!msg.html,
+      hasText: !!msg.text
+    }, null, 2));
+    
+    const result = await sgMail.send(msg);
+    console.log('SendGrid response status:', result[0]?.statusCode);
+    console.log('SendGrid response headers:', result[0]?.headers);
+    console.log(`Confirmation email sent successfully to ${sellerEmail}`);
     return true;
   } catch (error) {
     console.error('Error sending confirmation email:', error);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    if (error.response) {
+      console.error('SendGrid error response status:', error.response.statusCode);
+      console.error('SendGrid error response body:', JSON.stringify(error.response.body, null, 2));
+    }
     // Don't throw error - email failure shouldn't break the API response
     return false;
   }
@@ -288,12 +321,32 @@ module.exports = async (req, res) => {
     });
 
     // Send confirmation email (non-blocking - don't fail if email fails)
-    if (sellerEmail) {
-      sendConfirmationEmail(packageSelection, sellerEmail, sellerId.trim(), language)
+    console.log('Package selection saved, checking email...');
+    console.log('sellerEmail from request:', sellerEmail);
+    console.log('sellerEmail from database:', packageSelection.sellerEmail);
+    
+    const emailToSend = sellerEmail || packageSelection.sellerEmail;
+    
+    if (emailToSend) {
+      console.log('Sending email to:', emailToSend);
+      sendConfirmationEmail(packageSelection, emailToSend, sellerId.trim(), language)
+        .then(success => {
+          if (success) {
+            console.log('Email sent successfully to:', emailToSend);
+          } else {
+            console.log('Email sending returned false');
+          }
+        })
         .catch(err => {
           console.error('Failed to send confirmation email:', err);
+          console.error('Error details:', JSON.stringify(err, null, 2));
+          if (err.response) {
+            console.error('SendGrid response:', err.response.body);
+          }
           // Continue even if email fails
         });
+    } else {
+      console.log('No email address provided, skipping email send');
     }
 
     res.json({
