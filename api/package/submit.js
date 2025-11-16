@@ -1,6 +1,12 @@
 // For Vercel, Prisma Client needs to be generated from prisma/schema.prisma
 // The Prisma Client should be generated during build
 const { PrismaClient } = require('@prisma/client');
+const sgMail = require('@sendgrid/mail');
+
+// Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 // Use a singleton pattern for Prisma Client in serverless functions
 // This prevents creating multiple connections in serverless environments
@@ -22,6 +28,165 @@ const getClientIP = (req) => {
     req.socket?.remoteAddress ||
     'unknown'
   );
+};
+
+// Package names mapping
+const getPackageName = (packageType) => {
+  const names = {
+    'A': 'Package 1',
+    'B': 'Package 2',
+    'C': 'Package 3'
+  };
+  return names[packageType] || `Package ${packageType}`;
+};
+
+// Send confirmation email
+const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, language = 'en') => {
+  if (!process.env.SENDGRID_API_KEY || !process.env.FROM_EMAIL || !sellerEmail) {
+    console.log('Email not sent: Missing SENDGRID_API_KEY, FROM_EMAIL, or sellerEmail');
+    return false;
+  }
+
+  try {
+    const packageName = getPackageName(packageSelection.package);
+    const startDateText = packageSelection.startDate === 'immediate' 
+      ? 'Immediate' 
+      : 'January 1, 2026';
+    
+    const billingPeriodText = packageSelection.billingPeriod === 'yearly' 
+      ? 'Yearly (30% discount)' 
+      : 'Monthly';
+    
+    const commissionText = packageSelection.commissionPercentage 
+      ? `${packageSelection.commissionPercentage}%`
+      : (packageSelection.package === 'A' ? '12% (standard)' : 'To be determined');
+    
+    const addons = [];
+    if (packageSelection.addonDealCSS) addons.push('DEAL CSS – Comparison Shopping Service – €24,95 p/m');
+    if (packageSelection.addonCAAS) addons.push('CAAS – Clicks as a Service (CPC to your own webshop) – €39,95 p/m');
+    if (packageSelection.addonFairifAI) addons.push('Review reputation management (Fairifai)');
+    
+    const addonsText = addons.length > 0 ? addons.join('\n• ') : 'None';
+    
+    const emailSubject = `Package Selection Confirmation - ${packageName}`;
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #e2603f; color: white; padding: 20px; text-align: center; }
+          .content { background: #f9f9f9; padding: 20px; margin-top: 20px; }
+          .details { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #e2603f; }
+          .label { font-weight: bold; color: #666; }
+          .value { margin-top: 5px; color: #333; }
+          .footer { margin-top: 20px; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Package Selection Confirmed</h1>
+          </div>
+          <div class="content">
+            <p>Dear Seller,</p>
+            <p>Thank you for selecting your SDeal package. Your selection has been successfully saved.</p>
+            
+            <div class="details">
+              <div class="label">Package:</div>
+              <div class="value">${packageName}</div>
+            </div>
+            
+            <div class="details">
+              <div class="label">Seller ID:</div>
+              <div class="value">${sellerId}</div>
+            </div>
+            
+            <div class="details">
+              <div class="label">Start Date:</div>
+              <div class="value">${startDateText}</div>
+            </div>
+            
+            <div class="details">
+              <div class="label">Commission Percentage:</div>
+              <div class="value">${commissionText}</div>
+            </div>
+            
+            <div class="details">
+              <div class="label">Billing Period:</div>
+              <div class="value">${billingPeriodText}</div>
+            </div>
+            
+            ${addons.length > 0 ? `
+            <div class="details">
+              <div class="label">Selected Add-ons:</div>
+              <div class="value">• ${addonsText}</div>
+            </div>
+            ` : ''}
+            
+            <p style="margin-top: 20px;">Your package selection will be effective as of ${startDateText}.</p>
+            
+            <p>If you have any questions, please contact us at <a href="mailto:info@sdeal.com">info@sdeal.com</a>.</p>
+            
+            <p>Best regards,<br>The SDeal Team</p>
+          </div>
+          
+          <div class="footer">
+            <p>SDeal B.V. | Osloweg 110, 9723 BX Groningen, The Netherlands</p>
+            <p>KVK: 76103080 | VAT: NL 860508468B01</p>
+            <p><a href="https://www.sdeal.com">www.sdeal.com</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const emailText = `
+Package Selection Confirmation
+
+Dear Seller,
+
+Thank you for selecting your SDeal package. Your selection has been successfully saved.
+
+Package: ${packageName}
+Seller ID: ${sellerId}
+Start Date: ${startDateText}
+Commission Percentage: ${commissionText}
+Billing Period: ${billingPeriodText}
+${addons.length > 0 ? `Selected Add-ons:\n• ${addonsText}` : 'Selected Add-ons: None'}
+
+Your package selection will be effective as of ${startDateText}.
+
+If you have any questions, please contact us at info@sdeal.com.
+
+Best regards,
+The SDeal Team
+
+---
+SDeal B.V. | Osloweg 110, 9723 BX Groningen, The Netherlands
+KVK: 76103080 | VAT: NL 860508468B01
+www.sdeal.com
+    `;
+
+    const msg = {
+      to: sellerEmail,
+      from: process.env.FROM_EMAIL,
+      subject: emailSubject,
+      text: emailText,
+      html: emailHtml,
+    };
+
+    await sgMail.send(msg);
+    console.log(`Confirmation email sent to ${sellerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
+    // Don't throw error - email failure shouldn't break the API response
+    return false;
+  }
 };
 
 module.exports = async (req, res) => {
@@ -122,8 +287,14 @@ module.exports = async (req, res) => {
       }
     });
 
-    // TODO: Send confirmation email here
-    // You can use nodemailer or another email service
+    // Send confirmation email (non-blocking - don't fail if email fails)
+    if (sellerEmail) {
+      sendConfirmationEmail(packageSelection, sellerEmail, sellerId.trim(), language)
+        .catch(err => {
+          console.error('Failed to send confirmation email:', err);
+          // Continue even if email fails
+        });
+    }
 
     res.json({
       success: true,
