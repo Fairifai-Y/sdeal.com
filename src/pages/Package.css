@@ -205,6 +205,58 @@
   margin-top: 20px;
 }
 
+/* Package Summary Section */
+.package-summary {
+  background: linear-gradient(135deg, #fff9f7 0%, #ffe8e0 100%);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  border: 2px solid var(--sdeal-orange, #e2603f);
+}
+
+.package-summary h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
+}
+
+.summary-discount {
+  color: var(--sdeal-orange, #e2603f);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Add-ons Section */
 .package-addons {
   background: white;
@@ -250,6 +302,126 @@
 
 .addon-item span {
   font-size: 16px;
+  color: #333;
+}
+
+/* Seller Info Section */
+.package-seller-info {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.package-seller-info h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--sdeal-orange, #e2603f);
+  box-shadow: 0 0 0 3px rgba(226, 96, 63, 0.1);
+}
+
+.form-input.error {
+  border-color: #e74c3c;
+}
+
+.form-hint {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+/* Start Date Section */
+.package-start-date {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.package-start-date h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.start-date-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.start-date-option {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.start-date-option:hover {
+  border-color: var(--sdeal-orange, #e2603f);
+  background: #fff9f7;
+}
+
+.start-date-option.selected {
+  border-color: var(--sdeal-orange, #e2603f);
+  background: #fff9f7;
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.2);
+}
+
+.start-date-option input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.start-date-option span {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Commission Section */
+.package-commission {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.package-commission h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
   color: #333;
 }
 
@@ -547,18 +719,28 @@
   }
 
   .package-selection,
+  .package-summary,
   .package-addons,
+  .package-seller-info,
+  .package-start-date,
+  .package-commission,
   .package-payment,
   .package-agreement,
   .package-cta {
     padding: 25px 20px;
   }
 
-  .payment-options {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-options,
+  .start-date-options {
     flex-direction: column;
   }
 
-  .payment-option {
+  .payment-option,
+  .start-date-option {
     min-width: 100%;
   }
 

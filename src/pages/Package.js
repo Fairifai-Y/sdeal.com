@@ -13,6 +13,9 @@ const Package = () => {
     caas: false
   });
   const [billingPeriod, setBillingPeriod] = useState('monthly');
+  const [sellerId, setSellerId] = useState('');
+  const [startDate, setStartDate] = useState('2026-01-01');
+  const [commissionPercentage, setCommissionPercentage] = useState('');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -51,6 +54,28 @@ const Package = () => {
       newErrors.package = 'Please select a package';
     }
     
+    if (!sellerId || sellerId.trim() === '') {
+      newErrors.sellerId = 'Seller ID is required';
+    }
+    
+    // Validate commission percentage based on package
+    if (selectedPackage === 'B' || selectedPackage === 'C') {
+      const commission = parseFloat(commissionPercentage);
+      if (!commissionPercentage || isNaN(commission) || commission < 4) {
+        newErrors.commissionPercentage = selectedPackage === 'B' 
+          ? 'Commission must be at least 4% for Package B'
+          : 'Commission must be at least 4% for Package C';
+      }
+    } else if (selectedPackage === 'A') {
+      // Package A has standard commission, but we can still allow override
+      if (commissionPercentage) {
+        const commission = parseFloat(commissionPercentage);
+        if (isNaN(commission) || commission < 12) {
+          newErrors.commissionPercentage = 'Commission must be at least 12% for Package A';
+        }
+      }
+    }
+    
     if (!agreementAccepted) {
       newErrors.agreement = 'You must accept the agreement to continue';
     }
@@ -81,9 +106,10 @@ const Package = () => {
           addons: selectedAddons,
           agreementAccepted: agreementAccepted,
           language: currentLanguage,
-          // Optional: Add sellerEmail and sellerId if available
-          // sellerEmail: 'seller@example.com',
-          // sellerId: 'seller-123'
+          sellerId: sellerId.trim(),
+          startDate: startDate,
+          commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
+          billingPeriod: billingPeriod
         })
       });
       
@@ -262,6 +288,54 @@ const Package = () => {
             <p className="package-change-note">{getTranslation(currentLanguage, 'packageChangeNote')}</p>
           </section>
 
+          {/* Package Summary Section - Only show when package is selected */}
+          {selectedPackage && (
+            <section className="package-summary">
+              <h2>{getTranslation(currentLanguage, 'packageSummaryTitle')}</h2>
+              <div className="summary-grid">
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryPackage')}:</span>
+                  <span className="summary-value">{getTranslation(currentLanguage, `package${selectedPackage}`)}</span>
+                </div>
+                {sellerId && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummarySellerId')}:</span>
+                    <span className="summary-value">{sellerId}</span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryStartDate')}:</span>
+                  <span className="summary-value">
+                    {startDate === 'immediate' 
+                      ? getTranslation(currentLanguage, 'startDateImmediate')
+                      : getTranslation(currentLanguage, 'startDate2026')
+                    }
+                  </span>
+                </div>
+                {(selectedPackage === 'B' || selectedPackage === 'C' || commissionPercentage) && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryCommission')}:</span>
+                    <span className="summary-value">
+                      {commissionPercentage ? `${commissionPercentage}%` : (selectedPackage === 'A' ? '12% (standard)' : '-')}
+                    </span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryBilling')}:</span>
+                  <span className="summary-value">
+                    {billingPeriod === 'monthly' 
+                      ? getTranslation(currentLanguage, 'monthly')
+                      : getTranslation(currentLanguage, 'yearly')
+                    }
+                    {billingPeriod === 'yearly' && (
+                      <span className="summary-discount"> ({getTranslation(currentLanguage, 'yearlyDiscount')})</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Add-ons Section */}
           <section className="package-addons">
             <h2>{getTranslation(currentLanguage, 'packageAddonsTitle')}</h2>
@@ -284,6 +358,81 @@ const Package = () => {
               </label>
             </div>
           </section>
+
+          {/* Seller Information Section */}
+          <section className="package-seller-info">
+            <h2>{getTranslation(currentLanguage, 'sellerIdLabel')}</h2>
+            <div className="form-group">
+              <input
+                type="text"
+                className={`form-input ${errors.sellerId ? 'error' : ''}`}
+                placeholder={getTranslation(currentLanguage, 'sellerIdPlaceholder')}
+                value={sellerId}
+                onChange={(e) => {
+                  setSellerId(e.target.value);
+                  setErrors({ ...errors, sellerId: '' });
+                }}
+                required
+              />
+              {errors.sellerId && <div className="error-message">{errors.sellerId}</div>}
+            </div>
+          </section>
+
+          {/* Start Date Section */}
+          <section className="package-start-date">
+            <h2>{getTranslation(currentLanguage, 'startDateTitle')}</h2>
+            <div className="start-date-options">
+              <label className={`start-date-option ${startDate === 'immediate' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="startDate"
+                  value="immediate"
+                  checked={startDate === 'immediate'}
+                  onChange={() => setStartDate('immediate')}
+                />
+                <span>{getTranslation(currentLanguage, 'startDateImmediate')}</span>
+              </label>
+              <label className={`start-date-option ${startDate === '2026-01-01' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="startDate"
+                  value="2026-01-01"
+                  checked={startDate === '2026-01-01'}
+                  onChange={() => setStartDate('2026-01-01')}
+                />
+                <span>{getTranslation(currentLanguage, 'startDate2026')}</span>
+              </label>
+            </div>
+          </section>
+
+          {/* Commission Percentage Section */}
+          {(selectedPackage === 'B' || selectedPackage === 'C' || (selectedPackage === 'A' && commissionPercentage)) && (
+            <section className="package-commission">
+              <h2>{getTranslation(currentLanguage, 'commissionPercentageLabel')}</h2>
+              <div className="form-group">
+                <input
+                  type="number"
+                  step="0.1"
+                  min={selectedPackage === 'A' ? 12 : 4}
+                  className={`form-input ${errors.commissionPercentage ? 'error' : ''}`}
+                  placeholder={getTranslation(currentLanguage, 'commissionPercentagePlaceholder')}
+                  value={commissionPercentage}
+                  onChange={(e) => {
+                    setCommissionPercentage(e.target.value);
+                    setErrors({ ...errors, commissionPercentage: '' });
+                  }}
+                  required={selectedPackage === 'B' || selectedPackage === 'C'}
+                />
+                <p className="form-hint">
+                  {selectedPackage === 'A' 
+                    ? getTranslation(currentLanguage, 'commissionPercentageMinA')
+                    : getTranslation(currentLanguage, 'commissionPercentageMinBC')
+                  }
+                </p>
+                {errors.commissionPercentage && <div className="error-message">{errors.commissionPercentage}</div>}
+              </div>
+            </section>
+          )}
 
           {/* Payment Section */}
           <section className="package-payment">
