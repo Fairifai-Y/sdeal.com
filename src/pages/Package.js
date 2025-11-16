@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import { getLocalizedUrl } from '../utils/languageUtils';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import SEOHead from '../components/SEOHead';
 import './Package.css';
 
 const Package = () => {
   const { currentLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
   
   // Get sellerId from URL parameter
   const urlSellerId = searchParams.get('sellerId');
@@ -213,6 +212,73 @@ const Package = () => {
           <h1>{getTranslation(currentLanguage, 'packageCTANote')}</h1>
           <p>Your package selection has been confirmed. You will receive a confirmation email shortly.</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show seller info form if sellerId is not in URL
+  if (showSellerInfo) {
+    return (
+      <div className="package-container">
+        <SEOHead 
+          title={`${getTranslation(currentLanguage, 'packageHeroTitle')} - SDeal`}
+          description={getTranslation(currentLanguage, 'packageHeroSubtitle')}
+        />
+        
+        {/* Hero Section */}
+        <section className="package-hero">
+          <div className="package-content">
+            <h1>{getTranslation(currentLanguage, 'packageHeroTitle')}</h1>
+            <p className="package-subtitle">{getTranslation(currentLanguage, 'packageHeroSubtitle')}</p>
+          </div>
+        </section>
+
+        {/* Seller Information Step */}
+        <section className="package-seller-info-step">
+          <div className="package-content">
+            <div className="seller-info-card">
+              <h2>{getTranslation(currentLanguage, 'sellerInfoTitle')}</h2>
+              <p className="seller-info-description">{getTranslation(currentLanguage, 'sellerInfoDescription')}</p>
+              <form onSubmit={handleSellerInfoSubmit} className="seller-info-form">
+                <div className="form-group">
+                  <label htmlFor="sellerEmail">{getTranslation(currentLanguage, 'sellerEmailLabel')}</label>
+                  <input
+                    id="sellerEmail"
+                    type="email"
+                    className={`form-input ${errors.sellerEmail ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'sellerEmailPlaceholder')}
+                    value={sellerEmail}
+                    onChange={(e) => {
+                      setSellerEmail(e.target.value);
+                      setErrors({ ...errors, sellerEmail: '' });
+                    }}
+                    required
+                  />
+                  {errors.sellerEmail && <div className="error-message">{errors.sellerEmail}</div>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="sellerId">{getTranslation(currentLanguage, 'sellerIdLabel')}</label>
+                  <input
+                    id="sellerId"
+                    type="text"
+                    className={`form-input ${errors.sellerId ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'sellerIdPlaceholder')}
+                    value={sellerId}
+                    onChange={(e) => {
+                      setSellerId(e.target.value);
+                      setErrors({ ...errors, sellerId: '' });
+                    }}
+                    required
+                  />
+                  {errors.sellerId && <div className="error-message">{errors.sellerId}</div>}
+                </div>
+                <button type="submit" className="seller-info-submit-btn">
+                  {getTranslation(currentLanguage, 'choosePackage')}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
