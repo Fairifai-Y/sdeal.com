@@ -234,6 +234,7 @@ www.sdeal.com
     const startTime = Date.now();
     
     try {
+      console.log('Starting SendGrid send with timeout...');
       const result = await sendEmailWithTimeout();
       const duration = Date.now() - startTime;
       console.log(`SendGrid call completed in ${duration}ms`);
@@ -241,21 +242,43 @@ www.sdeal.com
       console.log('SendGrid response type:', typeof result);
       console.log('SendGrid response is array:', Array.isArray(result));
       console.log('SendGrid response length:', result ? result.length : 0);
-      console.log('SendGrid response[0]:', result[0] ? JSON.stringify(result[0], null, 2) : 'null');
-      console.log('SendGrid response status:', result[0]?.statusCode);
-      console.log('SendGrid response headers:', result[0]?.headers ? JSON.stringify(result[0].headers, null, 2) : 'null');
       
-      if (result && result[0] && (result[0].statusCode === 202 || result[0].statusCode === 200)) {
-        console.log(`Confirmation email sent successfully to ${trimmedEmail}`);
-        return true;
+      if (result && Array.isArray(result) && result.length > 0) {
+        console.log('SendGrid response[0]:', JSON.stringify(result[0], null, 2));
+        console.log('SendGrid response status:', result[0]?.statusCode);
+        console.log('SendGrid response headers:', result[0]?.headers ? JSON.stringify(result[0].headers, null, 2) : 'null');
+        
+        if (result[0].statusCode === 202 || result[0].statusCode === 200) {
+          console.log(`Confirmation email sent successfully to ${trimmedEmail}`);
+          return true;
+        } else {
+          console.error('Unexpected SendGrid status code:', result[0]?.statusCode);
+          console.error('Full result:', JSON.stringify(result, null, 2));
+          return false;
+        }
       } else {
-        console.error('Unexpected SendGrid status code:', result[0]?.statusCode);
-        console.error('Full result:', JSON.stringify(result, null, 2));
+        console.error('Unexpected SendGrid response format:', JSON.stringify(result, null, 2));
         return false;
       }
     } catch (sendError) {
       const duration = Date.now() - startTime;
       console.error(`SendGrid call failed after ${duration}ms`);
+      console.error('SendGrid error name:', sendError.name);
+      console.error('SendGrid error message:', sendError.message);
+      console.error('SendGrid error stack:', sendError.stack);
+      
+      // Check if it's a timeout error
+      if (sendError.message && sendError.message.includes('timeout')) {
+        console.error('SendGrid request timed out after 5 seconds');
+      }
+      
+      // Check for SendGrid specific errors
+      if (sendError.response) {
+        console.error('SendGrid error response status:', sendError.response.statusCode);
+        console.error('SendGrid error response body:', JSON.stringify(sendError.response.body, null, 2));
+        console.error('SendGrid error response headers:', JSON.stringify(sendError.response.headers, null, 2));
+      }
+      
       throw sendError; // Re-throw to be caught by outer catch
     }
   } catch (error) {
@@ -441,11 +464,23 @@ module.exports = async (req, res) => {
     console.log('emailToSend truthy:', !!emailToSend);
     console.log('emailToSend length:', emailToSend ? emailToSend.length : 0);
     
+    // Send response immediately, then send email in background
+    res.json({
+      success: true,
+      message: 'Package selection saved successfully',
+      data: {
+        id: packageSelection.id,
+        package: packageSelection.package,
+        createdAt: packageSelection.createdAt
+      }
+    });
+
+    // Send email after response is sent (non-blocking)
     if (emailToSend && emailToSend.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim())) {
       console.log('Sending email to:', emailToSend);
       console.log('Calling sendConfirmationEmail function...');
       
-      // Use await but don't block the response
+      // Don't await - let it run in background
       sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
         .then(success => {
           console.log('Email sending promise resolved');
@@ -478,16 +513,6 @@ module.exports = async (req, res) => {
       console.log('emailToSend value:', emailToSend);
       console.log('emailToSend validation result:', emailToSend ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim()) : false);
     }
-
-    res.json({
-      success: true,
-      message: 'Package selection saved successfully',
-      data: {
-        id: packageSelection.id,
-        package: packageSelection.package,
-        createdAt: packageSelection.createdAt
-      }
-    });
   } catch (error) {
     console.error('Error saving package selection:', error);
     res.status(500).json({
