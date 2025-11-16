@@ -40,7 +40,7 @@ module.exports = async (req, res) => {
       agreementAccepted,
       language,
       sellerEmail,
-      sellerId,
+      sellerId: sellerIdParam,
       startDate,
       commissionPercentage,
       billingPeriod
@@ -68,6 +68,8 @@ module.exports = async (req, res) => {
       });
     }
 
+    const sellerId = sellerIdParam || '';
+    
     if (!sellerId || sellerId.trim() === '') {
       return res.status(400).json({
         success: false,

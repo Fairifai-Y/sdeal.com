@@ -20,6 +20,10 @@
       "dest": "/api/package/submit.js"
     },
     {
+      "src": "/api/package/send-email",
+      "dest": "/api/package/send-email.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },

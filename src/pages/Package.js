@@ -1,25 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import { getLocalizedUrl } from '../utils/languageUtils';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import SEOHead from '../components/SEOHead';
 import './Package.css';
 
 const Package = () => {
   const { currentLanguage } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  
+  // Get sellerId from URL parameter
+  const urlSellerId = searchParams.get('sellerId');
+  
+  const [showSellerInfo, setShowSellerInfo] = useState(!urlSellerId);
   const [selectedPackage, setSelectedPackage] = useState('');
   const [selectedAddons, setSelectedAddons] = useState({
     dealCSS: false,
     caas: false
   });
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [sellerId, setSellerId] = useState('');
+  const [sellerId, setSellerId] = useState(urlSellerId || '');
+  const [sellerEmail, setSellerEmail] = useState('');
   const [startDate, setStartDate] = useState('2026-01-01');
   const [commissionPercentage, setCommissionPercentage] = useState('');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Update sellerId when URL parameter changes
+  useEffect(() => {
+    if (urlSellerId) {
+      setSellerId(urlSellerId);
+      setShowSellerInfo(false);
+    }
+  }, [urlSellerId]);
 
   // Handle package selection
   const handlePackageChange = (packageType) => {
@@ -46,6 +63,32 @@ const Package = () => {
     setErrors({ ...errors, agreement: '' });
   };
 
+  // Handle seller info submission (first step)
+  const handleSellerInfoSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    
+    if (!sellerEmail || sellerEmail.trim() === '') {
+      newErrors.sellerEmail = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sellerEmail)) {
+      newErrors.sellerEmail = 'Please enter a valid email address';
+    }
+    
+    if (!sellerId || sellerId.trim() === '') {
+      newErrors.sellerId = 'Seller ID is required';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      setShowSellerInfo(false);
+      // Update URL with sellerId
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('sellerId', sellerId.trim());
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  };
+
   // Validate form
   const validateForm = () => {
     const newErrors = {};
@@ -56,6 +99,12 @@ const Package = () => {
     
     if (!sellerId || sellerId.trim() === '') {
       newErrors.sellerId = 'Seller ID is required';
+    }
+    
+    if (!sellerEmail || sellerEmail.trim() === '') {
+      newErrors.sellerEmail = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sellerEmail)) {
+      newErrors.sellerEmail = 'Please enter a valid email address';
     }
     
     // Validate commission percentage based on package
@@ -107,6 +156,7 @@ const Package = () => {
           agreementAccepted: agreementAccepted,
           language: currentLanguage,
           sellerId: sellerId.trim(),
+          sellerEmail: sellerEmail.trim(),
           startDate: startDate,
           commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
           billingPeriod: billingPeriod
@@ -329,19 +379,41 @@ const Package = () => {
             </div>
           </section>
 
-          {/* Seller Information Section */}
+          {/* Seller Information Section - Only show email if not already set */}
+          {!sellerEmail && (
+            <section className="package-seller-info">
+              <h2>{getTranslation(currentLanguage, 'sellerEmailLabel')}</h2>
+              <div className="form-group">
+                <input
+                  type="email"
+                  className={`form-input ${errors.sellerEmail ? 'error' : ''}`}
+                  placeholder={getTranslation(currentLanguage, 'sellerEmailPlaceholder')}
+                  value={sellerEmail}
+                  onChange={(e) => {
+                    setSellerEmail(e.target.value);
+                    setErrors({ ...errors, sellerEmail: '' });
+                  }}
+                  required
+                />
+                {errors.sellerEmail && <div className="error-message">{errors.sellerEmail}</div>}
+              </div>
+            </section>
+          )}
+          
+          {/* Seller ID Display - Read-only if from URL */}
           <section className="package-seller-info">
             <h2>{getTranslation(currentLanguage, 'sellerIdLabel')}</h2>
             <div className="form-group">
               <input
                 type="text"
-                className={`form-input ${errors.sellerId ? 'error' : ''}`}
+                className={`form-input ${errors.sellerId ? 'error' : ''} ${urlSellerId ? 'read-only' : ''}`}
                 placeholder={getTranslation(currentLanguage, 'sellerIdPlaceholder')}
                 value={sellerId}
                 onChange={(e) => {
                   setSellerId(e.target.value);
                   setErrors({ ...errors, sellerId: '' });
                 }}
+                readOnly={!!urlSellerId}
                 required
               />
               {errors.sellerId && <div className="error-message">{errors.sellerId}</div>}
