@@ -24,7 +24,10 @@ router.post('/submit', async (req, res) => {
       agreementAccepted,
       language,
       sellerEmail,
-      sellerId
+      sellerId,
+      startDate,
+      commissionPercentage,
+      billingPeriod
     } = req.body;
 
     // Validation
@@ -49,6 +52,37 @@ router.post('/submit', async (req, res) => {
       });
     }
 
+    if (!sellerId || sellerId.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Seller ID is required.'
+      });
+    }
+
+    if (!startDate || !['immediate', '2026-01-01'].includes(startDate)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid start date. Must be "immediate" or "2026-01-01".'
+      });
+    }
+
+    // Validate commission percentage based on package
+    if (package === 'B' || package === 'C') {
+      if (!commissionPercentage || isNaN(parseFloat(commissionPercentage)) || parseFloat(commissionPercentage) < 4) {
+        return res.status(400).json({
+          success: false,
+          error: `Commission percentage must be at least 4% for Package ${package}.`
+        });
+      }
+    } else if (package === 'A' && commissionPercentage) {
+      if (isNaN(parseFloat(commissionPercentage)) || parseFloat(commissionPercentage) < 12) {
+        return res.status(400).json({
+          success: false,
+          error: 'Commission percentage must be at least 12% for Package A.'
+        });
+      }
+    }
+
     // Get IP address
     const ipAddress = getClientIP(req);
 
@@ -63,7 +97,10 @@ router.post('/submit', async (req, res) => {
         language,
         ipAddress,
         sellerEmail: sellerEmail || null,
-        sellerId: sellerId || null
+        sellerId: sellerId.trim(),
+        startDate: startDate,
+        commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
+        billingPeriod: billingPeriod || 'monthly'
       }
     });
 
