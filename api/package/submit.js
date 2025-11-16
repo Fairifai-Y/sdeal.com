@@ -6,7 +6,9 @@ const sgMail = require('@sendgrid/mail');
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('SendGrid initialized with API key');
+  // Set a shorter timeout for serverless environments (default is 30s)
+  sgMail.setTimeout(3000); // 3 seconds
+  console.log('SendGrid initialized with API key and 3s timeout');
 } else {
   console.warn('SENDGRID_API_KEY not found in environment variables');
 }
@@ -220,14 +222,14 @@ www.sdeal.com
       hasText: !!msg.text
     }, null, 2));
     
-    // Add timeout to prevent hanging (5 seconds for serverless)
+    // Add timeout to prevent hanging (3 seconds for serverless - Vercel has 10s limit for hobby)
     const sendEmailWithTimeout = async () => {
-      return Promise.race([
-        sgMail.send(msg),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('SendGrid timeout after 5 seconds')), 5000)
-        )
-      ]);
+      const sendPromise = sgMail.send(msg);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SendGrid timeout after 3 seconds')), 3000)
+      );
+      
+      return Promise.race([sendPromise, timeoutPromise]);
     };
     
     console.log('About to call sgMail.send()...');
@@ -464,7 +466,45 @@ module.exports = async (req, res) => {
     console.log('emailToSend truthy:', !!emailToSend);
     console.log('emailToSend length:', emailToSend ? emailToSend.length : 0);
     
-    // Send response immediately, then send email in background
+    // Send email before response (but don't block if it fails)
+    let emailSent = false;
+    if (emailToSend && emailToSend.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim())) {
+      console.log('Sending email to:', emailToSend);
+      console.log('Calling sendConfirmationEmail function...');
+      
+      try {
+        // Try to send email with a short timeout, but don't wait too long
+        const emailPromise = sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language);
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), 2000));
+        
+        emailSent = await Promise.race([emailPromise, timeoutPromise]);
+        
+        if (emailSent) {
+          console.log('Email sent successfully to:', emailToSend);
+        } else {
+          console.log('Email sending timed out or returned false - will continue in background');
+          // Continue in background (but may be cancelled by Vercel)
+          sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
+            .then(success => {
+              console.log('Background email sending completed:', success);
+            })
+            .catch(err => {
+              console.error('Background email sending failed:', err.message);
+            });
+        }
+      } catch (emailError) {
+        console.error('Email sending error (non-blocking):', emailError.message);
+        // Continue even if email fails
+      }
+    } else {
+      console.log('No email address provided, skipping email send');
+      console.log('sellerEmail value:', sellerEmail);
+      console.log('packageSelection.sellerEmail value:', packageSelection.sellerEmail);
+      console.log('emailToSend value:', emailToSend);
+      console.log('emailToSend validation result:', emailToSend ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim()) : false);
+    }
+
+    // Send response
     res.json({
       success: true,
       message: 'Package selection saved successfully',
@@ -474,45 +514,6 @@ module.exports = async (req, res) => {
         createdAt: packageSelection.createdAt
       }
     });
-
-    // Send email after response is sent (non-blocking)
-    if (emailToSend && emailToSend.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim())) {
-      console.log('Sending email to:', emailToSend);
-      console.log('Calling sendConfirmationEmail function...');
-      
-      // Don't await - let it run in background
-      sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
-        .then(success => {
-          console.log('Email sending promise resolved');
-          if (success) {
-            console.log('Email sent successfully to:', emailToSend);
-          } else {
-            console.log('Email sending returned false');
-          }
-        })
-        .catch(err => {
-          console.error('Failed to send confirmation email - promise rejected:', err);
-          console.error('Error name:', err.name);
-          console.error('Error message:', err.message);
-          console.error('Error stack:', err.stack);
-          console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-          if (err.response) {
-            console.error('SendGrid error response status:', err.response.statusCode);
-            console.error('SendGrid error response body:', JSON.stringify(err.response.body, null, 2));
-            console.error('SendGrid error response headers:', JSON.stringify(err.response.headers, null, 2));
-          }
-          // Continue even if email fails
-        })
-        .finally(() => {
-          console.log('Email sending attempt completed (finally block)');
-        });
-    } else {
-      console.log('No email address provided, skipping email send');
-      console.log('sellerEmail value:', sellerEmail);
-      console.log('packageSelection.sellerEmail value:', packageSelection.sellerEmail);
-      console.log('emailToSend value:', emailToSend);
-      console.log('emailToSend validation result:', emailToSend ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim()) : false);
-    }
   } catch (error) {
     console.error('Error saving package selection:', error);
     res.status(500).json({
