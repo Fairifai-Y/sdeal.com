@@ -169,6 +169,35 @@
   font-weight: bold;
 }
 
+.package-choose-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: white;
+  border: 2px solid var(--sdeal-orange, #e2603f);
+  border-radius: 8px;
+  color: var(--sdeal-orange, #e2603f);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.package-choose-btn:hover {
+  background: var(--sdeal-orange, #e2603f);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.3);
+}
+
+.package-choose-btn.selected {
+  background: var(--sdeal-orange, #e2603f);
+  color: white;
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.4);
+}
+
 .package-change-note {
   font-size: 14px;
   color: #999;

@@ -181,6 +181,13 @@ const Package = () => {
                       <li>{getTranslation(currentLanguage, 'packageAFeature4')}</li>
                       <li>{getTranslation(currentLanguage, 'packageAFeature5')}</li>
                     </ul>
+                    <button
+                      type="button"
+                      className={`package-choose-btn ${selectedPackage === 'A' ? 'selected' : ''}`}
+                      onClick={() => handlePackageChange('A')}
+                    >
+                      {getTranslation(currentLanguage, 'choosePackage')}
+                    </button>
                   </div>
                 </label>
               </div>
@@ -206,6 +213,13 @@ const Package = () => {
                       <li>{getTranslation(currentLanguage, 'packageBFeature5')}</li>
                       <li>{getTranslation(currentLanguage, 'packageBFeature6')}</li>
                     </ul>
+                    <button
+                      type="button"
+                      className={`package-choose-btn ${selectedPackage === 'B' ? 'selected' : ''}`}
+                      onClick={() => handlePackageChange('B')}
+                    >
+                      {getTranslation(currentLanguage, 'choosePackage')}
+                    </button>
                   </div>
                 </label>
               </div>
@@ -233,6 +247,13 @@ const Package = () => {
                       <li>{getTranslation(currentLanguage, 'packageCFeature7')}</li>
                       <li>{getTranslation(currentLanguage, 'packageCFeature8')}</li>
                     </ul>
+                    <button
+                      type="button"
+                      className={`package-choose-btn ${selectedPackage === 'C' ? 'selected' : ''}`}
+                      onClick={() => handlePackageChange('C')}
+                    >
+                      {getTranslation(currentLanguage, 'choosePackage')}
+                    </button>
                   </div>
                 </label>
               </div>
