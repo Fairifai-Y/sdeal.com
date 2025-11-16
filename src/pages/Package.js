@@ -113,9 +113,27 @@ const Package = () => {
         })
       });
       
+      // Check if response is ok before parsing JSON
+      if (!response.ok) {
+        let errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          } catch (textError) {
+            // Use default error message
+          }
+        }
+        throw new Error(errorMessage);
+      }
+      
       const result = await response.json();
       
-      if (response.ok && result.success) {
+      if (result.success) {
         setSubmitSuccess(true);
         // Success message is shown in the UI
       } else {

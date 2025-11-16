@@ -6,11 +6,19 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "build",
-        "buildCommand": "npm install && npm run setup-images && npm run build"
+        "buildCommand": "npm run vercel-build"
       }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/package/submit",
+      "dest": "/api/package/submit.js"
+    },
     {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
