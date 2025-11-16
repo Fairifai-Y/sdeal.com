@@ -6,6 +6,9 @@ const sgMail = require('@sendgrid/mail');
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid initialized with API key');
+} else {
+  console.warn('SENDGRID_API_KEY not found in environment variables');
 }
 
 // Use a singleton pattern for Prisma Client in serverless functions
@@ -207,6 +210,8 @@ www.sdeal.com
     };
 
     console.log('Sending email via SendGrid...');
+    console.log('SendGrid API key length:', process.env.SENDGRID_API_KEY ? process.env.SENDGRID_API_KEY.length : 0);
+    console.log('SendGrid API key starts with:', process.env.SENDGRID_API_KEY ? process.env.SENDGRID_API_KEY.substring(0, 10) + '...' : 'N/A');
     console.log('Email message:', JSON.stringify({
       to: msg.to,
       from: msg.from,
@@ -215,11 +220,44 @@ www.sdeal.com
       hasText: !!msg.text
     }, null, 2));
     
-    const result = await sgMail.send(msg);
-    console.log('SendGrid response status:', result[0]?.statusCode);
-    console.log('SendGrid response headers:', result[0]?.headers);
-    console.log(`Confirmation email sent successfully to ${sellerEmail}`);
-    return true;
+    // Add timeout to prevent hanging (5 seconds for serverless)
+    const sendEmailWithTimeout = async () => {
+      return Promise.race([
+        sgMail.send(msg),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('SendGrid timeout after 5 seconds')), 5000)
+        )
+      ]);
+    };
+    
+    console.log('About to call sgMail.send()...');
+    const startTime = Date.now();
+    
+    try {
+      const result = await sendEmailWithTimeout();
+      const duration = Date.now() - startTime;
+      console.log(`SendGrid call completed in ${duration}ms`);
+      console.log('SendGrid response received');
+      console.log('SendGrid response type:', typeof result);
+      console.log('SendGrid response is array:', Array.isArray(result));
+      console.log('SendGrid response length:', result ? result.length : 0);
+      console.log('SendGrid response[0]:', result[0] ? JSON.stringify(result[0], null, 2) : 'null');
+      console.log('SendGrid response status:', result[0]?.statusCode);
+      console.log('SendGrid response headers:', result[0]?.headers ? JSON.stringify(result[0].headers, null, 2) : 'null');
+      
+      if (result && result[0] && (result[0].statusCode === 202 || result[0].statusCode === 200)) {
+        console.log(`Confirmation email sent successfully to ${trimmedEmail}`);
+        return true;
+      } else {
+        console.error('Unexpected SendGrid status code:', result[0]?.statusCode);
+        console.error('Full result:', JSON.stringify(result, null, 2));
+        return false;
+      }
+    } catch (sendError) {
+      const duration = Date.now() - startTime;
+      console.error(`SendGrid call failed after ${duration}ms`);
+      throw sendError; // Re-throw to be caught by outer catch
+    }
   } catch (error) {
     console.error('Error sending confirmation email:', error);
     console.error('Error message:', error.message);
@@ -339,29 +377,50 @@ module.exports = async (req, res) => {
     
     console.log('Saving to database with values:');
     console.log('- commissionPercentage:', commissionValue);
+    console.log('- commissionPercentage type:', typeof commissionValue);
     console.log('- billingPeriod:', billingValue);
+    console.log('- billingPeriod type:', typeof billingValue);
     
     // Create package selection record
+    const dataToSave = {
+      package: packageType,
+      addonDealCSS: addons?.dealCSS || false,
+      addonCAAS: addons?.caas || false,
+      addonFairifAI: addons?.fairifAI || false,
+      agreementAccepted,
+      language,
+      ipAddress,
+      sellerEmail: sellerEmail || null,
+      sellerId: sellerId.trim(),
+      startDate: startDate,
+      commissionPercentage: commissionValue,
+      billingPeriod: billingValue
+    };
+    
+    console.log('Data to save:', JSON.stringify(dataToSave, null, 2));
+    
     const packageSelection = await prisma.packageSelection.create({
-      data: {
-        package: packageType,
-        addonDealCSS: addons?.dealCSS || false,
-        addonCAAS: addons?.caas || false,
-        addonFairifAI: addons?.fairifAI || false,
-        agreementAccepted,
-        language,
-        ipAddress,
-        sellerEmail: sellerEmail || null,
-        sellerId: sellerId.trim(),
-        startDate: startDate,
-        commissionPercentage: commissionValue,
-        billingPeriod: billingValue
-      }
+      data: dataToSave
     });
     
     console.log('Package selection saved with ID:', packageSelection.id);
     console.log('Saved commissionPercentage:', packageSelection.commissionPercentage);
+    console.log('Saved commissionPercentage type:', typeof packageSelection.commissionPercentage);
     console.log('Saved billingPeriod:', packageSelection.billingPeriod);
+    console.log('Saved billingPeriod type:', typeof packageSelection.billingPeriod);
+    
+    // Verify the saved data
+    const verifyRecord = await prisma.packageSelection.findUnique({
+      where: { id: packageSelection.id },
+      select: {
+        id: true,
+        commissionPercentage: true,
+        billingPeriod: true,
+        package: true
+      }
+    });
+    
+    console.log('Verified record from database:', JSON.stringify(verifyRecord, null, 2));
 
     // Send confirmation email (non-blocking - don't fail if email fails)
     console.log('Package selection saved, checking email...');
@@ -384,8 +443,12 @@ module.exports = async (req, res) => {
     
     if (emailToSend && emailToSend.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim())) {
       console.log('Sending email to:', emailToSend);
+      console.log('Calling sendConfirmationEmail function...');
+      
+      // Use await but don't block the response
       sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
         .then(success => {
+          console.log('Email sending promise resolved');
           if (success) {
             console.log('Email sent successfully to:', emailToSend);
           } else {
@@ -393,17 +456,27 @@ module.exports = async (req, res) => {
           }
         })
         .catch(err => {
-          console.error('Failed to send confirmation email:', err);
-          console.error('Error details:', JSON.stringify(err, null, 2));
+          console.error('Failed to send confirmation email - promise rejected:', err);
+          console.error('Error name:', err.name);
+          console.error('Error message:', err.message);
+          console.error('Error stack:', err.stack);
+          console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
           if (err.response) {
-            console.error('SendGrid response:', err.response.body);
+            console.error('SendGrid error response status:', err.response.statusCode);
+            console.error('SendGrid error response body:', JSON.stringify(err.response.body, null, 2));
+            console.error('SendGrid error response headers:', JSON.stringify(err.response.headers, null, 2));
           }
           // Continue even if email fails
+        })
+        .finally(() => {
+          console.log('Email sending attempt completed (finally block)');
         });
     } else {
       console.log('No email address provided, skipping email send');
       console.log('sellerEmail value:', sellerEmail);
       console.log('packageSelection.sellerEmail value:', packageSelection.sellerEmail);
+      console.log('emailToSend value:', emailToSend);
+      console.log('emailToSend validation result:', emailToSend ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim()) : false);
     }
 
     res.json({

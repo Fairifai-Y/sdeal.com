@@ -555,12 +555,56 @@ const Package = () => {
                   type="number"
                   step="0.1"
                   min={selectedPackage === 'A' ? 12 : 4}
+                  max={100}
                   className={`form-input ${errors.commissionPercentage ? 'error' : ''}`}
                   placeholder={getTranslation(currentLanguage, 'commissionPercentagePlaceholder')}
                   value={commissionPercentage}
                   onChange={(e) => {
-                    setCommissionPercentage(e.target.value);
-                    setErrors({ ...errors, commissionPercentage: '' });
+                    const value = e.target.value;
+                    // Allow typing, but validate on blur and submit
+                    setCommissionPercentage(value);
+                    // Clear error when user starts typing
+                    if (errors.commissionPercentage) {
+                      setErrors({ ...errors, commissionPercentage: '' });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    const minValue = selectedPackage === 'A' ? 12 : 4;
+                    
+                    if (value && value.trim() !== '') {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        if (numValue < minValue) {
+                          // Auto-correct to minimum value
+                          setCommissionPercentage(minValue.toString());
+                          const newErrors = { ...errors };
+                          if (currentLanguage === 'nl') {
+                            newErrors.commissionPercentage = selectedPackage === 'A'
+                              ? 'Commissie moet minimaal 12% zijn voor Pakket A'
+                              : `Commissie moet minimaal 4% zijn voor Pakket ${selectedPackage}`;
+                          } else if (currentLanguage === 'de') {
+                            newErrors.commissionPercentage = selectedPackage === 'A'
+                              ? 'Provision muss mindestens 12% für Paket A betragen'
+                              : `Provision muss mindestens 4% für Paket ${selectedPackage} betragen`;
+                          } else if (currentLanguage === 'fr') {
+                            newErrors.commissionPercentage = selectedPackage === 'A'
+                              ? 'La commission doit être d\'au moins 12% pour le forfait A'
+                              : `La commission doit être d'au moins 4% pour le forfait ${selectedPackage}`;
+                          } else {
+                            newErrors.commissionPercentage = selectedPackage === 'A'
+                              ? 'Commission must be at least 12% for Package A'
+                              : `Commission must be at least 4% for Package ${selectedPackage}`;
+                          }
+                          setErrors(newErrors);
+                        } else if (numValue > 100) {
+                          setCommissionPercentage('100');
+                          setErrors({ ...errors, commissionPercentage: '' });
+                        } else {
+                          setErrors({ ...errors, commissionPercentage: '' });
+                        }
+                      }
+                    }
                   }}
                   required
                 />
