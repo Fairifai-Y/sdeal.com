@@ -20,6 +20,10 @@ const TermsSellers = () => {
         <p>1.1 These Terms apply to all services provided by SDeal to Sellers, including but not limited to access to the Platform, SaaS functionality, marketing and visibility services, payment facilitation, and commercial agency activities.</p>
         <p>1.2 The Terms form an integral part of the SDeal Agreement. In case of conflict between the Agreement and these Terms, the Agreement prevails.</p>
         <p>1.3 SDeal reserves the right to modify these Terms at any time. Sellers will be notified at least 30 days in advance of substantial changes. Continued use of the Platform constitutes acceptance of the updated Terms.</p>
+        <p>1.4 Future Changes (Pricing, Packages and Service Structure)</p>
+        <p>SDeal may modify its pricing, package structure (including Packages A, B and C), commission rules, transaction fees, SaaS features, or any other commercial conditions with 30 days' prior written notice (email is sufficient).</p>
+        <p>If the Seller does not agree to the amended conditions, the Seller may terminate the Agreement before the effective date of the changes.</p>
+        <p>The Seller's continued use of the Platform after the effective date constitutes binding acceptance of the amended Terms, pricing, and commercial structure.</p>
 
         <h3>Legal Framework</h3>
         <p>SDeal acts as a commercial agent as defined in Articles 7:428 et seq. of the Dutch Civil Code.</p>
