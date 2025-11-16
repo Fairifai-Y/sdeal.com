@@ -10,9 +10,9 @@ const Package = () => {
   const [selectedPackage, setSelectedPackage] = useState('');
   const [selectedAddons, setSelectedAddons] = useState({
     dealCSS: false,
-    caas: false,
-    fairifAI: false
+    caas: false
   });
+  const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -30,6 +30,11 @@ const Package = () => {
       ...selectedAddons,
       [addon]: !selectedAddons[addon]
     });
+  };
+
+  // Handle billing period change
+  const handleBillingPeriodChange = (period) => {
+    setBillingPeriod(period);
   };
 
   // Handle agreement checkbox
@@ -167,13 +172,14 @@ const Package = () => {
                     onChange={() => handlePackageChange('A')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageSelectA')}</h3>
-                    <p className="package-price">{getTranslation(currentLanguage, 'packageAPrice')}</p>
+                    <h3>{getTranslation(currentLanguage, 'packageA')}</h3>
+                    <p className="package-subtitle-small">{getTranslation(currentLanguage, 'packageASubtitle')}</p>
+                    <p className="package-price">{getTranslation(currentLanguage, 'packageAFeature1')}</p>
                     <ul>
-                      <li>{getTranslation(currentLanguage, 'packageADesc1')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageADesc2')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageADesc3')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageADesc4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageAFeature2')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageAFeature3')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageAFeature4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageAFeature5')}</li>
                     </ul>
                   </div>
                 </label>
@@ -190,13 +196,15 @@ const Package = () => {
                     onChange={() => handlePackageChange('B')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageSelectB')}</h3>
-                    <p className="package-price">{getTranslation(currentLanguage, 'packageBPrice')}</p>
+                    <h3>{getTranslation(currentLanguage, 'packageB')}</h3>
+                    <p className="package-subtitle-small">{getTranslation(currentLanguage, 'packageBSubtitle')}</p>
+                    <p className="package-price">{getTranslation(currentLanguage, 'packageBFeature1')}</p>
                     <ul>
-                      <li>{getTranslation(currentLanguage, 'packageBDesc1')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageBDesc2')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageBDesc3')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageBDesc4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageBFeature2')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageBFeature3')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageBFeature4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageBFeature5')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageBFeature6')}</li>
                     </ul>
                   </div>
                 </label>
@@ -213,13 +221,17 @@ const Package = () => {
                     onChange={() => handlePackageChange('C')}
                   />
                   <div className="package-card-content">
-                    <h3>{getTranslation(currentLanguage, 'packageSelectC')}</h3>
-                    <p className="package-price">{getTranslation(currentLanguage, 'packageCPrice')}</p>
+                    <h3>{getTranslation(currentLanguage, 'packageC')}</h3>
+                    <p className="package-subtitle-small">{getTranslation(currentLanguage, 'packageCSubtitle')}</p>
+                    <p className="package-price">{getTranslation(currentLanguage, 'packageCFeature1')}</p>
                     <ul>
-                      <li>{getTranslation(currentLanguage, 'packageCDesc1')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageCDesc2')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageCDesc3')}</li>
-                      <li>{getTranslation(currentLanguage, 'packageCDesc4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature2')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature3')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature4')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature5')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature6')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature7')}</li>
+                      <li>{getTranslation(currentLanguage, 'packageCFeature8')}</li>
                     </ul>
                   </div>
                 </label>
@@ -249,13 +261,37 @@ const Package = () => {
                 />
                 <span>{getTranslation(currentLanguage, 'packageAddonCAAS')}</span>
               </label>
-              <label className="addon-item">
+            </div>
+          </section>
+
+          {/* Payment Section */}
+          <section className="package-payment">
+            <h2>{getTranslation(currentLanguage, 'paymentTitle')}</h2>
+            <div className="payment-options">
+              <label className={`payment-option ${billingPeriod === 'monthly' ? 'selected' : ''}`}>
                 <input
-                  type="checkbox"
-                  checked={selectedAddons.fairifAI}
-                  onChange={() => handleAddonChange('fairifAI')}
+                  type="radio"
+                  name="billingPeriod"
+                  value="monthly"
+                  checked={billingPeriod === 'monthly'}
+                  onChange={() => handleBillingPeriodChange('monthly')}
                 />
-                <span>{getTranslation(currentLanguage, 'packageAddonFairifAI')}</span>
+                <div className="payment-option-content">
+                  <span className="payment-option-label">{getTranslation(currentLanguage, 'monthly')}</span>
+                </div>
+              </label>
+              <label className={`payment-option ${billingPeriod === 'yearly' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="billingPeriod"
+                  value="yearly"
+                  checked={billingPeriod === 'yearly'}
+                  onChange={() => handleBillingPeriodChange('yearly')}
+                />
+                <div className="payment-option-content">
+                  <span className="payment-option-label">{getTranslation(currentLanguage, 'yearly')}</span>
+                  <span className="payment-discount">{getTranslation(currentLanguage, 'yearlyDiscount')}</span>
+                </div>
               </label>
             </div>
           </section>
