@@ -107,20 +107,22 @@ const Package = () => {
     }
     
     // Validate commission percentage based on package
-    if (selectedPackage === 'B' || selectedPackage === 'C') {
+    if (selectedPackage === 'A') {
+      // Package A requires commission (minimum 12%)
+      if (!commissionPercentage || isNaN(parseFloat(commissionPercentage))) {
+        newErrors.commissionPercentage = 'Commission percentage is required for Package A';
+      } else {
+        const commission = parseFloat(commissionPercentage);
+        if (commission < 12) {
+          newErrors.commissionPercentage = 'Commission must be at least 12% for Package A';
+        }
+      }
+    } else if (selectedPackage === 'B' || selectedPackage === 'C') {
       const commission = parseFloat(commissionPercentage);
       if (!commissionPercentage || isNaN(commission) || commission < 4) {
         newErrors.commissionPercentage = selectedPackage === 'B' 
           ? 'Commission must be at least 4% for Package B'
           : 'Commission must be at least 4% for Package C';
-      }
-    } else if (selectedPackage === 'A') {
-      // Package A has standard commission, but we can still allow override
-      if (commissionPercentage) {
-        const commission = parseFloat(commissionPercentage);
-        if (isNaN(commission) || commission < 12) {
-          newErrors.commissionPercentage = 'Commission must be at least 12% for Package A';
-        }
       }
     }
     
@@ -514,7 +516,7 @@ const Package = () => {
           </section>
 
           {/* Commission Percentage Section */}
-          {(selectedPackage === 'B' || selectedPackage === 'C' || (selectedPackage === 'A' && commissionPercentage)) && (
+          {selectedPackage && (
             <section className="package-commission">
               <h2>{getTranslation(currentLanguage, 'commissionPercentageLabel')}</h2>
               <div className="form-group">
@@ -529,7 +531,7 @@ const Package = () => {
                     setCommissionPercentage(e.target.value);
                     setErrors({ ...errors, commissionPercentage: '' });
                   }}
-                  required={selectedPackage === 'B' || selectedPackage === 'C'}
+                  required
                 />
                 <p className="form-hint">
                   {selectedPackage === 'A' 
@@ -623,11 +625,11 @@ const Package = () => {
                     }
                   </span>
                 </div>
-                {(selectedPackage === 'B' || selectedPackage === 'C' || commissionPercentage) && (
+                {selectedPackage && (
                   <div className="summary-item">
                     <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryCommission')}:</span>
                     <span className="summary-value">
-                      {commissionPercentage ? `${commissionPercentage}%` : (selectedPackage === 'A' ? '12% (standard)' : '-')}
+                      {commissionPercentage ? `${commissionPercentage}%` : '-'}
                     </span>
                   </div>
                 )}

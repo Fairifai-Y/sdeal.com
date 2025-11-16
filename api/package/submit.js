@@ -283,18 +283,25 @@ module.exports = async (req, res) => {
     }
 
     // Validate commission percentage based on package
-    if (packageType === 'B' || packageType === 'C') {
+    if (packageType === 'A') {
+      // Package A requires commission (minimum 12%)
+      if (!commissionPercentage || isNaN(parseFloat(commissionPercentage))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Commission percentage is required for Package A.'
+        });
+      }
+      if (parseFloat(commissionPercentage) < 12) {
+        return res.status(400).json({
+          success: false,
+          error: 'Commission percentage must be at least 12% for Package A.'
+        });
+      }
+    } else if (packageType === 'B' || packageType === 'C') {
       if (!commissionPercentage || isNaN(parseFloat(commissionPercentage)) || parseFloat(commissionPercentage) < 4) {
         return res.status(400).json({
           success: false,
           error: `Commission percentage must be at least 4% for Package ${packageType}.`
-        });
-      }
-    } else if (packageType === 'A' && commissionPercentage) {
-      if (isNaN(parseFloat(commissionPercentage)) || parseFloat(commissionPercentage) < 12) {
-        return res.status(400).json({
-          success: false,
-          error: 'Commission percentage must be at least 12% for Package A.'
         });
       }
     }
@@ -302,6 +309,20 @@ module.exports = async (req, res) => {
     // Get IP address
     const ipAddress = getClientIP(req);
 
+    // Prepare commission percentage - ensure it's a number
+    // For Package A, commission is required (validated above)
+    // For Package B/C, commission is required (validated above)
+    const commissionValue = parseFloat(commissionPercentage);
+    
+    // Prepare billing period - ensure it's set
+    const billingValue = billingPeriod && ['monthly', 'yearly'].includes(billingPeriod) 
+      ? billingPeriod 
+      : 'monthly';
+    
+    console.log('Saving to database with values:');
+    console.log('- commissionPercentage:', commissionValue);
+    console.log('- billingPeriod:', billingValue);
+    
     // Create package selection record
     const packageSelection = await prisma.packageSelection.create({
       data: {
@@ -315,10 +336,14 @@ module.exports = async (req, res) => {
         sellerEmail: sellerEmail || null,
         sellerId: sellerId.trim(),
         startDate: startDate,
-        commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
-        billingPeriod: billingPeriod || 'monthly'
+        commissionPercentage: commissionValue,
+        billingPeriod: billingValue
       }
     });
+    
+    console.log('Package selection saved with ID:', packageSelection.id);
+    console.log('Saved commissionPercentage:', packageSelection.commissionPercentage);
+    console.log('Saved billingPeriod:', packageSelection.billingPeriod);
 
     // Send confirmation email (non-blocking - don't fail if email fails)
     console.log('Package selection saved, checking email...');
