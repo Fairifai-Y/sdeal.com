@@ -288,54 +288,6 @@ const Package = () => {
             <p className="package-change-note">{getTranslation(currentLanguage, 'packageChangeNote')}</p>
           </section>
 
-          {/* Package Summary Section - Only show when package is selected */}
-          {selectedPackage && (
-            <section className="package-summary">
-              <h2>{getTranslation(currentLanguage, 'packageSummaryTitle')}</h2>
-              <div className="summary-grid">
-                <div className="summary-item">
-                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryPackage')}:</span>
-                  <span className="summary-value">{getTranslation(currentLanguage, `package${selectedPackage}`)}</span>
-                </div>
-                {sellerId && (
-                  <div className="summary-item">
-                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummarySellerId')}:</span>
-                    <span className="summary-value">{sellerId}</span>
-                  </div>
-                )}
-                <div className="summary-item">
-                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryStartDate')}:</span>
-                  <span className="summary-value">
-                    {startDate === 'immediate' 
-                      ? getTranslation(currentLanguage, 'startDateImmediate')
-                      : getTranslation(currentLanguage, 'startDate2026')
-                    }
-                  </span>
-                </div>
-                {(selectedPackage === 'B' || selectedPackage === 'C' || commissionPercentage) && (
-                  <div className="summary-item">
-                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryCommission')}:</span>
-                    <span className="summary-value">
-                      {commissionPercentage ? `${commissionPercentage}%` : (selectedPackage === 'A' ? '12% (standard)' : '-')}
-                    </span>
-                  </div>
-                )}
-                <div className="summary-item">
-                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryBilling')}:</span>
-                  <span className="summary-value">
-                    {billingPeriod === 'monthly' 
-                      ? getTranslation(currentLanguage, 'monthly')
-                      : getTranslation(currentLanguage, 'yearly')
-                    }
-                    {billingPeriod === 'yearly' && (
-                      <span className="summary-discount"> ({getTranslation(currentLanguage, 'yearlyDiscount')})</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </section>
-          )}
-
           {/* Add-ons Section */}
           <section className="package-addons">
             <h2>{getTranslation(currentLanguage, 'packageAddonsTitle')}</h2>
@@ -490,6 +442,65 @@ const Package = () => {
             <p className="legal-note">{getTranslation(currentLanguage, 'packageLegalNote1')}</p>
             <p className="legal-note-small">{getTranslation(currentLanguage, 'packageLegalNote2')}</p>
           </section>
+
+          {/* Package Summary Section - Show before confirmation */}
+          {selectedPackage && (
+            <section className="package-summary">
+              <h2>{getTranslation(currentLanguage, 'packageSummaryTitle')}</h2>
+              <div className="summary-grid">
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryPackage')}:</span>
+                  <span className="summary-value">{getTranslation(currentLanguage, `package${selectedPackage}`)}</span>
+                </div>
+                {sellerId && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummarySellerId')}:</span>
+                    <span className="summary-value">{sellerId}</span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryStartDate')}:</span>
+                  <span className="summary-value">
+                    {startDate === 'immediate' 
+                      ? getTranslation(currentLanguage, 'startDateImmediate')
+                      : getTranslation(currentLanguage, 'startDate2026')
+                    }
+                  </span>
+                </div>
+                {(selectedPackage === 'B' || selectedPackage === 'C' || commissionPercentage) && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryCommission')}:</span>
+                    <span className="summary-value">
+                      {commissionPercentage ? `${commissionPercentage}%` : (selectedPackage === 'A' ? '12% (standard)' : '-')}
+                    </span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryBilling')}:</span>
+                  <span className="summary-value">
+                    {billingPeriod === 'monthly' 
+                      ? getTranslation(currentLanguage, 'monthly')
+                      : getTranslation(currentLanguage, 'yearly')
+                    }
+                    {billingPeriod === 'yearly' && (
+                      <span className="summary-discount"> ({getTranslation(currentLanguage, 'yearlyDiscount')})</span>
+                    )}
+                  </span>
+                </div>
+                {(selectedAddons.dealCSS || selectedAddons.caas) && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageAddonsTitle')}:</span>
+                    <span className="summary-value">
+                      {[
+                        selectedAddons.dealCSS && getTranslation(currentLanguage, 'packageAddonDEALCSS'),
+                        selectedAddons.caas && getTranslation(currentLanguage, 'packageAddonCAAS')
+                      ].filter(Boolean).join(', ') || '-'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* CTA Button */}
           <section className="package-cta">
