@@ -1260,7 +1260,7 @@ const Package = () => {
               <a href="/images/SDeal Agreement.pdf" target="_blank" rel="noopener noreferrer">
                 📄 {getTranslation(currentLanguage, 'packageAgreementLink')}
               </a>
-              <a href={getLocalizedUrl('/terms-sellers', currentLanguage)} target="_blank" rel="noopener noreferrer">
+              <a href="/images/SDeal Seller Terms & Conditions.pdf" target="_blank" rel="noopener noreferrer">
                 📄 {getTranslation(currentLanguage, 'packageTermsLink')}
               </a>
             </div>
