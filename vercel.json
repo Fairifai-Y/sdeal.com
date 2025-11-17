@@ -24,6 +24,18 @@
       "dest": "/api/package/send-email.js"
     },
     {
+      "src": "/api/package/create-payment",
+      "dest": "/api/package/create-payment.js"
+    },
+    {
+      "src": "/api/package/payment-webhook",
+      "dest": "/api/package/payment-webhook.js"
+    },
+    {
+      "src": "/api/package/generate-agreement-pdf",
+      "dest": "/api/package/generate-agreement-pdf.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },

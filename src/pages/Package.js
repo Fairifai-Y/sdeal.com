@@ -36,6 +36,7 @@ const Package = () => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [packageSelectionId, setPackageSelectionId] = useState(null);
   const [errors, setErrors] = useState({});
   
   // New customer NAW fields
@@ -399,6 +400,10 @@ const Package = () => {
       
       if (result.success) {
         setSubmitSuccess(true);
+        // Store package selection ID for payment
+        if (result.data && result.data.id) {
+          setPackageSelectionId(result.data.id);
+        }
         // Success message is shown in the UI
       } else {
         throw new Error(result.error || 'Submission failed');
@@ -415,6 +420,41 @@ const Package = () => {
   };
 
 
+  // Handle payment button click
+  const handlePaymentClick = async () => {
+    if (!packageSelectionId) {
+      console.error('No package selection ID available');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/package/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          packageSelectionId: packageSelectionId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.paymentUrl) {
+        // Redirect to Mollie payment page
+        window.location.href = result.paymentUrl;
+      } else {
+        throw new Error(result.error || 'Failed to create payment');
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      setErrors({ 
+        ...errors, 
+        payment: error.message || 'Failed to create payment. Please try again.' 
+      });
+    }
+  };
+
   if (submitSuccess) {
     return (
       <div className="package-container">
@@ -426,6 +466,19 @@ const Package = () => {
           <div className="success-icon">✓</div>
           <h1>{getTranslation(currentLanguage, 'packageCTANote')}</h1>
           <p>Your package selection has been confirmed. You will receive a confirmation email shortly.</p>
+          {packageSelectionId && (
+            <button 
+              onClick={handlePaymentClick}
+              className="payment-button"
+            >
+              {getTranslation(currentLanguage, 'proceedToPayment')}
+            </button>
+          )}
+          {errors.payment && (
+            <div className="error-message" style={{ marginTop: '20px' }}>
+              {errors.payment}
+            </div>
+          )}
         </div>
       </div>
     );

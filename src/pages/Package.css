@@ -843,6 +843,31 @@
 .package-success p {
   font-size: 18px;
   color: #666;
+  margin-bottom: 30px;
+}
+
+.payment-button {
+  background: linear-gradient(135deg, var(--sdeal-orange, #e2603f) 0%, #c94a2f 100%);
+  color: white;
+  border: none;
+  padding: 18px 50px;
+  font-size: 20px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(226, 96, 63, 0.3);
+  margin-top: 20px;
+}
+
+.payment-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(226, 96, 63, 0.4);
+  background: linear-gradient(135deg, var(--sdeal-orange-hover, #f0704f) 0%, #c94a2f 100%);
+}
+
+.payment-button:active {
+  transform: translateY(0);
 }
 
 /* Error Message */
