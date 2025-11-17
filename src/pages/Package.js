@@ -10,9 +10,11 @@ const Package = () => {
   const { currentLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Get sellerId and newCustomer from URL parameters
+  // Get sellerId, newCustomer, and payment success from URL parameters
   const urlSellerId = searchParams.get('sellerId');
   const urlNewCustomer = searchParams.get('newCustomer') === 'true';
+  const paymentSuccess = searchParams.get('payment') === 'success';
+  const paymentPackageId = searchParams.get('id');
   
   // Customer type: null = not selected, 'new' = new customer, 'existing' = existing customer
   // If newCustomer=true in URL, automatically set to 'new'
@@ -475,6 +477,26 @@ const Package = () => {
       });
     }
   };
+
+  // Show payment success page if payment=success in URL
+  if (paymentSuccess) {
+    return (
+      <div className="package-container">
+        <SEOHead 
+          title={`Payment Successful - SDeal`}
+          description="Your payment has been processed successfully"
+        />
+        <div className="package-success">
+          <div className="success-icon">✓</div>
+          <h1>{getTranslation(currentLanguage, 'paymentSuccessTitle')}</h1>
+          <p>{getTranslation(currentLanguage, 'paymentSuccessMessage')}</p>
+          <p style={{ fontSize: '16px', color: '#666', marginTop: '20px' }}>
+            {getTranslation(currentLanguage, 'paymentSuccessDetails')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (submitSuccess) {
     return (
