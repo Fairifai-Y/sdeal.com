@@ -420,7 +420,9 @@ const Package = () => {
   };
 
 
-  // Handle payment button click
+  // Payment functionality - kept for future use
+  // Uncomment and use when payment button is needed again
+  /*
   const handlePaymentClick = async () => {
     if (!packageSelectionId) {
       console.error('No package selection ID available');
@@ -475,6 +477,7 @@ const Package = () => {
       });
     }
   };
+  */
 
   // Show payment success page if payment=success in URL
   if (paymentSuccess) {
