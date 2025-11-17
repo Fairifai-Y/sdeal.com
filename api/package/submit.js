@@ -149,7 +149,7 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
               <div class="value">${packageName}</div>
             </div>
             
-            ${!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO' ? `
+            ${!packageSelection.isNewCustomer && sellerId && !sellerId.startsWith('NEW-') ? `
             <div class="details">
               <div class="label">Seller ID:</div>
               <div class="value">${sellerId}</div>
@@ -224,7 +224,7 @@ Dear Seller,
 Thank you for selecting your SDeal package. Your selection has been successfully saved.
 
 Package: ${packageName}
-${!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO' ? `Seller ID: ${sellerId}\n` : ''}Start Date: ${startDateText}
+${!packageSelection.isNewCustomer && sellerId && !sellerId.startsWith('NEW-') ? `Seller ID: ${sellerId}\n` : ''}Start Date: ${startDateText}
 Commission Percentage: ${commissionText}
 Billing Period: ${billingPeriodText}
 ${addons.length > 0 ? `Selected Add-ons:\n• ${addonsText}` : 'Selected Add-ons: None'}
@@ -490,7 +490,7 @@ module.exports = async (req, res) => {
       language,
       ipAddress,
       sellerEmail: sellerEmail || null,
-      sellerId: (sellerId && sellerId.trim() !== '') ? sellerId.trim() : (newCustomer ? 'PENDING-MAGENTO' : ''),
+      sellerId: (sellerId && sellerId.trim() !== '') ? sellerId.trim() : '',
       startDate: startDate,
       commissionPercentage: commissionValue,
       billingPeriod: billingValue,
@@ -512,9 +512,12 @@ module.exports = async (req, res) => {
       dataToSave.iban = customerData.iban || null;
       dataToSave.bic = customerData.bic || null;
       
-      // For new customers, don't generate seller ID - it will be created in Magento
-      // Use placeholder that indicates it's pending
-      dataToSave.sellerId = 'PENDING-MAGENTO';
+      // Generate a unique temporary seller ID for new customers
+      // This ID is stored in the database but not communicated to customers
+      // Format: NEW-{timestamp}-{random}
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+      dataToSave.sellerId = `NEW-${timestamp}-${random}`;
     }
     
     console.log('Data to save:', JSON.stringify(dataToSave, null, 2));

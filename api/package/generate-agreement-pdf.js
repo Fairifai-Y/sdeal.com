@@ -109,7 +109,7 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
     yPosition -= 25;
     
     // Only show Seller ID for existing customers (not for new customers or pending)
-    if (!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO') {
+    if (!packageSelection.isNewCustomer && sellerId && !sellerId.startsWith('NEW-')) {
       page.drawText(`Seller ID: ${sellerId}`, {
         x: 50,
         y: yPosition,
