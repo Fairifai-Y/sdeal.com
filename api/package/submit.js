@@ -2,6 +2,7 @@
 // The Prisma Client should be generated during build
 const { PrismaClient } = require('@prisma/client');
 const sgMail = require('@sendgrid/mail');
+const { generateAgreementPDF } = require('./generate-agreement-pdf');
 
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
@@ -80,6 +81,22 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
   }
 
   try {
+    // Generate PDF agreement
+    console.log('Generating PDF agreement...');
+    let pdfAttachment = null;
+    try {
+      const pdfBytes = await generateAgreementPDF(packageSelection, sellerId, trimmedEmail);
+      pdfAttachment = {
+        content: Buffer.from(pdfBytes).toString('base64'),
+        filename: `SDeal_Agreement_${sellerId}_${packageSelection.id}.pdf`,
+        type: 'application/pdf',
+        disposition: 'attachment'
+      };
+      console.log('PDF generated successfully, size:', pdfBytes.length, 'bytes');
+    } catch (pdfError) {
+      console.error('Error generating PDF (continuing without attachment):', pdfError.message);
+      // Continue without PDF attachment - don't fail the email
+    }
     const packageName = getPackageName(packageSelection.package);
     const startDateText = packageSelection.startDate === 'immediate' 
       ? 'Immediate' 
@@ -161,6 +178,11 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
             
             <p style="margin-top: 20px;">Your package selection will be effective as of ${startDateText}.</p>
             
+            <p style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-left: 4px solid #e2603f;">
+              <strong>📄 Agreement PDF Attached</strong><br>
+              A personalized copy of your SDeal Agreement with all your selected package details has been attached to this email for your records.
+            </p>
+            
             <p>If you have any questions, please contact us at <a href="mailto:info@sdeal.com">info@sdeal.com</a>.</p>
             
             <p>Best regards,<br>The SDeal Team</p>
@@ -192,6 +214,9 @@ ${addons.length > 0 ? `Selected Add-ons:\n• ${addonsText}` : 'Selected Add-ons
 
 Your package selection will be effective as of ${startDateText}.
 
+📄 AGREEMENT PDF ATTACHED
+A personalized copy of your SDeal Agreement with all your selected package details has been attached to this email for your records.
+
 If you have any questions, please contact us at info@sdeal.com.
 
 Best regards,
@@ -205,17 +230,25 @@ www.sdeal.com
 
     const msg = {
       to: trimmedEmail,
+      cc: 'onboarding@sdeal.com',
       from: process.env.FROM_EMAIL,
       subject: emailSubject,
       text: emailText,
       html: emailHtml,
     };
+    
+    // Add PDF attachment if generated successfully
+    if (pdfAttachment) {
+      msg.attachments = [pdfAttachment];
+      console.log('PDF attachment added to email');
+    }
 
     console.log('Sending email via SendGrid...');
     console.log('SendGrid API key length:', process.env.SENDGRID_API_KEY ? process.env.SENDGRID_API_KEY.length : 0);
     console.log('SendGrid API key starts with:', process.env.SENDGRID_API_KEY ? process.env.SENDGRID_API_KEY.substring(0, 10) + '...' : 'N/A');
     console.log('Email message:', JSON.stringify({
       to: msg.to,
+      cc: msg.cc,
       from: msg.from,
       subject: msg.subject,
       hasHtml: !!msg.html,
