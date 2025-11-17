@@ -119,6 +119,11 @@ module.exports = async (req, res) => {
 
     // Create first payment to set up recurring payment (mandate)
     // For recurring payments, we need to use sequenceType: 'first' to create a mandate
+    // Note: For recurring payments, only certain methods support mandates:
+    // - directdebit (SEPA Direct Debit)
+    // - creditcard
+    // - paypal (limited)
+    // We'll let Mollie determine available methods or use directdebit/creditcard
     const paymentData = {
       amount: {
         currency: 'EUR',
@@ -128,7 +133,8 @@ module.exports = async (req, res) => {
       redirectUrl: `${baseUrl}/package?payment=success&id=${packageSelectionId}`,
       webhookUrl: `${baseUrl}/api/package/payment-webhook`,
       sequenceType: 'first', // First payment to set up recurring mandate
-      method: ['ideal', 'creditcard', 'bancontact', 'sofort', 'sepa'], // Supported methods for recurring
+      // Only specify methods that support recurring payments (mandates)
+      method: ['directdebit', 'creditcard'], // SEPA Direct Debit and Creditcard support mandates
       customerId: mollieCustomerId || undefined
     };
 
