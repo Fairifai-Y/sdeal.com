@@ -36,6 +36,7 @@ const Package = () => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [packageSelectionId, setPackageSelectionId] = useState(null);
   const [errors, setErrors] = useState({});
   

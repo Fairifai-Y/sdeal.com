@@ -5,6 +5,11 @@ const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [activeSection, setActiveSection] = useState('overview');
+  const [overviewData, setOverviewData] = useState(null);
+  const [financeData, setFinanceData] = useState(null);
+  const [customersData, setCustomersData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -13,6 +18,37 @@ const Admin = () => {
       setIsAuthenticated(true);
     }
   }, []);
+
+  // Fetch data when section changes
+  useEffect(() => {
+    if (isAuthenticated && activeSection) {
+      fetchSectionData(activeSection);
+    }
+  }, [isAuthenticated, activeSection]);
+
+  const fetchSectionData = async (section) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/admin/${section}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        if (section === 'overview') {
+          setOverviewData(result.data);
+        } else if (section === 'finance') {
+          setFinanceData(result.data);
+        } else if (section === 'customers') {
+          setCustomersData(result.data);
+        }
+      } else {
+        console.error('Error fetching data:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching section data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -61,6 +97,205 @@ const Admin = () => {
     );
   }
 
+  const renderSectionContent = () => {
+    if (loading) {
+      return <div className="admin-loading">Loading...</div>;
+    }
+
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <div className="admin-section-content">
+            <h2>Overzicht</h2>
+            {overviewData && (
+              <div className="admin-stats-grid">
+                <div className="stat-card">
+                  <h3>Totaal Klanten</h3>
+                  <p className="stat-number">{overviewData.totalCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Nieuwe Klanten</h3>
+                  <p className="stat-number">{overviewData.newCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Bestaande Klanten</h3>
+                  <p className="stat-number">{overviewData.existingCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Met Recurring Payment</h3>
+                  <p className="stat-number">{overviewData.withRecurring}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Registraties (7 dagen)</h3>
+                  <p className="stat-number">{overviewData.recentRegistrations}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Pakket A</h3>
+                  <p className="stat-number">{overviewData.statsByPackage?.A || 0}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Pakket B</h3>
+                  <p className="stat-number">{overviewData.statsByPackage?.B || 0}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Pakket C</h3>
+                  <p className="stat-number">{overviewData.statsByPackage?.C || 0}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'finance':
+        return (
+          <div className="admin-section-content">
+            <h2>Finance</h2>
+            {financeData && (
+              <div>
+                <div className="admin-stats-grid">
+                  <div className="stat-card highlight">
+                    <h3>Klanten met Recurring Payment</h3>
+                    <p className="stat-number">{financeData.totalWithRecurring}</p>
+                  </div>
+                  <div className="stat-card highlight">
+                    <h3>Geschatte Maandelijkse Omzet</h3>
+                    <p className="stat-number">€{financeData.totalMonthlyRevenue}</p>
+                  </div>
+                </div>
+                
+                <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
+                  <div className="stat-card">
+                    <h3>Pakket A (Recurring)</h3>
+                    <p className="stat-number">{financeData.statsByPackage?.A || 0}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Pakket B (Recurring)</h3>
+                    <p className="stat-number">{financeData.statsByPackage?.B || 0}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Pakket C (Recurring)</h3>
+                    <p className="stat-number">{financeData.statsByPackage?.C || 0}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Maandelijks</h3>
+                    <p className="stat-number">{financeData.statsByBilling?.monthly || 0}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Jaarlijks</h3>
+                    <p className="stat-number">{financeData.statsByBilling?.yearly || 0}</p>
+                  </div>
+                </div>
+
+                {financeData.customers && financeData.customers.length > 0 && (
+                  <div style={{ marginTop: '30px' }}>
+                    <h3>Klanten met Recurring Payments</h3>
+                    <div className="admin-table-container">
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Seller ID</th>
+                            <th>Email</th>
+                            <th>Bedrijf</th>
+                            <th>Pakket</th>
+                            <th>Billing</th>
+                            <th>Mollie Customer ID</th>
+                            <th>Mandate ID</th>
+                            <th>Datum</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {financeData.customers.map((customer) => (
+                            <tr key={customer.id}>
+                              <td>{customer.sellerId}</td>
+                              <td>{customer.sellerEmail || '-'}</td>
+                              <td>{customer.companyName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || '-'}</td>
+                              <td>{customer.package}</td>
+                              <td>{customer.billingPeriod || '-'}</td>
+                              <td>{customer.mollieCustomerId || '-'}</td>
+                              <td>{customer.mollieMandateId || '-'}</td>
+                              <td>{new Date(customer.createdAt).toLocaleDateString('nl-NL')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'customers':
+        return (
+          <div className="admin-section-content">
+            <h2>Klanten</h2>
+            {customersData && (
+              <div>
+                <div className="admin-stats-grid">
+                  <div className="stat-card">
+                    <h3>Totaal Klanten</h3>
+                    <p className="stat-number">{customersData.totalCustomers}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Nieuwe Klanten</h3>
+                    <p className="stat-number">{customersData.newCustomers}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Bestaande Klanten</h3>
+                    <p className="stat-number">{customersData.existingCustomers}</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>Met Recurring</h3>
+                    <p className="stat-number">{customersData.withRecurring}</p>
+                  </div>
+                </div>
+
+                {customersData.customers && customersData.customers.length > 0 && (
+                  <div style={{ marginTop: '30px' }}>
+                    <h3>Alle Klanten</h3>
+                    <div className="admin-table-container">
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Seller ID</th>
+                            <th>Email</th>
+                            <th>Bedrijf/Naam</th>
+                            <th>Type</th>
+                            <th>Pakket</th>
+                            <th>Billing</th>
+                            <th>Recurring</th>
+                            <th>Datum</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {customersData.customers.map((customer) => (
+                            <tr key={customer.id}>
+                              <td>{customer.sellerId}</td>
+                              <td>{customer.sellerEmail || '-'}</td>
+                              <td>{customer.companyName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || '-'}</td>
+                              <td>{customer.isNewCustomer ? 'Nieuw' : 'Bestaand'}</td>
+                              <td>{customer.package}</td>
+                              <td>{customer.billingPeriod || '-'}</td>
+                              <td>{customer.mollieMandateId ? '✓' : '-'}</td>
+                              <td>{new Date(customer.createdAt).toLocaleDateString('nl-NL')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return <div>Selecteer een sectie</div>;
+    }
+  };
+
   return (
     <div className="admin-container">
       <div className="admin-panel">
@@ -69,23 +304,29 @@ const Admin = () => {
           <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
         
+        <div className="admin-navigation">
+          <button 
+            className={`admin-nav-button ${activeSection === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveSection('overview')}
+          >
+            Overzicht
+          </button>
+          <button 
+            className={`admin-nav-button ${activeSection === 'finance' ? 'active' : ''}`}
+            onClick={() => setActiveSection('finance')}
+          >
+            Finance
+          </button>
+          <button 
+            className={`admin-nav-button ${activeSection === 'customers' ? 'active' : ''}`}
+            onClick={() => setActiveSection('customers')}
+          >
+            Klanten
+          </button>
+        </div>
+        
         <div className="admin-content">
-          <div className="admin-section">
-            <h2>Welcome to the Admin Panel</h2>
-            <p>This is a protected admin area. You can add admin functionality here.</p>
-            
-            <div className="admin-stats">
-              <div className="stat-card">
-                <h3>Quick Actions</h3>
-                <ul>
-                  <li>View analytics</li>
-                  <li>Manage content</li>
-                  <li>User management</li>
-                  <li>Settings</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+          {renderSectionContent()}
         </div>
       </div>
     </div>

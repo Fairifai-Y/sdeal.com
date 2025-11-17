@@ -36,6 +36,18 @@
       "dest": "/api/package/generate-agreement-pdf.js"
     },
     {
+      "src": "/api/admin/overview",
+      "dest": "/api/admin/overview.js"
+    },
+    {
+      "src": "/api/admin/finance",
+      "dest": "/api/admin/finance.js"
+    },
+    {
+      "src": "/api/admin/customers",
+      "dest": "/api/admin/customers.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },
