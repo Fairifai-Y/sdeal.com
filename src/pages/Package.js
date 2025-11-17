@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
-import { getLocalizedUrl } from '../utils/languageUtils';
 import { useSearchParams } from 'react-router-dom';
 import SEOHead from '../components/SEOHead';
 import './Package.css';
