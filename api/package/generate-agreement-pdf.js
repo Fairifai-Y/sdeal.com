@@ -108,15 +108,17 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
     
     yPosition -= 25;
     
-    page.drawText(`Seller ID: ${sellerId}`, {
-      x: 50,
-      y: yPosition,
-      size: 11,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    yPosition -= 20;
+    // Only show Seller ID for existing customers (not for new customers or pending)
+    if (!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO') {
+      page.drawText(`Seller ID: ${sellerId}`, {
+        x: 50,
+        y: yPosition,
+        size: 11,
+        font: helveticaFont,
+        color: textColor,
+      });
+      yPosition -= 20;
+    }
     
     if (sellerEmail) {
       page.drawText(`Seller Email: ${sellerEmail}`, {
@@ -127,6 +129,127 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
         color: textColor,
       });
       yPosition -= 20;
+    }
+    
+    // Add new customer details if it's a new customer
+    if (packageSelection.isNewCustomer) {
+      yPosition -= 20;
+      
+      if (packageSelection.companyName) {
+        page.drawText(`Company Name: ${packageSelection.companyName}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.firstName || packageSelection.lastName) {
+        const fullName = `${packageSelection.firstName || ''} ${packageSelection.lastName || ''}`.trim();
+        if (fullName) {
+          page.drawText(`Contact Person: ${fullName}`, {
+            x: 50,
+            y: yPosition,
+            size: 11,
+            font: helveticaFont,
+            color: textColor,
+          });
+          yPosition -= 20;
+        }
+      }
+      
+      if (packageSelection.street) {
+        page.drawText(`Address: ${packageSelection.street}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.postalCode || packageSelection.city) {
+        const addressLine = `${packageSelection.postalCode || ''} ${packageSelection.city || ''}`.trim();
+        if (addressLine) {
+          page.drawText(addressLine, {
+            x: 50,
+            y: yPosition,
+            size: 11,
+            font: helveticaFont,
+            color: textColor,
+          });
+          yPosition -= 20;
+        }
+      }
+      
+      if (packageSelection.country) {
+        page.drawText(`Country: ${packageSelection.country}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.phone) {
+        page.drawText(`Phone: ${packageSelection.phone}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.kvkNumber) {
+        page.drawText(`KVK Number: ${packageSelection.kvkNumber}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.vatNumber) {
+        page.drawText(`VAT Number: ${packageSelection.vatNumber}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.iban) {
+        page.drawText(`IBAN: ${packageSelection.iban}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
+      
+      if (packageSelection.bic) {
+        page.drawText(`BIC: ${packageSelection.bic}`, {
+          x: 50,
+          y: yPosition,
+          size: 11,
+          font: helveticaFont,
+          color: textColor,
+        });
+        yPosition -= 20;
+      }
     }
     
     yPosition -= 40;

@@ -26,6 +26,22 @@ model PackageSelection {
   startDate          String   // "immediate" or "2026-01-01"
   commissionPercentage Float?  // Commission percentage (12% min for A, 4% min for B/C)
   billingPeriod      String?  // "monthly" or "yearly"
+  
+  // New customer registration fields (NAW + business details)
+  isNewCustomer      Boolean  @default(false)
+  companyName        String?
+  firstName          String?
+  lastName           String?
+  street             String?
+  city               String?
+  postalCode         String?
+  country            String?
+  phone              String?
+  kvkNumber          String?  // Chamber of Commerce number
+  vatNumber         String?  // VAT/BTW number
+  iban              String?  // IBAN
+  bic               String?  // BIC
+  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -33,5 +49,6 @@ model PackageSelection {
   @@index([createdAt])
   @@index([language])
   @@index([sellerId])
+  @@index([isNewCustomer])
 }
 

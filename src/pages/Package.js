@@ -13,6 +13,8 @@ const Package = () => {
   // Get sellerId from URL parameter
   const urlSellerId = searchParams.get('sellerId');
   
+  // Customer type: null = not selected, 'new' = new customer, 'existing' = existing customer
+  const [customerType, setCustomerType] = useState(null);
   const [showSellerInfo, setShowSellerInfo] = useState(!urlSellerId);
   const [selectedPackage, setSelectedPackage] = useState('');
   const [selectedAddons, setSelectedAddons] = useState({
@@ -28,15 +30,41 @@ const Package = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // New customer NAW fields
+  const [newCustomerData, setNewCustomerData] = useState({
+    companyName: '',
+    firstName: '',
+    lastName: '',
+    street: '',
+    city: '',
+    postalCode: '',
+    country: 'NL',
+    phone: '',
+    email: '',
+    kvkNumber: '',
+    vatNumber: '',
+    iban: '',
+    bic: ''
+  });
 
   // Update sellerId when URL parameter changes
   useEffect(() => {
     if (urlSellerId) {
       setSellerId(urlSellerId);
       setShowSellerInfo(false);
+      setCustomerType('existing');
       // Note: sellerEmail still needs to be filled in the form below
     }
   }, [urlSellerId]);
+  
+  // Handle customer type selection
+  const handleCustomerTypeSelect = (type) => {
+    setCustomerType(type);
+    if (type === 'existing') {
+      setShowSellerInfo(true);
+    }
+  };
 
   // Handle package selection
   const handlePackageChange = (packageType) => {
@@ -63,7 +91,87 @@ const Package = () => {
     setErrors({ ...errors, agreement: '' });
   };
 
-  // Handle seller info submission (first step)
+  // Handle new customer form submission
+  const handleNewCustomerSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    
+    if (!newCustomerData.email || newCustomerData.email.trim() === '') {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCustomerData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!newCustomerData.companyName || newCustomerData.companyName.trim() === '') {
+      newErrors.companyName = 'Company name is required';
+    }
+    
+    if (!newCustomerData.firstName || newCustomerData.firstName.trim() === '') {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    if (!newCustomerData.lastName || newCustomerData.lastName.trim() === '') {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (!newCustomerData.street || newCustomerData.street.trim() === '') {
+      newErrors.street = 'Street address is required';
+    }
+    
+    if (!newCustomerData.city || newCustomerData.city.trim() === '') {
+      newErrors.city = 'City is required';
+    }
+    
+    if (!newCustomerData.postalCode || newCustomerData.postalCode.trim() === '') {
+      newErrors.postalCode = 'Postal code is required';
+    }
+    
+    if (!newCustomerData.country || newCustomerData.country.trim() === '') {
+      newErrors.country = 'Country is required';
+    }
+    
+    if (!newCustomerData.kvkNumber || newCustomerData.kvkNumber.trim() === '') {
+      newErrors.kvkNumber = 'KVK number is required';
+    }
+    
+    if (!newCustomerData.vatNumber || newCustomerData.vatNumber.trim() === '') {
+      newErrors.vatNumber = 'VAT number is required';
+    }
+    
+    if (!newCustomerData.iban || newCustomerData.iban.trim() === '') {
+      newErrors.iban = 'IBAN is required';
+    } else {
+      // Basic IBAN validation (should start with 2 letters, then 2 digits, then alphanumeric)
+      const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/;
+      const ibanUpper = newCustomerData.iban.replace(/\s/g, '').toUpperCase();
+      if (!ibanRegex.test(ibanUpper)) {
+        newErrors.iban = 'Please enter a valid IBAN';
+      }
+    }
+    
+    if (!newCustomerData.bic || newCustomerData.bic.trim() === '') {
+      newErrors.bic = 'BIC is required';
+    } else {
+      // Basic BIC validation (8 or 11 characters, alphanumeric)
+      const bicRegex = /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
+      const bicUpper = newCustomerData.bic.replace(/\s/g, '').toUpperCase();
+      if (!bicRegex.test(bicUpper)) {
+        newErrors.bic = 'Please enter a valid BIC';
+      }
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      // Set email for later use
+      setSellerEmail(newCustomerData.email);
+      // Generate a temporary seller ID (will be replaced by backend)
+      setSellerId('NEW-' + Date.now());
+      setShowSellerInfo(false);
+    }
+  };
+  
+  // Handle seller info submission (first step for existing customers)
   const handleSellerInfoSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
@@ -74,6 +182,7 @@ const Package = () => {
       newErrors.sellerEmail = 'Please enter a valid email address';
     }
     
+    // Seller ID is required for existing customers
     if (!sellerId || sellerId.trim() === '') {
       newErrors.sellerId = 'Seller ID is required';
     }
@@ -103,7 +212,8 @@ const Package = () => {
         : 'Please select a package';
     }
     
-    if (!sellerId || sellerId.trim() === '') {
+    // Seller ID is only required for existing customers, not for new customers
+    if (customerType !== 'new' && (!sellerId || sellerId.trim() === '')) {
       newErrors.sellerId = 'Seller ID is required';
     }
     
@@ -179,22 +289,35 @@ const Package = () => {
 
     // Submit to API
     try {
+      const requestBody = {
+          package: selectedPackage,
+          addons: selectedAddons,
+          agreementAccepted: agreementAccepted,
+          language: currentLanguage,
+          sellerEmail: sellerEmail.trim(),
+          startDate: startDate,
+          commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
+          billingPeriod: billingPeriod
+      };
+      
+      // Add seller ID only for existing customers (not for new customers)
+      if (customerType !== 'new' && sellerId && sellerId.trim() !== '') {
+        requestBody.sellerId = sellerId.trim();
+      }
+      
+      // Add new customer data if it's a new customer
+      if (customerType === 'new') {
+        requestBody.newCustomer = true;
+        requestBody.customerData = newCustomerData;
+        // Don't send sellerId for new customers - it will be generated in Magento
+      }
+      
       const response = await fetch('/api/package/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          package: selectedPackage,
-          addons: selectedAddons,
-          agreementAccepted: agreementAccepted,
-          language: currentLanguage,
-          sellerId: sellerId.trim(),
-          sellerEmail: sellerEmail.trim(),
-          startDate: startDate,
-          commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
-          billingPeriod: billingPeriod
-        })
+        body: JSON.stringify(requestBody)
       });
       
       // Check if response is ok before parsing JSON
@@ -251,8 +374,329 @@ const Package = () => {
     );
   }
 
-  // Show seller info form if sellerId is not in URL
-  if (showSellerInfo) {
+  // Show customer type selection screen if not selected yet
+  if (customerType === null && !urlSellerId) {
+    return (
+      <div className="package-container">
+        <SEOHead 
+          title={`${getTranslation(currentLanguage, 'packageHeroTitle')} - SDeal`}
+          description={getTranslation(currentLanguage, 'packageHeroSubtitle')}
+        />
+        
+        {/* Hero Section */}
+        <section className="package-hero">
+          <div className="package-content">
+            <h1>{getTranslation(currentLanguage, 'packageHeroTitle')}</h1>
+            <p className="package-subtitle">{getTranslation(currentLanguage, 'packageHeroSubtitle')}</p>
+          </div>
+        </section>
+
+        {/* Customer Type Selection */}
+        <section className="package-customer-type-selection">
+          <div className="package-content">
+            <div className="customer-type-card">
+              <h2>{getTranslation(currentLanguage, 'customerTypeTitle')}</h2>
+              <div className="customer-type-options">
+                <button
+                  type="button"
+                  className="customer-type-option"
+                  onClick={() => handleCustomerTypeSelect('new')}
+                >
+                  <div className="customer-type-icon">🆕</div>
+                  <h3>{getTranslation(currentLanguage, 'customerTypeNew')}</h3>
+                  <p>{getTranslation(currentLanguage, 'customerTypeNewDescription')}</p>
+                </button>
+                <button
+                  type="button"
+                  className="customer-type-option"
+                  onClick={() => handleCustomerTypeSelect('existing')}
+                >
+                  <div className="customer-type-icon">👤</div>
+                  <h3>{getTranslation(currentLanguage, 'customerTypeExisting')}</h3>
+                  <p>{getTranslation(currentLanguage, 'customerTypeExistingDescription')}</p>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Show new customer form
+  if (customerType === 'new' && showSellerInfo) {
+    return (
+      <div className="package-container">
+        <SEOHead 
+          title={`${getTranslation(currentLanguage, 'packageHeroTitle')} - SDeal`}
+          description={getTranslation(currentLanguage, 'packageHeroSubtitle')}
+        />
+        
+        {/* Hero Section */}
+        <section className="package-hero">
+          <div className="package-content">
+            <h1>{getTranslation(currentLanguage, 'packageHeroTitle')}</h1>
+            <p className="package-subtitle">{getTranslation(currentLanguage, 'packageHeroSubtitle')}</p>
+          </div>
+        </section>
+
+        {/* New Customer Registration Form */}
+        <section className="package-seller-info-step">
+          <div className="package-content">
+            <div className="seller-info-card">
+              <h2>{getTranslation(currentLanguage, 'newCustomerTitle')}</h2>
+              <p className="seller-info-description">{getTranslation(currentLanguage, 'newCustomerDescription')}</p>
+              <form onSubmit={handleNewCustomerSubmit} className="seller-info-form">
+                <div className="form-group">
+                  <label htmlFor="companyName">{getTranslation(currentLanguage, 'companyNameLabel')}</label>
+                  <input
+                    id="companyName"
+                    type="text"
+                    className={`form-input ${errors.companyName ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'companyNamePlaceholder')}
+                    value={newCustomerData.companyName}
+                    onChange={(e) => {
+                      setNewCustomerData({ ...newCustomerData, companyName: e.target.value });
+                      setErrors({ ...errors, companyName: '' });
+                    }}
+                    required
+                  />
+                  {errors.companyName && <div className="error-message">{errors.companyName}</div>}
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="firstName">{getTranslation(currentLanguage, 'firstNameLabel')}</label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      className={`form-input ${errors.firstName ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'firstNamePlaceholder')}
+                      value={newCustomerData.firstName}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, firstName: e.target.value });
+                        setErrors({ ...errors, firstName: '' });
+                      }}
+                      required
+                    />
+                    {errors.firstName && <div className="error-message">{errors.firstName}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="lastName">{getTranslation(currentLanguage, 'lastNameLabel')}</label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      className={`form-input ${errors.lastName ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'lastNamePlaceholder')}
+                      value={newCustomerData.lastName}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, lastName: e.target.value });
+                        setErrors({ ...errors, lastName: '' });
+                      }}
+                      required
+                    />
+                    {errors.lastName && <div className="error-message">{errors.lastName}</div>}
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="email">{getTranslation(currentLanguage, 'sellerEmailLabel')}</label>
+                  <input
+                    id="email"
+                    type="email"
+                    className={`form-input ${errors.email ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'sellerEmailPlaceholder')}
+                    value={newCustomerData.email}
+                    onChange={(e) => {
+                      setNewCustomerData({ ...newCustomerData, email: e.target.value });
+                      setErrors({ ...errors, email: '' });
+                    }}
+                    required
+                  />
+                  {errors.email && <div className="error-message">{errors.email}</div>}
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="street">{getTranslation(currentLanguage, 'streetLabel')}</label>
+                  <input
+                    id="street"
+                    type="text"
+                    className={`form-input ${errors.street ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'streetPlaceholder')}
+                    value={newCustomerData.street}
+                    onChange={(e) => {
+                      setNewCustomerData({ ...newCustomerData, street: e.target.value });
+                      setErrors({ ...errors, street: '' });
+                    }}
+                    required
+                  />
+                  {errors.street && <div className="error-message">{errors.street}</div>}
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="postalCode">{getTranslation(currentLanguage, 'postalCodeLabel')}</label>
+                    <input
+                      id="postalCode"
+                      type="text"
+                      className={`form-input ${errors.postalCode ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'postalCodePlaceholder')}
+                      value={newCustomerData.postalCode}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, postalCode: e.target.value });
+                        setErrors({ ...errors, postalCode: '' });
+                      }}
+                      required
+                    />
+                    {errors.postalCode && <div className="error-message">{errors.postalCode}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="city">{getTranslation(currentLanguage, 'cityLabel')}</label>
+                    <input
+                      id="city"
+                      type="text"
+                      className={`form-input ${errors.city ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'cityPlaceholder')}
+                      value={newCustomerData.city}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, city: e.target.value });
+                        setErrors({ ...errors, city: '' });
+                      }}
+                      required
+                    />
+                    {errors.city && <div className="error-message">{errors.city}</div>}
+                  </div>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="country">{getTranslation(currentLanguage, 'countryLabel')}</label>
+                    <select
+                      id="country"
+                      className={`form-input ${errors.country ? 'error' : ''}`}
+                      value={newCustomerData.country}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, country: e.target.value });
+                        setErrors({ ...errors, country: '' });
+                      }}
+                      required
+                    >
+                      <option value="NL">Nederland</option>
+                      <option value="BE">België</option>
+                      <option value="DE">Duitsland</option>
+                      <option value="FR">Frankrijk</option>
+                      <option value="GB">Verenigd Koninkrijk</option>
+                      <option value="AT">Oostenrijk</option>
+                      <option value="IT">Italië</option>
+                      <option value="DK">Denemarken</option>
+                    </select>
+                    {errors.country && <div className="error-message">{errors.country}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="phone">{getTranslation(currentLanguage, 'phoneLabel')}</label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      className="form-input"
+                      placeholder={getTranslation(currentLanguage, 'phonePlaceholder')}
+                      value={newCustomerData.phone}
+                      onChange={(e) => {
+                        setNewCustomerData({ ...newCustomerData, phone: e.target.value });
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="kvkNumber">{getTranslation(currentLanguage, 'kvkNumberLabel')}</label>
+                  <input
+                    id="kvkNumber"
+                    type="text"
+                    className={`form-input ${errors.kvkNumber ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'kvkNumberPlaceholder')}
+                    value={newCustomerData.kvkNumber}
+                    onChange={(e) => {
+                      setNewCustomerData({ ...newCustomerData, kvkNumber: e.target.value });
+                      setErrors({ ...errors, kvkNumber: '' });
+                    }}
+                    required
+                  />
+                  {errors.kvkNumber && <div className="error-message">{errors.kvkNumber}</div>}
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="vatNumber">{getTranslation(currentLanguage, 'vatNumberLabel')}</label>
+                  <input
+                    id="vatNumber"
+                    type="text"
+                    className={`form-input ${errors.vatNumber ? 'error' : ''}`}
+                    placeholder={getTranslation(currentLanguage, 'vatNumberPlaceholder')}
+                    value={newCustomerData.vatNumber}
+                    onChange={(e) => {
+                      setNewCustomerData({ ...newCustomerData, vatNumber: e.target.value });
+                      setErrors({ ...errors, vatNumber: '' });
+                    }}
+                    required
+                  />
+                  {errors.vatNumber && <div className="error-message">{errors.vatNumber}</div>}
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="iban">{getTranslation(currentLanguage, 'ibanLabel')}</label>
+                    <input
+                      id="iban"
+                      type="text"
+                      className={`form-input ${errors.iban ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'ibanPlaceholder')}
+                      value={newCustomerData.iban}
+                      onChange={(e) => {
+                        // Remove spaces and convert to uppercase for validation
+                        const value = e.target.value.replace(/\s/g, '').toUpperCase();
+                        setNewCustomerData({ ...newCustomerData, iban: value });
+                        setErrors({ ...errors, iban: '' });
+                      }}
+                      required
+                    />
+                    {errors.iban && <div className="error-message">{errors.iban}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="bic">{getTranslation(currentLanguage, 'bicLabel')}</label>
+                    <input
+                      id="bic"
+                      type="text"
+                      className={`form-input ${errors.bic ? 'error' : ''}`}
+                      placeholder={getTranslation(currentLanguage, 'bicPlaceholder')}
+                      value={newCustomerData.bic}
+                      onChange={(e) => {
+                        // Remove spaces and convert to uppercase for validation
+                        const value = e.target.value.replace(/\s/g, '').toUpperCase();
+                        setNewCustomerData({ ...newCustomerData, bic: value });
+                        setErrors({ ...errors, bic: '' });
+                      }}
+                      required
+                    />
+                    {errors.bic && <div className="error-message">{errors.bic}</div>}
+                  </div>
+                </div>
+                
+                <button type="submit" className="seller-info-submit-btn">
+                  {getTranslation(currentLanguage, 'choosePackage')}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Show seller info form if sellerId is not in URL (existing customer)
+  if (showSellerInfo && customerType === 'existing') {
     return (
       <div className="package-container">
         <SEOHead 
@@ -499,25 +943,27 @@ const Package = () => {
             </div>
           </section>
           
-          {/* Seller ID Display - Read-only if from URL */}
-          <section className="package-seller-info">
-            <h2>{getTranslation(currentLanguage, 'sellerIdLabel')}</h2>
-            <div className="form-group">
-              <input
-                type="text"
-                className={`form-input ${errors.sellerId ? 'error' : ''} ${urlSellerId ? 'read-only' : ''}`}
-                placeholder={getTranslation(currentLanguage, 'sellerIdPlaceholder')}
-                value={sellerId}
-                onChange={(e) => {
-                  setSellerId(e.target.value);
-                  setErrors({ ...errors, sellerId: '' });
-                }}
-                readOnly={!!urlSellerId}
-                required
-              />
-              {errors.sellerId && <div className="error-message">{errors.sellerId}</div>}
-            </div>
-          </section>
+          {/* Seller ID Display - Read-only if from URL, hidden for new customers */}
+          {customerType !== 'new' && (
+            <section className="package-seller-info">
+              <h2>{getTranslation(currentLanguage, 'sellerIdLabel')}</h2>
+              <div className="form-group">
+                <input
+                  type="text"
+                  className={`form-input ${errors.sellerId ? 'error' : ''} ${urlSellerId ? 'read-only' : ''}`}
+                  placeholder={getTranslation(currentLanguage, 'sellerIdPlaceholder')}
+                  value={sellerId}
+                  onChange={(e) => {
+                    setSellerId(e.target.value);
+                    setErrors({ ...errors, sellerId: '' });
+                  }}
+                  readOnly={!!urlSellerId}
+                  required
+                />
+                {errors.sellerId && <div className="error-message">{errors.sellerId}</div>}
+              </div>
+            </section>
+          )}
 
           {/* Start Date Section */}
           <section className="package-start-date">
@@ -685,7 +1131,7 @@ const Package = () => {
                   <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryPackage')}:</span>
                   <span className="summary-value">{getTranslation(currentLanguage, `packageSelect${selectedPackage}`)}</span>
                 </div>
-                {sellerId && (
+                {sellerId && customerType !== 'new' && (
                   <div className="summary-item">
                     <span className="summary-label">{getTranslation(currentLanguage, 'packageSummarySellerId')}:</span>
                     <span className="summary-value">{sellerId}</span>

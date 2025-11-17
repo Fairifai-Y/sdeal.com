@@ -149,10 +149,12 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
               <div class="value">${packageName}</div>
             </div>
             
+            ${!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO' ? `
             <div class="details">
               <div class="label">Seller ID:</div>
               <div class="value">${sellerId}</div>
             </div>
+            ` : ''}
             
             <div class="details">
               <div class="label">Start Date:</div>
@@ -173,6 +175,22 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
             <div class="details">
               <div class="label">Selected Add-ons:</div>
               <div class="value">• ${addonsText}</div>
+            </div>
+            ` : ''}
+            
+            ${packageSelection.isNewCustomer ? `
+            <div class="details" style="margin-top: 20px; background: #e8f4f8;">
+              <div class="label" style="font-size: 16px; margin-bottom: 10px;">Company Information:</div>
+              ${packageSelection.companyName ? `<div class="value"><strong>Company:</strong> ${packageSelection.companyName}</div>` : ''}
+              ${packageSelection.firstName || packageSelection.lastName ? `<div class="value"><strong>Contact:</strong> ${packageSelection.firstName || ''} ${packageSelection.lastName || ''}</div>` : ''}
+              ${packageSelection.street ? `<div class="value"><strong>Address:</strong> ${packageSelection.street}</div>` : ''}
+              ${packageSelection.postalCode || packageSelection.city ? `<div class="value">${packageSelection.postalCode || ''} ${packageSelection.city || ''}</div>` : ''}
+              ${packageSelection.country ? `<div class="value"><strong>Country:</strong> ${packageSelection.country}</div>` : ''}
+              ${packageSelection.phone ? `<div class="value"><strong>Phone:</strong> ${packageSelection.phone}</div>` : ''}
+              ${packageSelection.kvkNumber ? `<div class="value"><strong>KVK:</strong> ${packageSelection.kvkNumber}</div>` : ''}
+              ${packageSelection.vatNumber ? `<div class="value"><strong>VAT:</strong> ${packageSelection.vatNumber}</div>` : ''}
+              ${packageSelection.iban ? `<div class="value"><strong>IBAN:</strong> ${packageSelection.iban}</div>` : ''}
+              ${packageSelection.bic ? `<div class="value"><strong>BIC:</strong> ${packageSelection.bic}</div>` : ''}
             </div>
             ` : ''}
             
@@ -206,11 +224,24 @@ Dear Seller,
 Thank you for selecting your SDeal package. Your selection has been successfully saved.
 
 Package: ${packageName}
-Seller ID: ${sellerId}
-Start Date: ${startDateText}
+${!packageSelection.isNewCustomer && sellerId && sellerId !== 'PENDING-MAGENTO' ? `Seller ID: ${sellerId}\n` : ''}Start Date: ${startDateText}
 Commission Percentage: ${commissionText}
 Billing Period: ${billingPeriodText}
 ${addons.length > 0 ? `Selected Add-ons:\n• ${addonsText}` : 'Selected Add-ons: None'}
+
+${packageSelection.isNewCustomer ? `
+Company Information:
+${packageSelection.companyName ? `Company: ${packageSelection.companyName}` : ''}
+${packageSelection.firstName || packageSelection.lastName ? `Contact: ${packageSelection.firstName || ''} ${packageSelection.lastName || ''}` : ''}
+${packageSelection.street ? `Address: ${packageSelection.street}` : ''}
+${packageSelection.postalCode || packageSelection.city ? `${packageSelection.postalCode || ''} ${packageSelection.city || ''}` : ''}
+${packageSelection.country ? `Country: ${packageSelection.country}` : ''}
+${packageSelection.phone ? `Phone: ${packageSelection.phone}` : ''}
+${packageSelection.kvkNumber ? `KVK: ${packageSelection.kvkNumber}` : ''}
+${packageSelection.vatNumber ? `VAT: ${packageSelection.vatNumber}` : ''}
+${packageSelection.iban ? `IBAN: ${packageSelection.iban}` : ''}
+${packageSelection.bic ? `BIC: ${packageSelection.bic}` : ''}
+` : ''}
 
 Your package selection will be effective as of ${startDateText}.
 
@@ -348,7 +379,9 @@ module.exports = async (req, res) => {
       sellerId: sellerIdParam,
       startDate,
       commissionPercentage,
-      billingPeriod
+      billingPeriod,
+      newCustomer,
+      customerData
     } = req.body;
     
     // Ensure sellerEmail is a string and trim it
@@ -382,10 +415,12 @@ module.exports = async (req, res) => {
 
     const sellerId = sellerIdParam || '';
     
-    if (!sellerId || sellerId.trim() === '') {
+    // Seller ID is only required for existing customers, not for new customers
+    // New customers will get their seller ID from Magento later
+    if (!newCustomer && (!sellerId || sellerId.trim() === '')) {
       return res.status(400).json({
         success: false,
-        error: 'Seller ID is required.'
+        error: 'Seller ID is required for existing customers.'
       });
     }
 
@@ -449,16 +484,42 @@ module.exports = async (req, res) => {
       language,
       ipAddress,
       sellerEmail: sellerEmail || null,
-      sellerId: sellerId.trim(),
+      sellerId: (sellerId && sellerId.trim() !== '') ? sellerId.trim() : (newCustomer ? 'PENDING-MAGENTO' : ''),
       startDate: startDate,
       commissionPercentage: commissionValue,
-      billingPeriod: billingValue
+      billingPeriod: billingValue,
+      isNewCustomer: newCustomer || false
     };
+    
+    // Add new customer data if it's a new customer
+    if (newCustomer && customerData) {
+      dataToSave.companyName = customerData.companyName || null;
+      dataToSave.firstName = customerData.firstName || null;
+      dataToSave.lastName = customerData.lastName || null;
+      dataToSave.street = customerData.street || null;
+      dataToSave.city = customerData.city || null;
+      dataToSave.postalCode = customerData.postalCode || null;
+      dataToSave.country = customerData.country || null;
+      dataToSave.phone = customerData.phone || null;
+      dataToSave.kvkNumber = customerData.kvkNumber || null;
+      dataToSave.vatNumber = customerData.vatNumber || null;
+      dataToSave.iban = customerData.iban || null;
+      dataToSave.bic = customerData.bic || null;
+      
+      // For new customers, don't generate seller ID - it will be created in Magento
+      // Use placeholder that indicates it's pending
+      dataToSave.sellerId = 'PENDING-MAGENTO';
+    }
     
     console.log('Data to save:', JSON.stringify(dataToSave, null, 2));
     
     const packageSelection = await prisma.packageSelection.create({
       data: dataToSave
+    });
+    
+    // Fetch the complete record to ensure all fields are available for email/PDF
+    const completePackageSelection = await prisma.packageSelection.findUnique({
+      where: { id: packageSelection.id }
     });
     
     console.log('Package selection saved with ID:', packageSelection.id);
@@ -467,18 +528,11 @@ module.exports = async (req, res) => {
     console.log('Saved billingPeriod:', packageSelection.billingPeriod);
     console.log('Saved billingPeriod type:', typeof packageSelection.billingPeriod);
     
-    // Verify the saved data
-    const verifyRecord = await prisma.packageSelection.findUnique({
-      where: { id: packageSelection.id },
-      select: {
-        id: true,
-        commissionPercentage: true,
-        billingPeriod: true,
-        package: true
-      }
-    });
+    // Use complete record for email/PDF generation (includes all new customer fields)
+    const recordForEmail = completePackageSelection || packageSelection;
     
-    console.log('Verified record from database:', JSON.stringify(verifyRecord, null, 2));
+    console.log('Complete record for email/PDF:', JSON.stringify(recordForEmail, null, 2));
+    console.log('Is new customer:', recordForEmail.isNewCustomer);
 
     // Send confirmation email (non-blocking - don't fail if email fails)
     console.log('Package selection saved, checking email...');
@@ -506,8 +560,11 @@ module.exports = async (req, res) => {
       console.log('Calling sendConfirmationEmail function...');
       
       try {
+        // Use the complete record with all fields for email
+        const finalSellerId = recordForEmail.sellerId || sellerId.trim();
+        
         // Try to send email with a short timeout, but don't wait too long
-        const emailPromise = sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language);
+        const emailPromise = sendConfirmationEmail(recordForEmail, emailToSend.trim(), finalSellerId, language);
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), 2000));
         
         emailSent = await Promise.race([emailPromise, timeoutPromise]);
@@ -517,7 +574,7 @@ module.exports = async (req, res) => {
         } else {
           console.log('Email sending timed out or returned false - will continue in background');
           // Continue in background (but may be cancelled by Vercel)
-          sendConfirmationEmail(packageSelection, emailToSend.trim(), sellerId.trim(), language)
+          sendConfirmationEmail(recordForEmail, emailToSend.trim(), finalSellerId, language)
             .then(success => {
               console.log('Background email sending completed:', success);
             })
