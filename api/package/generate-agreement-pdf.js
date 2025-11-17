@@ -1,4 +1,6 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Generate a filled SDeal Agreement PDF with customer data
@@ -95,8 +97,8 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
     
     yPosition -= 40;
     
-    // Section: Party Information
-    page.drawText('Party Information', {
+    // Section: Party Information (Seller only - the signing party)
+    page.drawText('Seller Information', {
       x: 50,
       y: yPosition,
       size: 14,
@@ -126,34 +128,6 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
       });
       yPosition -= 20;
     }
-    
-    page.drawText('SDeal B.V.', {
-      x: 50,
-      y: yPosition,
-      size: 11,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    yPosition -= 20;
-    
-    page.drawText('Osloweg 110, 9723 BX Groningen, The Netherlands', {
-      x: 50,
-      y: yPosition,
-      size: 11,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    yPosition -= 20;
-    
-    page.drawText('KVK: 76103080 | VAT: NL 860508468B01', {
-      x: 50,
-      y: yPosition,
-      size: 11,
-      font: helveticaFont,
-      color: textColor,
-    });
     
     yPosition -= 40;
     
@@ -429,6 +403,80 @@ const generateAgreementPDF = async (packageSelection, sellerId, sellerEmail) => 
       font: helveticaFont,
       color: textColor,
     });
+    
+    // Load and append the original SDeal Agreement PDF
+    console.log('Loading original SDeal Agreement PDF...');
+    try {
+      let agreementPdfBytes = null;
+      
+      // Try multiple possible paths for the agreement PDF (for local development)
+      const possiblePaths = [
+        path.join(process.cwd(), 'public', 'images', 'SDeal Agreement.pdf'),
+        path.join(process.cwd(), '..', 'public', 'images', 'SDeal Agreement.pdf'),
+        path.join(__dirname, '..', '..', 'public', 'images', 'SDeal Agreement.pdf'),
+        path.join(__dirname, '..', '..', '..', 'public', 'images', 'SDeal Agreement.pdf'),
+      ];
+      
+      // Try to load from file system first
+      for (const pdfPath of possiblePaths) {
+        try {
+          if (fs.existsSync(pdfPath)) {
+            agreementPdfBytes = fs.readFileSync(pdfPath);
+            console.log('Found agreement PDF at:', pdfPath);
+            break;
+          }
+        } catch (err) {
+          // Continue to next path
+          continue;
+        }
+      }
+      
+      // If not found locally, try to fetch from URL (for Vercel/serverless)
+      if (!agreementPdfBytes) {
+        try {
+          const baseUrl = process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : process.env.BASE_URL || 'https://www.sdeal.com';
+          const pdfUrl = `${baseUrl}/images/SDeal%20Agreement.pdf`;
+          
+          console.log('Attempting to fetch agreement PDF from URL:', pdfUrl);
+          
+          // Use native fetch (available in Node.js 18+ and Vercel)
+          const response = await fetch(pdfUrl);
+          
+          if (response.ok) {
+            agreementPdfBytes = await response.arrayBuffer();
+            console.log('Successfully fetched agreement PDF from URL');
+          } else {
+            console.warn('Failed to fetch PDF from URL, status:', response.status);
+          }
+        } catch (fetchError) {
+          console.warn('Error fetching PDF from URL:', fetchError.message);
+        }
+      }
+      
+      if (agreementPdfBytes) {
+        // Load the existing PDF
+        const existingPdfDoc = await PDFDocument.load(agreementPdfBytes);
+        const existingPages = existingPdfDoc.getPages();
+        
+        console.log(`Copying ${existingPages.length} pages from original agreement PDF...`);
+        
+        // Copy all pages from the original agreement PDF
+        for (let i = 0; i < existingPages.length; i++) {
+          const [copiedPage] = await pdfDoc.copyPages(existingPdfDoc, [i]);
+          pdfDoc.addPage(copiedPage);
+        }
+        
+        console.log('Successfully appended original agreement PDF pages');
+      } else {
+        console.warn('Original SDeal Agreement PDF not found. Continuing without it.');
+        console.warn('Searched paths:', possiblePaths);
+      }
+    } catch (error) {
+      console.error('Error loading original agreement PDF (continuing without it):', error.message);
+      // Continue without the original PDF - don't fail the entire generation
+    }
     
     // Set PDF metadata for legal validity
     pdfDoc.setTitle(`SDeal Seller Agreement - ${sellerId} - ${documentId}`);
