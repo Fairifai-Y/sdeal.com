@@ -14,7 +14,6 @@ const Package = () => {
   const urlSellerId = searchParams.get('sellerId');
   const urlNewCustomer = searchParams.get('newCustomer') === 'true';
   const paymentSuccess = searchParams.get('payment') === 'success';
-  const paymentPackageId = searchParams.get('id');
   
   // Customer type: null = not selected, 'new' = new customer, 'existing' = existing customer
   // If newCustomer=true in URL, automatically set to 'new'
