@@ -508,14 +508,6 @@ const Package = () => {
           <div className="success-icon">✓</div>
           <h1>{getTranslation(currentLanguage, 'packageCTANote')}</h1>
           <p>Your package selection has been confirmed. You will receive a confirmation email shortly.</p>
-          {packageSelectionId && (
-            <button 
-              onClick={handlePaymentClick}
-              className="payment-button"
-            >
-              {getTranslation(currentLanguage, 'proceedToPayment')}
-            </button>
-          )}
           {errors.payment && (
             <div className="error-message" style={{ marginTop: '20px' }}>
               {errors.payment}
