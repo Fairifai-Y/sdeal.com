@@ -583,14 +583,14 @@ const Package = () => {
                       }}
                       required
                     >
-                      <option value="NL">Nederland</option>
-                      <option value="BE">België</option>
-                      <option value="DE">Duitsland</option>
-                      <option value="FR">Frankrijk</option>
-                      <option value="GB">Verenigd Koninkrijk</option>
-                      <option value="AT">Oostenrijk</option>
-                      <option value="IT">Italië</option>
-                      <option value="DK">Denemarken</option>
+                      <option value="NL">{getTranslation(currentLanguage, 'countryNL')}</option>
+                      <option value="BE">{getTranslation(currentLanguage, 'countryBE')}</option>
+                      <option value="DE">{getTranslation(currentLanguage, 'countryDE')}</option>
+                      <option value="FR">{getTranslation(currentLanguage, 'countryFR')}</option>
+                      <option value="GB">{getTranslation(currentLanguage, 'countryGB')}</option>
+                      <option value="AT">{getTranslation(currentLanguage, 'countryAT')}</option>
+                      <option value="IT">{getTranslation(currentLanguage, 'countryIT')}</option>
+                      <option value="DK">{getTranslation(currentLanguage, 'countryDK')}</option>
                     </select>
                     {errors.country && <div className="error-message">{errors.country}</div>}
                   </div>
