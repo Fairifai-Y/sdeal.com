@@ -57,13 +57,8 @@ const Contact = () => {
   ];
 
   const getEmailAddress = (lang) => {
-    const emails = {
-      en: 'customerservice@sdeal.com',
-      nl: 'klantenservice@sdeal.com',
-      de: 'kundenservice@sdeal.com',
-      fr: 'service-client@sdeal.com'
-    };
-    return emails[lang] || emails.en;
+    // All languages use info@sdeal.com
+    return 'info@sdeal.com';
   };
 
   const contactStructuredData = {
@@ -97,7 +92,7 @@ const Contact = () => {
         'addressCountry': 'NL'
       },
       'telephone': '+31 850 250 182',
-      'email': 'customerservice@sdeal.com',
+      'email': 'info@sdeal.com',
       'url': 'https://www.sdeal.com',
       'openingHours': 'Mo-Fr 09:00-17:00',
       'geo': {

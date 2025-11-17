@@ -179,6 +179,12 @@ const Pricing = () => {
                     </li>
                   ))}
                 </ul>
+                <Link 
+                  to={getLocalizedUrl('/package?newCustomer=true', currentLanguage)}
+                  className="package-start-selling-btn"
+                >
+                  {getTranslation(currentLanguage, 'startSelling')}
+                </Link>
               </div>
             ))}
           </div>
