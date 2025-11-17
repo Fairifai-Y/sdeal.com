@@ -1,10 +1,23 @@
 const { PrismaClient } = require('@prisma/client');
 const { createMollieClient } = require('@mollie/api-client');
 
-const prisma = new PrismaClient();
+// Use a singleton pattern for Prisma Client in serverless functions
+const globalForPrisma = global;
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 // Initialize Mollie client
-const mollieClient = createMollieClient({ apiKey: process.env.MOLLIE_API_KEY });
+if (!process.env.MOLLIE_API_KEY) {
+  console.warn('MOLLIE_API_KEY not found in environment variables');
+}
+const mollieClient = process.env.MOLLIE_API_KEY 
+  ? createMollieClient({ apiKey: process.env.MOLLIE_API_KEY })
+  : null;
 
 module.exports = async (req, res) => {
   // Only allow POST requests
@@ -13,6 +26,13 @@ module.exports = async (req, res) => {
       success: false,
       error: 'Method not allowed. Use POST.'
     });
+  }
+
+  // Check if Mollie client is initialized
+  if (!mollieClient) {
+    console.error('Mollie client not initialized - MOLLIE_API_KEY missing');
+    // Still return 200 to Mollie to prevent retries
+    return res.status(200).json({ received: true, error: 'Mollie API key not configured' });
   }
 
   try {

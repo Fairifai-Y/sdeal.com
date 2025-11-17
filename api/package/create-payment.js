@@ -1,10 +1,24 @@
 const { PrismaClient } = require('@prisma/client');
 const { createMollieClient } = require('@mollie/api-client');
 
-const prisma = new PrismaClient();
+// Use a singleton pattern for Prisma Client in serverless functions
+// This prevents creating multiple connections in serverless environments
+const globalForPrisma = global;
+const prisma = globalForPrisma.prisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 // Initialize Mollie client
-const mollieClient = createMollieClient({ apiKey: process.env.MOLLIE_API_KEY });
+if (!process.env.MOLLIE_API_KEY) {
+  console.warn('MOLLIE_API_KEY not found in environment variables');
+}
+const mollieClient = process.env.MOLLIE_API_KEY 
+  ? createMollieClient({ apiKey: process.env.MOLLIE_API_KEY })
+  : null;
 
 module.exports = async (req, res) => {
   // Only allow POST requests
@@ -12,6 +26,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({
       success: false,
       error: 'Method not allowed. Use POST.'
+    });
+  }
+
+  // Check if Mollie client is initialized
+  if (!mollieClient) {
+    return res.status(500).json({
+      success: false,
+      error: 'Mollie API key is not configured. Please set MOLLIE_API_KEY environment variable.'
     });
   }
 
@@ -129,10 +151,21 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating Mollie payment:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Return detailed error in development, generic in production
+    const errorDetails = process.env.NODE_ENV === 'development' 
+      ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      : undefined;
+    
     res.status(500).json({
       success: false,
       error: 'Failed to create payment',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: errorDetails
     });
   }
 };

@@ -438,6 +438,21 @@ const Package = () => {
         })
       });
 
+      // Check if response is ok
+      if (!response.ok) {
+        // Try to parse error response
+        let errorMessage = `Server error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON, get text
+          const text = await response.text();
+          errorMessage = text || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
       const result = await response.json();
 
       if (result.success && result.paymentUrl) {
