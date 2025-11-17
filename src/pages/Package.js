@@ -440,15 +440,21 @@ const Package = () => {
 
       // Check if response is ok
       if (!response.ok) {
-        // Try to parse error response
+        // Clone response to read it multiple times if needed
+        const clonedResponse = response.clone();
         let errorMessage = `Server error: ${response.status}`;
         try {
-          const errorData = await response.json();
+          const errorData = await clonedResponse.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (e) {
           // If response is not JSON, get text
-          const text = await response.text();
-          errorMessage = text || errorMessage;
+          try {
+            const text = await response.text();
+            errorMessage = text || errorMessage;
+          } catch (textError) {
+            // If both fail, use status message
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+          }
         }
         throw new Error(errorMessage);
       }
