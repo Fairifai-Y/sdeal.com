@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import CountryCard from '../components/CountryCard';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
+import { getLocalizedUrl } from '../utils/languageUtils';
 import './Home.css';
 
 const Home = () => {
@@ -112,15 +113,13 @@ const Home = () => {
             className="hero-logo" 
           />
           <h1 className="hero-title">Real deals, without the noise</h1>
-          <a 
-            href="https://onboarding.sdeal.com" 
+          <Link 
+            to={getLocalizedUrl('/package?newCustomer=true', currentLanguage)}
             className="hero-button" 
-            target="_blank" 
-            rel="noopener noreferrer"
             style={{ textDecoration: 'none', display: 'inline-block' }}
           >
             Start selling
-          </a>
+          </Link>
         </div>
       </div>
 

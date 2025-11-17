@@ -10,12 +10,14 @@ const Package = () => {
   const { currentLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Get sellerId from URL parameter
+  // Get sellerId and newCustomer from URL parameters
   const urlSellerId = searchParams.get('sellerId');
+  const urlNewCustomer = searchParams.get('newCustomer') === 'true';
   
   // Customer type: null = not selected, 'new' = new customer, 'existing' = existing customer
-  const [customerType, setCustomerType] = useState(null);
-  const [showSellerInfo, setShowSellerInfo] = useState(!urlSellerId);
+  // If newCustomer=true in URL, automatically set to 'new'
+  const [customerType, setCustomerType] = useState(urlNewCustomer ? 'new' : null);
+  const [showSellerInfo, setShowSellerInfo] = useState(urlNewCustomer || !urlSellerId);
   const [selectedPackage, setSelectedPackage] = useState('');
   const [selectedAddons, setSelectedAddons] = useState({
     dealCSS: false,
@@ -58,6 +60,14 @@ const Package = () => {
     }
   }, [urlSellerId]);
   
+  // Handle newCustomer URL parameter - automatically show new customer form
+  useEffect(() => {
+    if (urlNewCustomer && !urlSellerId) {
+      setCustomerType('new');
+      setShowSellerInfo(true);
+    }
+  }, [urlNewCustomer, urlSellerId]);
+  
   // Handle customer type selection
   const handleCustomerTypeSelect = (type) => {
     setCustomerType(type);
@@ -78,6 +88,41 @@ const Package = () => {
       ...selectedAddons,
       [addon]: !selectedAddons[addon]
     });
+  };
+  
+  // Calculate total price
+  const calculateTotalPrice = () => {
+    if (!selectedPackage) return null;
+    
+    // Package prices per month
+    const packagePrices = {
+      'A': 29.00,
+      'B': 49.00,
+      'C': 99.00
+    };
+    
+    // Add-on prices per month
+    const addonPrices = {
+      dealCSS: 24.95,
+      caas: 39.95
+    };
+    
+    let total = packagePrices[selectedPackage];
+    
+    // Add add-on prices
+    if (selectedAddons.dealCSS) {
+      total += addonPrices.dealCSS;
+    }
+    if (selectedAddons.caas) {
+      total += addonPrices.caas;
+    }
+    
+    // Apply yearly discount (30% off)
+    if (billingPeriod === 'yearly') {
+      total = total * 12 * 0.7; // 30% discount
+    }
+    
+    return total;
   };
 
   // Handle billing period change
@@ -1174,6 +1219,17 @@ const Package = () => {
                         selectedAddons.dealCSS && getTranslation(currentLanguage, 'packageAddonDEALCSS'),
                         selectedAddons.caas && getTranslation(currentLanguage, 'packageAddonCAAS')
                       ].filter(Boolean).join(', ') || '-'}
+                    </span>
+                  </div>
+                )}
+                {calculateTotalPrice() !== null && (
+                  <div className="summary-item summary-total">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryTotal')}:</span>
+                    <span className="summary-value summary-total-price">
+                      €{calculateTotalPrice().toFixed(2)} {billingPeriod === 'monthly' 
+                        ? getTranslation(currentLanguage, 'packageSummaryTotalPerMonth')
+                        : getTranslation(currentLanguage, 'packageSummaryTotalPerYear')
+                      }
                     </span>
                   </div>
                 )}
