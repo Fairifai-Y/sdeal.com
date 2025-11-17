@@ -26,7 +26,12 @@ const Package = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [sellerId, setSellerId] = useState(urlSellerId || '');
   const [sellerEmail, setSellerEmail] = useState('');
-  const [startDate, setStartDate] = useState('2026-01-01');
+  // Check if we're past January 1, 2026
+  const isPast2026 = new Date() > new Date('2026-01-01');
+  
+  // For new customers, always default to immediate
+  // For existing customers, default to 2026-01-01 if before 2026, otherwise immediate
+  const [startDate, setStartDate] = useState('immediate');
   const [commissionPercentage, setCommissionPercentage] = useState('');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +70,8 @@ const Package = () => {
     if (urlNewCustomer && !urlSellerId) {
       setCustomerType('new');
       setShowSellerInfo(true);
+      // For new customers, always default to immediate
+      setStartDate('immediate');
     }
   }, [urlNewCustomer, urlSellerId]);
   
@@ -73,6 +80,11 @@ const Package = () => {
     setCustomerType(type);
     if (type === 'existing') {
       setShowSellerInfo(true);
+      // For existing customers, set default based on date
+      setStartDate(isPast2026 ? 'immediate' : '2026-01-01');
+    } else if (type === 'new') {
+      // For new customers, always default to immediate
+      setStartDate('immediate');
     }
   };
 
@@ -1024,16 +1036,19 @@ const Package = () => {
                 />
                 <span>{getTranslation(currentLanguage, 'startDateImmediate')}</span>
               </label>
-              <label className={`start-date-option ${startDate === '2026-01-01' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="startDate"
-                  value="2026-01-01"
-                  checked={startDate === '2026-01-01'}
-                  onChange={() => setStartDate('2026-01-01')}
-                />
-                <span>{getTranslation(currentLanguage, 'startDate2026')}</span>
-              </label>
+              {/* Only show future date option for existing customers and if before 2026 */}
+              {customerType !== 'new' && !isPast2026 && (
+                <label className={`start-date-option ${startDate === '2026-01-01' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="startDate"
+                    value="2026-01-01"
+                    checked={startDate === '2026-01-01'}
+                    onChange={() => setStartDate('2026-01-01')}
+                  />
+                  <span>{getTranslation(currentLanguage, 'startDate2026')}</span>
+                </label>
+              )}
             </div>
           </section>
 
@@ -1163,8 +1178,12 @@ const Package = () => {
               <span>{getTranslation(currentLanguage, 'packageAgreementCheckbox')}</span>
             </label>
             {errors.agreement && <div className="error-message">{errors.agreement}</div>}
-            <p className="legal-note">{getTranslation(currentLanguage, 'packageLegalNote1')}</p>
-            <p className="legal-note-small">{getTranslation(currentLanguage, 'packageLegalNote2')}</p>
+            {customerType !== 'new' && (
+              <>
+                <p className="legal-note">{getTranslation(currentLanguage, 'packageLegalNote1')}</p>
+                <p className="legal-note-small">{getTranslation(currentLanguage, 'packageLegalNote2')}</p>
+              </>
+            )}
           </section>
 
           {/* Package Summary Section - Show before confirmation */}
@@ -1187,7 +1206,9 @@ const Package = () => {
                   <span className="summary-value">
                     {startDate === 'immediate' 
                       ? getTranslation(currentLanguage, 'startDateImmediate')
-                      : getTranslation(currentLanguage, 'startDate2026')
+                      : startDate === '2026-01-01'
+                      ? getTranslation(currentLanguage, 'startDate2026')
+                      : startDate
                     }
                   </span>
                 </div>

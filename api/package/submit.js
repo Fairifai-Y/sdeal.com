@@ -424,10 +424,16 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (!startDate || !['immediate', '2026-01-01'].includes(startDate)) {
+    // Validate start date - after 2026-01-01, only "immediate" is valid
+    const isPast2026 = new Date() > new Date('2026-01-01');
+    const validStartDates = isPast2026 ? ['immediate'] : ['immediate', '2026-01-01'];
+    
+    if (!startDate || !validStartDates.includes(startDate)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid start date. Must be "immediate" or "2026-01-01".'
+        error: isPast2026 
+          ? 'Invalid start date. Must be "immediate".'
+          : 'Invalid start date. Must be "immediate" or "2026-01-01".'
       });
     }
 
