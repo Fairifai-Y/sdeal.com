@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Admin.css';
 
 const Admin = () => {
@@ -74,24 +75,31 @@ const Admin = () => {
   if (!isAuthenticated) {
     return (
       <div className="admin-container">
-        <div className="admin-login">
-          <h1>Admin Login</h1>
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label htmlFor="password">Password:</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter admin password"
-                required
-                autoFocus
-              />
-            </div>
-            {error && <div className="error-message">{error}</div>}
-            <button type="submit" className="login-button">Login</button>
-          </form>
+        <div className="admin-header-top">
+          <Link to="/" className="admin-logo-link">
+            <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
+          </Link>
+        </div>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 20px' }}>
+          <div className="admin-login">
+            <h1>Admin Login</h1>
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label htmlFor="password">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter admin password"
+                  required
+                  autoFocus
+                />
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              <button type="submit" className="login-button">Login</button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -298,10 +306,15 @@ const Admin = () => {
 
   return (
     <div className="admin-container">
+      <div className="admin-header-top">
+        <Link to="/" className="admin-logo-link">
+          <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
+        </Link>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
+      </div>
       <div className="admin-panel">
-        <div className="admin-header">
+        <div className="admin-panel-header">
           <h1>Admin Panel</h1>
-          <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
         
         <div className="admin-navigation">
