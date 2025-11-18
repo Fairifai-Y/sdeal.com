@@ -23,34 +23,6 @@ const Admin = () => {
     }
   }, []);
 
-  // Fetch data when section changes
-  useEffect(() => {
-    if (isAuthenticated && activeSection) {
-      if (activeSection === 'customers' && searchQuery.trim() !== '') {
-        // Don't fetch default data if searching
-        return;
-      }
-      fetchSectionData(activeSection);
-    }
-  }, [isAuthenticated, activeSection]);
-
-  // Search customers
-  useEffect(() => {
-    if (isAuthenticated && activeSection === 'customers') {
-      const timeoutId = setTimeout(() => {
-        if (searchQuery.trim() !== '') {
-          searchCustomers(searchQuery);
-        } else {
-          setSearchResults(null);
-          // Reload default customers data
-          fetchSectionData('customers');
-        }
-      }, 300); // Debounce search
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery, isAuthenticated, activeSection]);
-
   const fetchSectionData = async (section) => {
     setLoading(true);
     try {
@@ -74,6 +46,58 @@ const Admin = () => {
       setLoading(false);
     }
   };
+
+  const searchCustomers = async (query) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/admin/search-customers?q=${encodeURIComponent(query)}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setSearchResults(result.data);
+      } else {
+        console.error('Error searching customers:', result.error);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching customers:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Fetch data when section changes
+  useEffect(() => {
+    if (isAuthenticated && activeSection) {
+      if (activeSection === 'customers' && searchQuery.trim() !== '') {
+        // Don't fetch default data if searching
+        return;
+      }
+      fetchSectionData(activeSection);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeSection]);
+
+  // Search customers
+  useEffect(() => {
+    if (isAuthenticated && activeSection === 'customers') {
+      const timeoutId = setTimeout(() => {
+        if (searchQuery.trim() !== '') {
+          searchCustomers(searchQuery);
+        } else {
+          setSearchResults(null);
+          // Reload default customers data
+          if (!customersData) {
+            fetchSectionData('customers');
+          }
+        }
+      }, 300); // Debounce search
+
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, isAuthenticated, activeSection]);
 
   const handleLogin = (e) => {
     e.preventDefault();
