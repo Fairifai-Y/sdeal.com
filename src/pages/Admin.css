@@ -335,3 +335,41 @@
   }
 }
 
+.admin-search-container {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.admin-search-input {
+  flex: 1;
+  min-width: 300px;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.admin-search-input:focus {
+  outline: none;
+  border-color: #e2603f;
+}
+
+.admin-search-loading {
+  color: #e2603f;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-search-count {
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+

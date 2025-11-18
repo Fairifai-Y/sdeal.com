@@ -11,6 +11,9 @@ const Admin = () => {
   const [financeData, setFinanceData] = useState(null);
   const [customersData, setCustomersData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -23,9 +26,30 @@ const Admin = () => {
   // Fetch data when section changes
   useEffect(() => {
     if (isAuthenticated && activeSection) {
+      if (activeSection === 'customers' && searchQuery.trim() !== '') {
+        // Don't fetch default data if searching
+        return;
+      }
       fetchSectionData(activeSection);
     }
   }, [isAuthenticated, activeSection]);
+
+  // Search customers
+  useEffect(() => {
+    if (isAuthenticated && activeSection === 'customers') {
+      const timeoutId = setTimeout(() => {
+        if (searchQuery.trim() !== '') {
+          searchCustomers(searchQuery);
+        } else {
+          setSearchResults(null);
+          // Reload default customers data
+          fetchSectionData('customers');
+        }
+      }, 300); // Debounce search
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery, isAuthenticated, activeSection]);
 
   const fetchSectionData = async (section) => {
     setLoading(true);
@@ -70,6 +94,8 @@ const Admin = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('adminAuthenticated');
     setPassword('');
+    setSearchQuery('');
+    setSearchResults(null);
   };
 
   if (!isAuthenticated) {
@@ -235,65 +261,116 @@ const Admin = () => {
         );
 
       case 'customers':
+        const displayCustomers = searchResults !== null ? searchResults : (customersData?.customers || []);
+        const isSearchMode = searchQuery.trim() !== '';
+        
         return (
           <div className="admin-section-content">
             <h2>Klanten</h2>
-            {customersData && (
-              <div>
-                <div className="admin-stats-grid">
-                  <div className="stat-card">
-                    <h3>Totaal Klanten</h3>
-                    <p className="stat-number">{customersData.totalCustomers}</p>
-                  </div>
-                  <div className="stat-card">
-                    <h3>Nieuwe Klanten</h3>
-                    <p className="stat-number">{customersData.newCustomers}</p>
-                  </div>
-                  <div className="stat-card">
-                    <h3>Bestaande Klanten</h3>
-                    <p className="stat-number">{customersData.existingCustomers}</p>
-                  </div>
-                  <div className="stat-card">
-                    <h3>Met Recurring</h3>
-                    <p className="stat-number">{customersData.withRecurring}</p>
-                  </div>
-                </div>
+            
+            {/* Search Bar */}
+            <div className="admin-search-container">
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Zoek in alle velden (ID, email, naam, bedrijf, KVK, BTW, IBAN, etc.)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {isSearching && <span className="admin-search-loading">Zoeken...</span>}
+              {isSearchMode && !isSearching && (
+                <span className="admin-search-count">
+                  {displayCustomers.length} resultaat{displayCustomers.length !== 1 ? 'en' : ''}
+                </span>
+              )}
+            </div>
 
-                {customersData.customers && customersData.customers.length > 0 && (
-                  <div style={{ marginTop: '30px' }}>
-                    <h3>Alle Klanten</h3>
-                    <div className="admin-table-container">
-                      <table className="admin-table">
-                        <thead>
-                          <tr>
-                            <th>Seller ID</th>
-                            <th>Email</th>
-                            <th>Bedrijf/Naam</th>
-                            <th>Type</th>
-                            <th>Pakket</th>
-                            <th>Billing</th>
-                            <th>Recurring</th>
-                            <th>Datum</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {customersData.customers.map((customer) => (
-                            <tr key={customer.id}>
-                              <td>{customer.sellerId}</td>
-                              <td>{customer.sellerEmail || '-'}</td>
-                              <td>{customer.companyName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || '-'}</td>
-                              <td>{customer.isNewCustomer ? 'Nieuw' : 'Bestaand'}</td>
-                              <td>{customer.package}</td>
-                              <td>{customer.billingPeriod || '-'}</td>
-                              <td>{customer.mollieMandateId ? '✓' : '-'}</td>
-                              <td>{new Date(customer.createdAt).toLocaleDateString('nl-NL')}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+            {!isSearchMode && customersData && (
+              <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
+                <div className="stat-card">
+                  <h3>Totaal Klanten</h3>
+                  <p className="stat-number">{customersData.totalCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Nieuwe Klanten</h3>
+                  <p className="stat-number">{customersData.newCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Bestaande Klanten</h3>
+                  <p className="stat-number">{customersData.existingCustomers}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Met Recurring</h3>
+                  <p className="stat-number">{customersData.withRecurring}</p>
+                </div>
+              </div>
+            )}
+
+            {displayCustomers.length > 0 && (
+              <div style={{ marginTop: '30px' }}>
+                <h3>{isSearchMode ? 'Zoekresultaten' : 'Alle Klanten'}</h3>
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Seller ID</th>
+                        <th>Email</th>
+                        <th>Bedrijf</th>
+                        <th>Naam</th>
+                        <th>Adres</th>
+                        <th>KVK</th>
+                        <th>BTW</th>
+                        <th>IBAN</th>
+                        <th>Type</th>
+                        <th>Pakket</th>
+                        <th>Billing</th>
+                        <th>Recurring</th>
+                        <th>Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayCustomers.map((customer) => (
+                        <tr key={customer.id}>
+                          <td>{customer.sellerId || '-'}</td>
+                          <td>{customer.sellerEmail || '-'}</td>
+                          <td>{customer.companyName || '-'}</td>
+                          <td>
+                            {customer.firstName || customer.lastName 
+                              ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+                              : '-'
+                            }
+                          </td>
+                          <td>
+                            {customer.street || customer.city || customer.postalCode
+                              ? `${customer.street || ''}${customer.street && (customer.city || customer.postalCode) ? ', ' : ''}${customer.postalCode || ''} ${customer.city || ''}`.trim()
+                              : '-'
+                            }
+                          </td>
+                          <td>{customer.kvkNumber || '-'}</td>
+                          <td>{customer.vatNumber || '-'}</td>
+                          <td>{customer.iban || '-'}</td>
+                          <td>{customer.isNewCustomer ? 'Nieuw' : 'Bestaand'}</td>
+                          <td>{customer.package || '-'}</td>
+                          <td>{customer.billingPeriod || '-'}</td>
+                          <td>{customer.mollieMandateId ? '✓' : '-'}</td>
+                          <td>{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('nl-NL') : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {isSearchMode && displayCustomers.length === 0 && !isSearching && (
+              <div style={{ marginTop: '30px', padding: '20px', textAlign: 'center', color: '#666' }}>
+                Geen resultaten gevonden voor "{searchQuery}"
+              </div>
+            )}
+
+            {!isSearchMode && customersData && (!customersData.customers || customersData.customers.length === 0) && (
+              <div style={{ marginTop: '30px', padding: '20px', textAlign: 'center', color: '#666' }}>
+                Geen klanten gevonden
               </div>
             )}
           </div>

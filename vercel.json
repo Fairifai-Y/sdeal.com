@@ -48,6 +48,10 @@
       "dest": "/api/admin/customers.js"
     },
     {
+      "src": "/api/admin/search-customers",
+      "dest": "/api/admin/search-customers.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },
