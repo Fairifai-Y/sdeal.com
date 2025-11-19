@@ -114,11 +114,24 @@ module.exports = async (req, res) => {
         responseData = responseText;
       }
 
+      // Check if this is a Cloudflare block (check full response, not truncated)
+      const isCloudflareBlock = !response.ok && (
+        (typeof responseData === 'string' && (
+          responseData.includes('Cloudflare') ||
+          responseData.includes('cf-error-details') ||
+          responseData.includes('Sorry, you have been blocked') ||
+          responseData.includes('Attention Required') ||
+          responseData.includes('cf-wrapper')
+        )) ||
+        (response.status === 403 && typeof responseData === 'string' && responseData.includes('<!DOCTYPE html>'))
+      );
+
       results.push({
         name: variation.name,
         status: response.ok ? 'success' : 'failed',
         statusCode: response.status,
         statusText: response.statusText,
+        isCloudflareBlock: isCloudflareBlock,
         headers: Object.keys(variation.headers).reduce((acc, key) => {
           if (key === 'Authorization') {
             acc[key] = `${variation.headers[key].substring(0, 10)}...`;
@@ -127,7 +140,9 @@ module.exports = async (req, res) => {
           }
           return acc;
         }, {}),
-        response: response.ok ? (responseData.items ? `Success: ${responseData.items.length} items` : 'Success') : `Error: ${typeof responseData === 'string' ? responseData.substring(0, 200) : JSON.stringify(responseData).substring(0, 200)}`
+        response: response.ok 
+          ? (responseData.items ? `Success: ${responseData.items.length} items` : 'Success') 
+          : `Error: ${typeof responseData === 'string' ? responseData.substring(0, 200) : JSON.stringify(responseData).substring(0, 200)}`
       });
 
       // If successful, we found the right format
@@ -144,9 +159,21 @@ module.exports = async (req, res) => {
   }
 
   const successful = results.find(r => r.status === 'success');
-  const allCloudflareBlocks = results.every(r => 
-    r.response && typeof r.response === 'string' && r.response.includes('Cloudflare')
-  );
+  
+  // Check if all failed requests are Cloudflare blocks
+  // Use the isCloudflareBlock flag we set during testing, or check response
+  const allCloudflareBlocks = results.length > 0 && results.every(r => {
+    if (r.status === 'success') return true; // Success is not a block
+    // Use the flag we set, or check the response
+    if (r.isCloudflareBlock === true) return true;
+    const response = r.response || '';
+    const responseStr = typeof response === 'string' ? response : JSON.stringify(response);
+    return responseStr.includes('Cloudflare') || 
+           responseStr.includes('cf-error-details') || 
+           responseStr.includes('Sorry, you have been blocked') ||
+           responseStr.includes('Attention Required') ||
+           (r.statusCode === 403 && responseStr.includes('<!DOCTYPE html>'));
+  });
 
   let message = successful 
     ? `Found working format: ${successful.name}` 

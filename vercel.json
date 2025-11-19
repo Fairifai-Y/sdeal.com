@@ -78,6 +78,10 @@
       "dest": "/api/seller-admin/test-alternative-headers.js"
     },
     {
+      "src": "/api/seller-admin/test-endpoints",
+      "dest": "/api/seller-admin/test-endpoints.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },

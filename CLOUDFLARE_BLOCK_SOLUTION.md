@@ -17,15 +17,117 @@ De error response bevat een Cloudflare HTML pagina met de boodschap:
 
 De API administrator moet Vercel's IP addresses whitelisten in Cloudflare:
 
+#### Stap 1: Vercel IP Ranges Ophalen
+
+**⚠️ BELANGRIJK: Vercel gebruikt dynamische IPs!**
+
+Het IP dat je hebt gewhitelist (`216.150.1.1`) is **niet** het IP dat Vercel gebruikt. In de error response zie je dat het geblokkeerde IP `34.205.20.126` is.
+
+**Vercel serverless functions gebruiken verschillende IPs per request!** Je moet daarom **IP ranges** whitelisten, niet individuele IPs.
+
 1. **Vercel IP Ranges:**
    - Vercel gebruikt AWS IP ranges
-   - Bekijk Vercel's IP ranges: https://vercel.com/docs/security/ip-addresses
-   - Of gebruik Vercel's API om de actuele IPs op te halen
+   - Bekijk Vercel's officiële IP ranges: https://vercel.com/docs/security/ip-addresses
+   - Of gebruik Vercel's API: `curl https://api.vercel.com/v1/edge-config/ip-ranges`
+   - Vercel IP ranges worden regelmatig bijgewerkt, dus check deze regelmatig
 
-2. **In Cloudflare Dashboard:**
-   - Ga naar Security → WAF
-   - Maak een nieuwe rule om Vercel IPs toe te staan
-   - Of gebruik IP Access Rules om Vercel IPs te whitelisten
+2. **Voor het IP dat nu geblokkeerd wordt (`34.205.20.126`):**
+   - Dit is een AWS IP in de `34.x.x.x` range
+   - Je moet de volledige Vercel IP ranges whitelisten, niet alleen dit ene IP
+   - Vercel kan verschillende IPs gebruiken voor verschillende requests
+
+3. **Hoe Vercel IP Ranges te krijgen:**
+   ```bash
+   # Via Vercel API
+   curl https://api.vercel.com/v1/edge-config/ip-ranges
+   
+   # Of bekijk de documentatie
+   # https://vercel.com/docs/security/ip-addresses
+   ```
+
+#### Stap 2: Whitelisten in Cloudflare Dashboard
+
+**Optie A: Via IP Access Rules (Aanbevolen - Eenvoudigst)**
+
+1. **Login in Cloudflare Dashboard:**
+   - Ga naar https://dash.cloudflare.com
+   - Selecteer je domain (sportdeal.nl)
+
+2. **Navigeer naar Security → WAF:**
+   - Klik op "Security" in de linker sidebar
+   - Klik op "WAF" (Web Application Firewall)
+
+3. **Ga naar IP Access Rules:**
+   - Scroll naar beneden naar "Tools"
+   - Klik op "IP Access Rules" of "Tools" → "IP Access Rules"
+
+4. **Maak een nieuwe Allow Rule:**
+   - Klik op "Create rule" of "Add rule"
+   - **Action:** Selecteer "Allow"
+   - **IP Address or IP Range:** 
+     - Voer Vercel IP ranges in (bijv. `76.76.21.0/24`)
+     - Of voer individuele IPs in gescheiden door komma's
+     - Voor meerdere ranges, maak meerdere rules of gebruik CIDR notation
+   - **Note (optioneel):** "Vercel Serverless Functions"
+   - Klik op "Save"
+
+**Optie B: Via WAF Custom Rules (Meer Geavanceerd)**
+
+1. **Ga naar Security → WAF:**
+   - Klik op "Security" → "WAF"
+
+2. **Klik op "Custom rules":**
+   - Scroll naar "Custom rules" sectie
+   - Klik op "Create rule"
+
+3. **Configureer de Rule:**
+   - **Rule name:** "Allow Vercel IPs"
+   - **When incoming requests match:**
+     - Field: `IP Source Address`
+     - Operator: `is in`
+     - Value: Voer Vercel IP ranges in (bijv. `76.76.21.0/24`)
+   - **Then:** Selecteer "Allow"
+   - **Priority:** Laag nummer (bijv. 1) zodat deze rule eerst wordt geëvalueerd
+   - Klik op "Deploy"
+
+**Optie C: Via Firewall Rules (Alternatief)**
+
+1. **Ga naar Security → WAF:**
+   - Klik op "Security" → "WAF"
+
+2. **Klik op "Firewall rules":**
+   - Scroll naar "Firewall rules"
+   - Klik op "Create rule"
+
+3. **Configureer de Rule:**
+   - **Rule name:** "Allow Vercel Serverless Functions"
+   - **Field:** `IP Source Address`
+   - **Operator:** `is in`
+   - **Value:** Voer Vercel IP ranges in
+   - **Action:** "Allow"
+   - Klik op "Save"
+
+#### Stap 3: Verifieer de Whitelist
+
+1. Test of de whitelist werkt:
+   - Maak een test request vanuit Vercel
+   - Check de Cloudflare logs om te zien of de request wordt toegestaan
+   - Ga naar Security → Events om requests te monitoren
+
+#### Belangrijke Notities:
+
+- **Vercel IP Ranges Veranderen:**
+  - Vercel IP ranges kunnen veranderen
+  - Check regelmatig https://vercel.com/docs/security/ip-addresses
+  - Overweeg een automatisch update proces
+
+- **CIDR Notation:**
+  - Gebruik CIDR notation voor IP ranges (bijv. `76.76.21.0/24`)
+  - Dit is efficiënter dan individuele IPs
+
+- **Prioriteit:**
+  - Allow rules moeten een hogere prioriteit hebben dan block rules
+  - Zet Allow rules bovenaan in de lijst
 
 ### Oplossing 2: Cloudflare Bot Protection Aanpassen
 
