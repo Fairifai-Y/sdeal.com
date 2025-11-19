@@ -14,6 +14,10 @@ const Admin = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedSeller, setSelectedSeller] = useState(null);
+  const [sellerInfo, setSellerInfo] = useState(null);
+  const [loadingSellerInfo, setLoadingSellerInfo] = useState(false);
+  const [sellerInfoError, setSellerInfoError] = useState(null);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -120,6 +124,82 @@ const Admin = () => {
     setPassword('');
     setSearchQuery('');
     setSearchResults(null);
+    setSelectedSeller(null);
+    setSellerInfo(null);
+  };
+
+  const fetchSellerInfo = async (sellerId) => {
+    if (!sellerId) return;
+    
+    setLoadingSellerInfo(true);
+    setSellerInfoError(null);
+    setSelectedSeller(sellerId);
+    
+    try {
+      // Fetch all seller info in parallel
+      const [balanceRes, ordersRes, deliveryRes] = await Promise.allSettled([
+        fetch(`/api/seller-admin/balance?supplierId=${sellerId}`),
+        fetch(`/api/seller-admin/orders?supplierId=${sellerId}&page=1&pageSize=10`),
+        fetch(`/api/seller-admin/delivery-info?supplierId=${sellerId}`)
+      ]);
+
+      const sellerData = {
+        sellerId: sellerId,
+        balance: null,
+        orders: null,
+        deliveryInfo: null,
+        errors: {}
+      };
+
+      // Process balance
+      if (balanceRes.status === 'fulfilled' && balanceRes.value.ok) {
+        const balanceData = await balanceRes.value.json();
+        if (balanceData.success) {
+          sellerData.balance = balanceData.data;
+        } else {
+          sellerData.errors.balance = balanceData.error || 'Failed to fetch balance';
+        }
+      } else {
+        sellerData.errors.balance = 'Failed to fetch balance';
+      }
+
+      // Process orders
+      if (ordersRes.status === 'fulfilled' && ordersRes.value.ok) {
+        const ordersData = await ordersRes.value.json();
+        if (ordersData.success) {
+          sellerData.orders = ordersData.data;
+        } else {
+          sellerData.errors.orders = ordersData.error || 'Failed to fetch orders';
+        }
+      } else {
+        sellerData.errors.orders = 'Failed to fetch orders';
+      }
+
+      // Process delivery info
+      if (deliveryRes.status === 'fulfilled' && deliveryRes.value.ok) {
+        const deliveryData = await deliveryRes.value.json();
+        if (deliveryData.success) {
+          sellerData.deliveryInfo = deliveryData.data;
+        } else {
+          sellerData.errors.deliveryInfo = deliveryData.error || 'Failed to fetch delivery info';
+        }
+      } else {
+        sellerData.errors.deliveryInfo = 'Failed to fetch delivery info';
+      }
+
+      setSellerInfo(sellerData);
+    } catch (error) {
+      console.error('Error fetching seller info:', error);
+      setSellerInfoError('Failed to fetch seller information');
+    } finally {
+      setLoadingSellerInfo(false);
+    }
+  };
+
+  const closeSellerModal = () => {
+    setSelectedSeller(null);
+    setSellerInfo(null);
+    setSellerInfoError(null);
   };
 
   if (!isAuthenticated) {
@@ -354,7 +434,26 @@ const Admin = () => {
                     </thead>
                     <tbody>
                       {displayCustomers.map((customer) => (
-                        <tr key={customer.id}>
+                        <tr 
+                          key={customer.id}
+                          onClick={() => customer.sellerId && fetchSellerInfo(customer.sellerId)}
+                          style={{ 
+                            cursor: customer.sellerId ? 'pointer' : 'default',
+                            backgroundColor: selectedSeller === customer.sellerId ? '#e3f2fd' : 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (customer.sellerId) {
+                              e.currentTarget.style.backgroundColor = '#f5f5f5';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedSeller !== customer.sellerId) {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            } else {
+                              e.currentTarget.style.backgroundColor = '#e3f2fd';
+                            }
+                          }}
+                        >
                           <td>{customer.sellerId || '-'}</td>
                           <td>{customer.sellerEmail || '-'}</td>
                           <td>{customer.companyName || '-'}</td>
@@ -443,6 +542,140 @@ const Admin = () => {
           {renderSectionContent()}
         </div>
       </div>
+
+      {/* Seller Info Modal */}
+      {(selectedSeller || sellerInfo) && (
+        <div className="seller-modal-overlay" onClick={closeSellerModal}>
+          <div className="seller-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="seller-modal-header">
+              <h2>Seller Informatie - ID: {selectedSeller}</h2>
+              <button className="seller-modal-close" onClick={closeSellerModal}>×</button>
+            </div>
+            
+            <div className="seller-modal-body">
+              {loadingSellerInfo ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <div className="admin-loading">Laden...</div>
+                </div>
+              ) : sellerInfoError ? (
+                <div style={{ color: 'red', padding: '20px', textAlign: 'center' }}>
+                  {sellerInfoError}
+                </div>
+              ) : sellerInfo ? (
+                <div className="seller-info-sections">
+                  {/* Balance Info */}
+                  <div className="seller-info-section">
+                    <h3>Balance</h3>
+                    {sellerInfo.errors.balance ? (
+                      <div style={{ color: 'red' }}>Error: {sellerInfo.errors.balance}</div>
+                    ) : sellerInfo.balance && sellerInfo.balance.items && sellerInfo.balance.items.length > 0 ? (
+                      <div className="seller-info-grid">
+                        {sellerInfo.balance.items.map((item, idx) => (
+                          <div key={idx} className="seller-info-card">
+                            <div className="seller-info-row">
+                              <strong>Supplier:</strong> {item.supplier_name || '-'}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Balance Totaal:</strong> €{parseFloat(item.balance_total || 0).toFixed(2)}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Balance Pending:</strong> €{parseFloat(item.balance_pending || 0).toFixed(2)}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Balance Available:</strong> €{parseFloat(item.balance_available || 0).toFixed(2)}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Balance Partner:</strong> €{parseFloat(item.balance_partner || 0).toFixed(2)}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Datum:</strong> {item.date ? new Date(item.date).toLocaleDateString('nl-NL') : '-'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>Geen balance data beschikbaar</div>
+                    )}
+                  </div>
+
+                  {/* Orders Info */}
+                  <div className="seller-info-section">
+                    <h3>Orders (Laatste 10)</h3>
+                    {sellerInfo.errors.orders ? (
+                      <div style={{ color: 'red' }}>Error: {sellerInfo.errors.orders}</div>
+                    ) : sellerInfo.orders && sellerInfo.orders.items && sellerInfo.orders.items.length > 0 ? (
+                      <div className="seller-orders-table">
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr>
+                              <th>Order ID</th>
+                              <th>Status</th>
+                              <th>Finance Status</th>
+                              <th>Bedrag</th>
+                              <th>Datum</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sellerInfo.orders.items.map((order) => (
+                              <tr key={order.id}>
+                                <td>{order.id}</td>
+                                <td>{order.order_status}</td>
+                                <td>{order.finance_status}</td>
+                                <td>€{parseFloat(order.order_amount_org || 0).toFixed(2)}</td>
+                                <td>{order.created_at ? new Date(order.created_at).toLocaleDateString('nl-NL') : '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div>Geen orders gevonden</div>
+                    )}
+                  </div>
+
+                  {/* Delivery Info */}
+                  <div className="seller-info-section">
+                    <h3>Delivery Informatie</h3>
+                    {sellerInfo.errors.deliveryInfo ? (
+                      <div style={{ color: 'red' }}>Error: {sellerInfo.errors.deliveryInfo}</div>
+                    ) : sellerInfo.deliveryInfo && sellerInfo.deliveryInfo.length > 0 ? (
+                      <div className="seller-info-grid">
+                        {sellerInfo.deliveryInfo.map((info, idx) => (
+                          <div key={idx} className="seller-info-card">
+                            <div className="seller-info-row">
+                              <strong>Delivery Reliability:</strong> {info.delivery_reliability || 0}%
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Delivery Reliability (90 dagen):</strong> {info.delivery_reliability_90_days || 0}%
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Total Emails Sent:</strong> {info.total_email_sent || 0}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Answered:</strong> {info.answered || 0}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Not Answered:</strong> {info.not_answered || 0}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Received:</strong> {info.received || 0}
+                            </div>
+                            <div className="seller-info-row">
+                              <strong>Not Received:</strong> {info.not_received || 0}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>Geen delivery data beschikbaar</div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

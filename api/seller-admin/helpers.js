@@ -3,7 +3,8 @@
  * Handles authentication and HTTP requests to the external SDeal Admin API
  */
 
-const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1';
+// Base URL should end without trailing slash, endpoints will start with /
+const SELLER_ADMIN_API_BASE_URL = (process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1').replace(/\/$/, '');
 const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
 
 /**
@@ -17,12 +18,16 @@ const getAuthHeaders = () => {
     throw new Error('Seller Admin API access token is not configured. Please set SELLER_ADMIN_ACCESS_TOKEN environment variable.');
   }
 
+  // User-Agent can be customized via environment variable, or use default browser-like one
+  const userAgent = process.env.SELLER_ADMIN_USER_AGENT || 
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
   return {
     'Authorization': accessToken,
     'Token-Type': 'admin',
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': userAgent,
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br',
     'Connection': 'keep-alive',
@@ -49,9 +54,14 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       }
     });
     
-    const url = `${SELLER_ADMIN_API_BASE_URL}${endpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
+    // Ensure endpoint starts with / if base URL doesn't end with /
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
     
     console.log(`[Seller Admin API] Making request to: ${url}`);
+    console.log(`[Seller Admin API] Base URL: ${SELLER_ADMIN_API_BASE_URL}`);
+    console.log(`[Seller Admin API] Endpoint: ${cleanEndpoint}`);
+    console.log(`[Seller Admin API] Full URL: ${url}`);
     console.log(`[Seller Admin API] Headers:`, {
       Authorization: headers.Authorization ? `${headers.Authorization.substring(0, 10)}...` : 'missing',
       'Token-Type': headers['Token-Type'],
