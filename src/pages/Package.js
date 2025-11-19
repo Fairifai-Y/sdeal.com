@@ -421,14 +421,21 @@ const Package = () => {
   };
 
 
-  // Payment functionality - kept for future use
-  // Uncomment and use when payment button is needed again
-  /*
+  // Payment functionality
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  
   const handlePaymentClick = async () => {
     if (!packageSelectionId) {
       console.error('No package selection ID available');
+      setErrors({ 
+        ...errors, 
+        payment: 'No package selection found. Please try submitting again.' 
+      });
       return;
     }
+
+    setIsCreatingPayment(true);
+    setErrors({ ...errors, payment: '' });
 
     try {
       const response = await fetch('/api/package/create-payment', {
@@ -476,9 +483,9 @@ const Package = () => {
         ...errors, 
         payment: error.message || 'Failed to create payment. Please try again.' 
       });
+      setIsCreatingPayment(false);
     }
   };
-  */
 
   // Show payment success page if payment=success in URL
   if (paymentSuccess) {
@@ -511,6 +518,23 @@ const Package = () => {
           <div className="success-icon">✓</div>
           <h1>{getTranslation(currentLanguage, 'packageCTANote')}</h1>
           <p>Your package selection has been confirmed. You will receive a confirmation email shortly.</p>
+          
+          {packageSelectionId && (
+            <div style={{ marginTop: '30px' }}>
+              <button
+                onClick={handlePaymentClick}
+                className="cta-button"
+                disabled={isCreatingPayment}
+                style={{ marginTop: '20px' }}
+              >
+                {isCreatingPayment 
+                  ? 'Processing...' 
+                  : getTranslation(currentLanguage, 'proceedToPayment')
+                }
+              </button>
+            </div>
+          )}
+          
           {errors.payment && (
             <div className="error-message" style={{ marginTop: '20px' }}>
               {errors.payment}

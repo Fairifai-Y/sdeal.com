@@ -25,7 +25,26 @@ module.exports = async (req, res) => {
   const testUrl = `${SELLER_ADMIN_API_BASE_URL}/sportdeal-balancemanagement/balance/search/?searchCriteria[filter_groups][0][filters][0][field]=supplier_id&searchCriteria[filter_groups][0][filters][0][value]=${testSupplierId}&searchCriteria[filter_groups][0][filters][0][condition_type]=eq`;
 
   // Different header format variations to try
+  const browserHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache'
+  };
+
   const headerVariations = [
+    {
+      name: 'Current format + Browser headers',
+      headers: {
+        'Authorization': ADMIN_ACCESS_TOKEN,
+        'Token-Type': 'admin',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...browserHeaders
+      }
+    },
     {
       name: 'Current format (Authorization + Token-Type)',
       headers: {
@@ -36,47 +55,42 @@ module.exports = async (req, res) => {
       }
     },
     {
-      name: 'Lowercase token-type',
+      name: 'Lowercase token-type + Browser headers',
       headers: {
         'Authorization': ADMIN_ACCESS_TOKEN,
         'token-type': 'admin',
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...browserHeaders
       }
     },
     {
-      name: 'Bearer token format',
+      name: 'Bearer token format + Browser headers',
       headers: {
         'Authorization': `Bearer ${ADMIN_ACCESS_TOKEN}`,
         'Token-Type': 'admin',
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...browserHeaders
       }
     },
     {
-      name: 'Only Authorization header',
+      name: 'Only Authorization + Browser headers',
       headers: {
         'Authorization': ADMIN_ACCESS_TOKEN,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...browserHeaders
       }
     },
     {
-      name: 'X-Auth-Token format',
+      name: 'X-Auth-Token format + Browser headers',
       headers: {
         'X-Auth-Token': ADMIN_ACCESS_TOKEN,
         'Token-Type': 'admin',
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    },
-    {
-      name: 'Custom header name',
-      headers: {
-        'Authorization': ADMIN_ACCESS_TOKEN,
-        'X-Token-Type': 'admin',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...browserHeaders
       }
     }
   ];
@@ -130,16 +144,42 @@ module.exports = async (req, res) => {
   }
 
   const successful = results.find(r => r.status === 'success');
+  const allCloudflareBlocks = results.every(r => 
+    r.response && typeof r.response === 'string' && r.response.includes('Cloudflare')
+  );
+
+  let message = successful 
+    ? `Found working format: ${successful.name}` 
+    : 'None of the header formats worked.';
+  
+  let recommendation = successful 
+    ? `Use this header format: ${JSON.stringify(successful.headers, null, 2)}`
+    : 'Please verify the access token is correct and has the right permissions';
+
+  if (allCloudflareBlocks) {
+    message = 'All requests are being blocked by Cloudflare. This is not an authentication issue.';
+    recommendation = `Cloudflare is blocking all requests from Vercel serverless functions. The API administrator needs to:
+1. Whitelist Vercel IP addresses in Cloudflare (Security → WAF → IP Access Rules)
+2. Adjust Cloudflare Bot Protection settings to allow API requests from serverless functions
+3. Or create an exception for /rest/V1/* endpoints in Cloudflare
+
+See CLOUDFLARE_BLOCK_SOLUTION.md for detailed instructions.
+
+Note: The x-vercel-id header in requests identifies them as coming from Vercel, which Cloudflare may be using to block them.`;
+  }
 
   res.json({
     success: !!successful,
-    message: successful 
-      ? `Found working format: ${successful.name}` 
-      : 'None of the header formats worked. Check the access token validity.',
+    message: message,
     results: results,
-    recommendation: successful 
-      ? `Use this header format: ${JSON.stringify(successful.headers, null, 2)}`
-      : 'Please verify the access token is correct and has the right permissions'
+    recommendation: recommendation,
+    isCloudflareBlock: allCloudflareBlocks,
+    nextSteps: allCloudflareBlocks ? [
+      'Contact the API administrator (sportdeal.nl)',
+      'Request whitelisting of Vercel IP addresses in Cloudflare',
+      'Or ask them to adjust Cloudflare bot protection settings',
+      'Alternative: Use a proxy server or API gateway that is already whitelisted'
+    ] : []
   });
 };
 
