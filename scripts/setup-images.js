@@ -27,7 +27,17 @@ const copyImages = () => {
     return;
   }
   
+  // Check if destination directory exists and has files (skip if already set up)
+  if (fs.existsSync(reactImagesDir)) {
+    const existingImages = fs.readdirSync(reactImagesDir).filter(f => f.match(/\.(png|jpg|jpeg|gif|svg)$/i));
+    if (existingImages.length > 0) {
+      console.log(`Images already exist in ${reactImagesDir} (${existingImages.length} files). Skipping copy.`);
+      return;
+    }
+  }
+  
   const images = fs.readdirSync(originalImagesDir);
+  let copiedCount = 0;
   
   images.forEach(image => {
     if (image.match(/\.(png|jpg|jpeg|gif|svg)$/i)) {
@@ -35,8 +45,14 @@ const copyImages = () => {
       const sourcePath = path.join(originalImagesDir, image);
       const destPath = path.join(reactImagesDir, image);
       
+      // Skip if already exists
+      if (fs.existsSync(destPath)) {
+        return;
+      }
+      
       try {
         fs.copyFileSync(sourcePath, destPath);
+        copiedCount++;
         console.log(`Copied ${image} to public/images/`);
       } catch (err) {
         console.error(`Error copying ${image}:`, err.message);
@@ -45,15 +61,21 @@ const copyImages = () => {
       // Copy logo to assets for import
       if (image.toLowerCase().includes('logo')) {
         const assetsDestPath = path.join(assetsImagesDir, image);
-        try {
-          fs.copyFileSync(sourcePath, assetsDestPath);
-          console.log(`Copied ${image} to src/assets/images/`);
-        } catch (err) {
-          console.error(`Error copying ${image} to assets:`, err.message);
+        if (!fs.existsSync(assetsDestPath)) {
+          try {
+            fs.copyFileSync(sourcePath, assetsDestPath);
+            console.log(`Copied ${image} to src/assets/images/`);
+          } catch (err) {
+            console.error(`Error copying ${image} to assets:`, err.message);
+          }
         }
       }
     }
   });
+  
+  if (copiedCount === 0) {
+    console.log('No new images to copy. All images are already in place.');
+  }
 };
 
 // Main execution

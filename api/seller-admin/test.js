@@ -66,13 +66,49 @@ module.exports = async (req, res) => {
         }
       });
     } catch (error) {
+      // Get more details about the error
+      const errorDetails = {
+        supplierId: testSupplierId,
+        errorMessage: error.message,
+        status: error.status,
+        statusText: error.statusText
+      };
+
+      // Add error details if available
+      if (error.details) {
+        errorDetails.apiErrorDetails = error.details;
+      }
+
+      // Add troubleshooting info based on status code
+      let troubleshooting = {
+        suggestion: 'Check if the access token is valid and has the correct permissions',
+        possibleCauses: []
+      };
+
+      if (error.status === 403) {
+        troubleshooting.suggestion = '403 Forbidden: The access token might be invalid, expired, or lacks permissions';
+        troubleshooting.possibleCauses = [
+          'Access token is invalid or expired',
+          'Access token does not have permission for this endpoint',
+          'Token-Type header might need to be different (case-sensitive?)',
+          'Authorization header format might be incorrect',
+          'The token might need to be prefixed with "Bearer " or another format'
+        ];
+      } else if (error.status === 401) {
+        troubleshooting.suggestion = '401 Unauthorized: Authentication failed';
+        troubleshooting.possibleCauses = [
+          'Access token is missing or incorrect',
+          'Authorization header format is wrong',
+          'Token-Type header is missing or incorrect'
+        ];
+      }
+
       testResults.tests.push({
         name: 'API Connection Test (Balance Endpoint)',
         status: 'failed',
         message: error.message,
-        details: {
-          supplierId: testSupplierId
-        }
+        details: errorDetails,
+        troubleshooting: troubleshooting
       });
     }
 

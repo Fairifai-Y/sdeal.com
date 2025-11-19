@@ -46,6 +46,12 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     const url = `${SELLER_ADMIN_API_BASE_URL}${endpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
     
     console.log(`[Seller Admin API] Making request to: ${url}`);
+    console.log(`[Seller Admin API] Headers:`, {
+      Authorization: headers.Authorization ? `${headers.Authorization.substring(0, 10)}...` : 'missing',
+      'Token-Type': headers['Token-Type'],
+      'Content-Type': headers['Content-Type'],
+      'Accept': headers['Accept']
+    });
     
     const response = await fetch(url, {
       method: 'GET',
@@ -54,8 +60,23 @@ const makeRequest = async (endpoint, queryParams = {}) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[Seller Admin API] Error response: ${response.status} ${response.statusText}`, errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      console.error(`[Seller Admin API] Error response: ${response.status} ${response.statusText}`);
+      console.error(`[Seller Admin API] Error body:`, errorText.substring(0, 500));
+      
+      // Try to parse error as JSON for more details
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson;
+      } catch (e) {
+        // Not JSON, use as is
+      }
+      
+      const error = new Error(`API request failed: ${response.status} ${response.statusText}`);
+      error.status = response.status;
+      error.statusText = response.statusText;
+      error.details = errorDetails;
+      throw error;
     }
 
     const data = await response.json();

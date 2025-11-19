@@ -30,7 +30,8 @@
     "setup-images": "node scripts/setup-images.js",
     "postinstall": "npm run setup-images",
     "prisma:generate": "prisma generate",
-    "vercel-build": "npm install && cd server && npm install && npm run prisma:generate && npm run prisma:deploy && cd .. && npm run prisma:generate && npm run setup-images && npm run build"
+    "vercel-build": "npm install && cd server && npm install && npm run prisma:generate && cd .. && npm run prisma:generate && npm run setup-images && npm run build",
+    "vercel-build:with-migrations": "npm install && cd server && npm install && npm run prisma:generate && npm run prisma:deploy && cd .. && npm run prisma:generate && npm run setup-images && npm run build"
   },
   "eslintConfig": {
     "extends": [

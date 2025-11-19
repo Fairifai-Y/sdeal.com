@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm install",
   "builds": [
     {
       "src": "package.json",
@@ -70,6 +72,10 @@
     {
       "src": "/api/seller-admin/test",
       "dest": "/api/seller-admin/test.js"
+    },
+    {
+      "src": "/api/seller-admin/test-alternative-headers",
+      "dest": "/api/seller-admin/test-alternative-headers.js"
     },
     {
       "src": "/adwords-tool",
