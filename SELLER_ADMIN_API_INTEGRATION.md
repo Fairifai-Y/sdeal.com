@@ -459,6 +459,24 @@ curl "https://your-app.vercel.app/api/seller-admin/delivery-info?supplierId=1773
 - Controleer de Vercel deployment logs voor errors
 - Gebruik de test endpoint om te verifiëren dat alles werkt na deployment
 
+### Cloudflare Block (403 Forbidden met HTML response)
+Als je een 403 Forbidden error krijgt met een Cloudflare HTML pagina, betekent dit dat Cloudflare de requests blokkeert.
+
+**Symptomen:**
+- Error response bevat HTML met "Sorry, you have been blocked"
+- Cloudflare Ray ID in de error
+- Error komt niet van de API zelf maar van Cloudflare
+
+**Oplossing:**
+1. De API administrator moet Vercel IP addresses whitelisten in Cloudflare
+2. Of Cloudflare bot protection aanpassen voor API endpoints
+3. Zie `CLOUDFLARE_BLOCK_SOLUTION.md` voor gedetailleerde instructies
+
+**Wat is al gedaan:**
+- User-Agent en browser headers zijn toegevoegd om requests legitiemer te maken
+- Cloudflare block detection is geïmplementeerd
+- Betere error messages voor dit specifieke probleem
+
 ## Bestandsstructuur
 
 ```

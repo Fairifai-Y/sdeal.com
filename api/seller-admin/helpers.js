@@ -21,7 +21,13 @@ const getAuthHeaders = () => {
     'Authorization': accessToken,
     'Token-Type': 'admin',
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache'
   };
 };
 
@@ -63,6 +69,9 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       console.error(`[Seller Admin API] Error response: ${response.status} ${response.statusText}`);
       console.error(`[Seller Admin API] Error body:`, errorText.substring(0, 500));
       
+      // Check if this is a Cloudflare block
+      const isCloudflareBlock = errorText.includes('Cloudflare') || errorText.includes('cf-error-details') || errorText.includes('Sorry, you have been blocked');
+      
       // Try to parse error as JSON for more details
       let errorDetails = errorText;
       try {
@@ -72,10 +81,16 @@ const makeRequest = async (endpoint, queryParams = {}) => {
         // Not JSON, use as is
       }
       
-      const error = new Error(`API request failed: ${response.status} ${response.statusText}`);
+      let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+      if (isCloudflareBlock) {
+        errorMessage = `Cloudflare is blocking the request. This usually means the request is being flagged as a bot. The API might need to whitelist Vercel's IP addresses or adjust Cloudflare settings.`;
+      }
+      
+      const error = new Error(errorMessage);
       error.status = response.status;
       error.statusText = response.statusText;
       error.details = errorDetails;
+      error.isCloudflareBlock = isCloudflareBlock;
       throw error;
     }
 

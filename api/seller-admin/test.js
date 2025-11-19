@@ -85,14 +85,25 @@ module.exports = async (req, res) => {
         possibleCauses: []
       };
 
-      if (error.status === 403) {
+      if (error.isCloudflareBlock) {
+        troubleshooting.suggestion = 'Cloudflare is blocking the request. This is a security measure, not an authentication issue.';
+        troubleshooting.possibleCauses = [
+          'Vercel serverless function IP addresses need to be whitelisted in Cloudflare',
+          'Cloudflare bot protection is too strict',
+          'Missing or incorrect User-Agent header (now added)',
+          'Cloudflare needs to allow API requests from serverless functions',
+          'Contact the API administrator to whitelist Vercel IPs or adjust Cloudflare settings'
+        ];
+        troubleshooting.solution = 'The API administrator needs to whitelist Vercel\'s IP addresses in Cloudflare or adjust the bot protection settings to allow API requests from serverless functions.';
+      } else if (error.status === 403) {
         troubleshooting.suggestion = '403 Forbidden: The access token might be invalid, expired, or lacks permissions';
         troubleshooting.possibleCauses = [
           'Access token is invalid or expired',
           'Access token does not have permission for this endpoint',
           'Token-Type header might need to be different (case-sensitive?)',
           'Authorization header format might be incorrect',
-          'The token might need to be prefixed with "Bearer " or another format'
+          'The token might need to be prefixed with "Bearer " or another format',
+          'Cloudflare might be blocking the request (check if error.details contains Cloudflare HTML)'
         ];
       } else if (error.status === 401) {
         troubleshooting.suggestion = '401 Unauthorized: Authentication failed';
