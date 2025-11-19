@@ -52,6 +52,26 @@
       "dest": "/api/admin/search-customers.js"
     },
     {
+      "src": "/api/seller-admin/orders",
+      "dest": "/api/seller-admin/orders.js"
+    },
+    {
+      "src": "/api/seller-admin/order",
+      "dest": "/api/seller-admin/order.js"
+    },
+    {
+      "src": "/api/seller-admin/balance",
+      "dest": "/api/seller-admin/balance.js"
+    },
+    {
+      "src": "/api/seller-admin/delivery-info",
+      "dest": "/api/seller-admin/delivery-info.js"
+    },
+    {
+      "src": "/api/seller-admin/test",
+      "dest": "/api/seller-admin/test.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },
