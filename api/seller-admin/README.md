@@ -9,7 +9,7 @@ Deze directory bevat de integratie met de externe SDeal Seller Admin API.
 Voeg toe aan je `.env` bestand of Vercel environment variables:
 
 ```env
-SELLER_ADMIN_API_BASE_URL=https://www.sportdeal.nl/rest/V1
+SELLER_ADMIN_API_BASE_URL=https://www.sdeal.nl/rest/V1
 SELLER_ADMIN_ACCESS_TOKEN=your_access_token_here
 ```
 

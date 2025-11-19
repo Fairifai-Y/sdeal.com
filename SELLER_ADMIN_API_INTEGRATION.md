@@ -4,7 +4,7 @@ Deze guide beschrijft hoe de Seller Admin API geïntegreerd is in het SDeal proj
 
 ## Overzicht
 
-De Seller Admin API integratie maakt verbinding met de externe SDeal Admin API op `sportdeal.nl` om ordergegevens, balance informatie en delivery statistieken op te halen voor sellers.
+De Seller Admin API integratie maakt verbinding met de externe SDeal Admin API op `sdeal.nl` om ordergegevens, balance informatie en delivery statistieken op te halen voor sellers.
 
 ## Configuratie
 
@@ -13,7 +13,7 @@ De Seller Admin API integratie maakt verbinding met de externe SDeal Admin API o
 Voeg de volgende environment variabelen toe aan je `.env` bestand of Vercel environment settings:
 
 ```env
-SELLER_ADMIN_API_BASE_URL=https://www.sportdeal.nl/rest/V1
+SELLER_ADMIN_API_BASE_URL=https://www.sdeal.nl/rest/V1
 SELLER_ADMIN_ACCESS_TOKEN=eqvh4bios3s7zf9znksr2rbgqsyel9hw
 ```
 
@@ -384,7 +384,7 @@ Deze endpoint:
   "message": "All tests passed! API is configured correctly.",
   "results": {
     "configuration": {
-      "baseUrl": "https://www.sportdeal.nl/rest/V1",
+      "baseUrl": "https://www.sdeal.nl/rest/V1",
       "hasAccessToken": true,
       "accessTokenLength": 32
     },

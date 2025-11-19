@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
     });
   }
 
-  const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sportdeal.nl/rest/V1';
+  const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1';
   const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
   const testSupplierId = req.query.supplierId || '1773';
 
@@ -202,7 +202,7 @@ Note: The x-vercel-id header in requests identifies them as coming from Vercel, 
     recommendation: recommendation,
     isCloudflareBlock: allCloudflareBlocks,
     nextSteps: allCloudflareBlocks ? [
-      'Contact the API administrator (sportdeal.nl)',
+      'Contact the API administrator (sdeal.nl)',
       'Request whitelisting of Vercel IP addresses in Cloudflare',
       'Or ask them to adjust Cloudflare bot protection settings',
       'Alternative: Use a proxy server or API gateway that is already whitelisted'

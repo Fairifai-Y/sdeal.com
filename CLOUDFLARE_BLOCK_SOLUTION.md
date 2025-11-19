@@ -8,7 +8,7 @@ De Seller Admin API geeft een **403 Forbidden** error, maar dit komt niet van de
 
 De error response bevat een Cloudflare HTML pagina met de boodschap:
 - "Sorry, you have been blocked"
-- "You are unable to access sportdeal.nl"
+- "You are unable to access sdeal.nl"
 - Cloudflare Ray ID wordt getoond
 
 ## Oplossingen
@@ -51,7 +51,7 @@ Het IP dat je hebt gewhitelist (`216.150.1.1`) is **niet** het IP dat Vercel geb
 
 1. **Login in Cloudflare Dashboard:**
    - Ga naar https://dash.cloudflare.com
-   - Selecteer je domain (sportdeal.nl)
+   - Selecteer je domain (sdeal.nl)
 
 2. **Navigeer naar Security → WAF:**
    - Klik op "Security" in de linker sidebar
@@ -129,13 +129,34 @@ Het IP dat je hebt gewhitelist (`216.150.1.1`) is **niet** het IP dat Vercel geb
   - Allow rules moeten een hogere prioriteit hebben dan block rules
   - Zet Allow rules bovenaan in de lijst
 
-### Oplossing 2: Cloudflare Bot Protection Aanpassen
+### Oplossing 2: Cloudflare Bot Protection Aanpassen (BELANGRIJK!)
+
+**⚠️ Bot Protection kan IP Access Rules overschrijven!**
+
+Als je IP whitelist actief is maar requests nog steeds worden geblokkeerd, is dit waarschijnlijk de oorzaak.
 
 1. **Ga naar Security → Bots**
-2. **Pas de bot protection aan:**
-   - Zet "Super Bot Fight Mode" uit voor API endpoints
-   - Of maak een exception voor `/rest/V1/*` endpoints
+2. **Check welke Bot Protection actief is:**
+   - Super Bot Fight Mode
+   - Bot Fight Mode
+   - JavaScript Challenge
+   
+3. **Maak een Exception voor API endpoints:**
+   - Klik op "Create exception" of "Add exception"
+   - **Path:** `/rest/V1/*`
+   - **Action:** Allow / Bypass
+   - **Note:** "Allow API requests from Vercel"
+   - Klik op "Save"
+
+4. **Of pas Bot Protection aan:**
+   - Zet "Super Bot Fight Mode" uit voor `/rest/V1/*` paths
+   - Of zet Bot Protection volledig uit voor API endpoints
    - Pas "Bot Fight Mode" aan om API requests toe te staan
+
+**Waarom dit belangrijk is:**
+- Bot Protection wordt geëvalueerd VOORDAT IP Access Rules
+- Zelfs met IP whitelist kan Bot Protection requests blokkeren
+- API requests hebben geen JavaScript, dus Bot Protection ziet ze als bots
 
 ### Oplossing 3: API Gateway / Proxy
 
@@ -167,7 +188,7 @@ Als Cloudflare nog steeds blokkeert, moet de API administrator de bovenstaande s
 
 ## Contact
 
-Neem contact op met de API administrator (sportdeal.nl) om:
+Neem contact op met de API administrator (sdeal.nl) om:
 1. Vercel IP addresses te whitelisten
 2. Cloudflare bot protection aan te passen voor API endpoints
 3. Of een alternatieve toegangsmethode te bespreken

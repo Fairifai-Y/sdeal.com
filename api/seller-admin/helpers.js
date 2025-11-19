@@ -3,7 +3,7 @@
  * Handles authentication and HTTP requests to the external SDeal Admin API
  */
 
-const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sportdeal.nl/rest/V1';
+const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1';
 const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
 
 /**
