@@ -136,7 +136,9 @@ const Admin = () => {
     setSelectedSeller(sellerId);
     
     try {
+      console.log(`[Admin] Fetching seller info for ID: ${sellerId}`);
       // Fetch all seller info in parallel
+      // Note: These endpoints automatically use the proxy if PROXY_BASE_URL is configured
       const [balanceRes, ordersRes, deliveryRes] = await Promise.allSettled([
         fetch(`/api/seller-admin/balance?supplierId=${sellerId}`),
         fetch(`/api/seller-admin/orders?supplierId=${sellerId}&page=1&pageSize=10`),

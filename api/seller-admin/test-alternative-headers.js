@@ -1,7 +1,10 @@
 /**
  * Alternative header format test endpoint
  * Tests different header formats to find the correct one
+ * NOTE: This endpoint now uses the proxy if PROXY_BASE_URL is configured
  */
+
+const { makeRequest } = require('./helpers');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
@@ -11,7 +14,7 @@ module.exports = async (req, res) => {
     });
   }
 
-  const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1';
+  const PROXY_BASE_URL = process.env.PROXY_BASE_URL || '';
   const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
   const testSupplierId = req.query.supplierId || '1773';
 
@@ -22,6 +25,50 @@ module.exports = async (req, res) => {
     });
   }
 
+  // If proxy is configured, use makeRequest which handles proxy automatically
+  if (PROXY_BASE_URL) {
+    try {
+      const balanceData = await makeRequest('/sportdeal-balancemanagement/balance/search/', {
+        'searchCriteria[filter_groups][0][filters][0][field]': 'supplier_id',
+        'searchCriteria[filter_groups][0][filters][0][value]': testSupplierId,
+        'searchCriteria[filter_groups][0][filters][0][condition_type]': 'eq'
+      });
+
+      return res.json({
+        success: true,
+        message: 'Proxy is configured and working! Request succeeded via proxy.',
+        results: [{
+          name: 'Proxy Request',
+          status: 'success',
+          statusCode: 200,
+          message: 'Successfully connected via proxy',
+          details: {
+            proxyUrl: PROXY_BASE_URL,
+            hasData: !!balanceData.items,
+            itemCount: balanceData.items ? balanceData.items.length : 0
+          }
+        }],
+        recommendation: 'Proxy is working correctly. All API requests will now go through the proxy.'
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Proxy is configured but request failed',
+        results: [{
+          name: 'Proxy Request',
+          status: 'failed',
+          statusCode: error.status || 500,
+          statusText: error.statusText || 'Unknown error',
+          error: error.message,
+          details: error.details
+        }],
+        recommendation: 'Check proxy configuration and ensure PROXY_SECRET is correct'
+      });
+    }
+  }
+
+  // If no proxy, test different header formats (original behavior)
+  const SELLER_ADMIN_API_BASE_URL = process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1';
   const testUrl = `${SELLER_ADMIN_API_BASE_URL}/sportdeal-balancemanagement/balance/search/?searchCriteria[filter_groups][0][filters][0][field]=supplier_id&searchCriteria[filter_groups][0][filters][0][value]=${testSupplierId}&searchCriteria[filter_groups][0][filters][0][condition_type]=eq`;
 
   // Different header format variations to try
@@ -185,12 +232,18 @@ module.exports = async (req, res) => {
 
   if (allCloudflareBlocks) {
     message = 'All requests are being blocked by Cloudflare. This is not an authentication issue.';
-    recommendation = `Cloudflare is blocking all requests from Vercel serverless functions. The API administrator needs to:
-1. Whitelist Vercel IP addresses in Cloudflare (Security → WAF → IP Access Rules)
-2. Adjust Cloudflare Bot Protection settings to allow API requests from serverless functions
-3. Or create an exception for /rest/V1/* endpoints in Cloudflare
+    recommendation = `Cloudflare is blocking all requests from Vercel serverless functions. 
 
-See CLOUDFLARE_BLOCK_SOLUTION.md for detailed instructions.
+SOLUTION: Configure a proxy server to bypass Cloudflare blocking.
+
+1. Set PROXY_BASE_URL environment variable (e.g., https://caityapps.com/proxy)
+2. Set PROXY_SECRET environment variable (your proxy authentication secret)
+3. The proxy server should forward requests to sdeal.nl/rest/V1
+
+Alternative solutions:
+- Whitelist Vercel IP addresses in Cloudflare (Security → WAF → IP Access Rules)
+- Adjust Cloudflare Bot Protection settings to allow API requests from serverless functions
+- Create an exception for /rest/V1/* endpoints in Cloudflare
 
 Note: The x-vercel-id header in requests identifies them as coming from Vercel, which Cloudflare may be using to block them.`;
   }
@@ -202,10 +255,10 @@ Note: The x-vercel-id header in requests identifies them as coming from Vercel, 
     recommendation: recommendation,
     isCloudflareBlock: allCloudflareBlocks,
     nextSteps: allCloudflareBlocks ? [
-      'Contact the API administrator (sdeal.nl)',
-      'Request whitelisting of Vercel IP addresses in Cloudflare',
+      'Configure PROXY_BASE_URL and PROXY_SECRET in Vercel environment variables',
+      'Or contact the API administrator (sdeal.nl) to whitelist Vercel IP addresses',
       'Or ask them to adjust Cloudflare bot protection settings',
-      'Alternative: Use a proxy server or API gateway that is already whitelisted'
+      'The proxy server should forward requests to sdeal.nl/rest/V1'
     ] : []
   });
 };

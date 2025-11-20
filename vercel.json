@@ -82,6 +82,10 @@
       "dest": "/api/seller-admin/test-endpoints.js"
     },
     {
+      "src": "/api/seller-admin/test-proxy",
+      "dest": "/api/seller-admin/test-proxy.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },
