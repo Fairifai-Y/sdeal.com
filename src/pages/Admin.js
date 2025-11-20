@@ -169,6 +169,14 @@ const Admin = () => {
       if (ordersRes.status === 'fulfilled' && ordersRes.value.ok) {
         const ordersData = await ordersRes.value.json();
         if (ordersData.success) {
+          // Sort orders by created_at date (newest first)
+          if (ordersData.data && ordersData.data.items && Array.isArray(ordersData.data.items)) {
+            ordersData.data.items.sort((a, b) => {
+              const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return dateB - dateA; // Newest first (descending)
+            });
+          }
           sellerData.orders = ordersData.data;
         } else {
           sellerData.errors.orders = ordersData.error || 'Failed to fetch orders';
@@ -249,9 +257,20 @@ const Admin = () => {
             <h2>Overzicht</h2>
             {overviewData && (
               <div className="admin-stats-grid">
-                <div className="stat-card">
-                  <h3>Totaal Klanten</h3>
-                  <p className="stat-number">{overviewData.totalCustomers}</p>
+                <div className="stat-card highlight">
+                  <h3>Totaal Balance Sellers</h3>
+                  <p className="stat-number">{overviewData.totalBalanceSellers || 0}</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers met balance record</p>
+                </div>
+                <div className="stat-card highlight">
+                  <h3>Sellers met Orders</h3>
+                  <p className="stat-number">{overviewData.sellersWithOrders || 0}</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers die een order hebben gehad</p>
+                </div>
+                <div className="stat-card highlight">
+                  <h3>New Model Sellers</h3>
+                  <p className="stat-number">{overviewData.newModelCustomers || 0}</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers uit database</p>
                 </div>
                 <div className="stat-card">
                   <h3>Nieuwe Klanten</h3>
@@ -394,7 +413,7 @@ const Admin = () => {
             {!isSearchMode && customersData && (
               <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
                 <div className="stat-card">
-                  <h3>Totaal Klanten</h3>
+                  <h3>New Model Klanten</h3>
                   <p className="stat-number">{customersData.totalCustomers}</p>
                 </div>
                 <div className="stat-card">
@@ -414,7 +433,7 @@ const Admin = () => {
 
             {displayCustomers.length > 0 && (
               <div style={{ marginTop: '30px' }}>
-                <h3>{isSearchMode ? 'Zoekresultaten' : 'Alle Klanten'}</h3>
+                <h3>{isSearchMode ? 'Zoekresultaten' : 'New Model Klanten'}</h3>
                 <div className="admin-table-container">
                   <table className="admin-table">
                     <thead>
