@@ -86,14 +86,14 @@ module.exports = async (req, res) => {
     
     // 2. Get sellers with orders (unique suppliers from orders)
     let sellersWithOrders = 0;
-    let totalOrdersCount = 0;
+    let fetchedOrdersCount = 0; // Count of orders actually fetched and processed
     const ordersCacheKey = 'api_sellers_with_orders';
-    const ordersCountCacheKey = 'api_total_orders_count';
+    const ordersCountCacheKey = 'api_fetched_orders_count';
     
     if (cache[ordersCacheKey] && cache[ordersCountCacheKey] && (now - cache[ordersCacheKey].timestamp) < cacheTTL) {
       sellersWithOrders = cache[ordersCacheKey].value;
-      totalOrdersCount = cache[ordersCountCacheKey].value;
-      console.log('[Overview] Using cached sellers with orders:', sellersWithOrders, 'from', totalOrdersCount, 'orders');
+      fetchedOrdersCount = cache[ordersCountCacheKey].value;
+      console.log('[Overview] Using cached sellers with orders:', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
     } else {
       try {
         const ordersData = await makeRequest('/supplier/orders/', {
@@ -103,14 +103,7 @@ module.exports = async (req, res) => {
         
         if (ordersData && ordersData.items && ordersData.items.length > 0) {
           const uniqueSupplierIds = new Set();
-          let ordersCount = ordersData.items.length;
-          
-          // Get total count from API if available
-          if (ordersData.total_count) {
-            totalOrdersCount = ordersData.total_count;
-          } else {
-            totalOrdersCount = ordersCount; // Start with first page count
-          }
+          fetchedOrdersCount = ordersData.items.length; // Start with first page
           
           ordersData.items.forEach(order => {
             if (order.supplier_id) {
@@ -118,7 +111,7 @@ module.exports = async (req, res) => {
             }
           });
           
-          // Fetch additional pages if needed
+          // Fetch additional pages if needed (max 5 pages = 5000 orders)
           if (ordersData.items.length === 1000 && ordersData.total_count > 1000) {
             const totalPages = Math.ceil(ordersData.total_count / 1000);
             for (let page = 2; page <= Math.min(totalPages, 5); page++) {
@@ -128,7 +121,7 @@ module.exports = async (req, res) => {
                   'searchCriteria[currentPage]': page
                 });
                 if (pageData && pageData.items) {
-                  ordersCount += pageData.items.length;
+                  fetchedOrdersCount += pageData.items.length; // Count actual fetched orders
                   pageData.items.forEach(order => {
                     if (order.supplier_id) {
                       uniqueSupplierIds.add(String(order.supplier_id));
@@ -140,17 +133,13 @@ module.exports = async (req, res) => {
                 break;
               }
             }
-            // If we couldn't get total_count from API, use the sum of fetched pages
-            if (!ordersData.total_count) {
-              totalOrdersCount = ordersCount;
-            }
           }
           
           sellersWithOrders = uniqueSupplierIds.size;
           cache[ordersCacheKey] = { value: sellersWithOrders, timestamp: now };
-          cache[ordersCountCacheKey] = { value: totalOrdersCount, timestamp: now };
+          cache[ordersCountCacheKey] = { value: fetchedOrdersCount, timestamp: now };
           global.apiCache = cache;
-          console.log('[Overview] Fetched sellers with orders (cached):', sellersWithOrders, 'from', totalOrdersCount, 'orders');
+          console.log('[Overview] Fetched sellers with orders (cached):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
         }
       } catch (ordersError) {
         console.error('Error fetching sellers with orders:', ordersError);
@@ -158,7 +147,7 @@ module.exports = async (req, res) => {
           sellersWithOrders = cache[ordersCacheKey].value;
         }
         if (cache[ordersCountCacheKey]) {
-          totalOrdersCount = cache[ordersCountCacheKey].value;
+          fetchedOrdersCount = cache[ordersCountCacheKey].value;
         }
       }
     }
@@ -207,7 +196,7 @@ module.exports = async (req, res) => {
         // Three main seller counts
         totalBalanceSellers, // Sellers with balance record (from balance endpoint)
         sellersWithOrders, // Sellers that have had orders (from orders endpoint)
-        totalOrdersCount, // Total number of orders used to calculate sellersWithOrders
+        fetchedOrdersCount, // Number of orders actually fetched and processed to calculate sellersWithOrders
         newModelCustomers, // Sellers from database (New Model)
         
         // Legacy fields (kept for backwards compatibility)
