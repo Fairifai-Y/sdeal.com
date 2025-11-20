@@ -3,6 +3,12 @@
  * Handles authentication and HTTP requests to the external SDeal Admin API
  */
 
+// Import zlib for gzip decompression
+const zlib = require('zlib');
+const { promisify } = require('util');
+const gunzip = promisify(zlib.gunzip);
+const inflate = promisify(zlib.inflate);
+
 // Proxy configuration
 const PROXY_BASE_URL = process.env.PROXY_BASE_URL || '';
 const PROXY_SECRET = process.env.PROXY_SECRET || '';
@@ -13,6 +19,40 @@ const ORIGINAL_API_BASE_URL = (process.env.SELLER_ADMIN_API_BASE_URL || 'https:/
 // If proxy is configured, use proxy URL, otherwise use original API URL
 const SELLER_ADMIN_API_BASE_URL = PROXY_BASE_URL || ORIGINAL_API_BASE_URL;
 const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
+
+/**
+ * Decompress response if it's gzipped or deflated
+ * @param {ArrayBuffer} buffer - Response buffer
+ * @param {string} contentEncoding - Content-Encoding header value
+ * @returns {Promise<string>} Decompressed text
+ */
+async function decompressIfNeeded(buffer, contentEncoding) {
+  // Check if response starts with gzip magic number (0x1f 0x8b)
+  const uint8Array = new Uint8Array(buffer);
+  const isGzipped = uint8Array.length >= 2 && uint8Array[0] === 0x1f && uint8Array[1] === 0x8b;
+  
+  if (contentEncoding === 'gzip' || isGzipped) {
+    try {
+      const decompressed = await gunzip(Buffer.from(buffer));
+      return decompressed.toString('utf-8');
+    } catch (error) {
+      console.warn('[Seller Admin API] Failed to decompress gzip, trying as plain text:', error.message);
+      // Fallback to plain text
+      return Buffer.from(buffer).toString('utf-8');
+    }
+  } else if (contentEncoding === 'deflate') {
+    try {
+      const decompressed = await inflate(Buffer.from(buffer));
+      return decompressed.toString('utf-8');
+    } catch (error) {
+      console.warn('[Seller Admin API] Failed to decompress deflate, trying as plain text:', error.message);
+      return Buffer.from(buffer).toString('utf-8');
+    }
+  } else {
+    // No compression, return as text
+    return Buffer.from(buffer).toString('utf-8');
+  }
+}
 
 /**
  * Get authentication headers for Seller Admin API requests
@@ -86,6 +126,10 @@ const makeRequest = async (endpoint, queryParams = {}) => {
         // finalHeaders['X-API-Key'] = PROXY_SECRET;
       }
       
+      // Remove Accept-Encoding when using proxy to avoid gzip issues
+      // The proxy should handle compression itself
+      delete finalHeaders['Accept-Encoding'];
+      
       // Keep the original API headers - the proxy should forward these to the target API
       // The Authorization and Token-Type headers will be sent to the proxy,
       // and the proxy should forward them to sdeal.nl/rest/V1
@@ -116,18 +160,30 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       headers: finalHeaders
     });
 
+    // Get response as array buffer first to handle potential gzip compression
+    const contentType = response.headers.get('content-type') || '';
+    const contentEncoding = response.headers.get('content-encoding') || '';
+    
+    let responseText;
+    let responseData;
+    
     if (!response.ok) {
-      const errorText = await response.text();
+      // For error responses, get as text first
+      const buffer = await response.arrayBuffer();
+      responseText = await decompressIfNeeded(buffer, contentEncoding);
+      
       console.error(`[Seller Admin API] Error response: ${response.status} ${response.statusText}`);
-      console.error(`[Seller Admin API] Error body:`, errorText.substring(0, 500));
+      console.error(`[Seller Admin API] Content-Type: ${contentType}`);
+      console.error(`[Seller Admin API] Content-Encoding: ${contentEncoding}`);
+      console.error(`[Seller Admin API] Error body:`, responseText.substring(0, 500));
       
       // Check if this is a Cloudflare block
-      const isCloudflareBlock = errorText.includes('Cloudflare') || errorText.includes('cf-error-details') || errorText.includes('Sorry, you have been blocked');
+      const isCloudflareBlock = responseText.includes('Cloudflare') || responseText.includes('cf-error-details') || responseText.includes('Sorry, you have been blocked');
       
       // Try to parse error as JSON for more details
-      let errorDetails = errorText;
+      let errorDetails = responseText;
       try {
-        const errorJson = JSON.parse(errorText);
+        const errorJson = JSON.parse(responseText);
         errorDetails = errorJson;
       } catch (e) {
         // Not JSON, use as is
@@ -146,8 +202,20 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       throw error;
     }
 
-    const data = await response.json();
-    return data;
+    // For successful responses, handle potential gzip
+    const buffer = await response.arrayBuffer();
+    responseText = await decompressIfNeeded(buffer, contentEncoding);
+    
+    // Try to parse as JSON
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('[Seller Admin API] Failed to parse JSON response:', parseError.message);
+      console.error('[Seller Admin API] Response preview:', responseText.substring(0, 200));
+      throw new Error(`Failed to parse JSON response: ${parseError.message}. Response may be gzipped or invalid JSON.`);
+    }
+    
+    return responseData;
   } catch (error) {
     console.error('[Seller Admin API] Request error:', error);
     throw error;
