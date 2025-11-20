@@ -3,8 +3,15 @@
  * Handles authentication and HTTP requests to the external SDeal Admin API
  */
 
-// Base URL should end without trailing slash, endpoints will start with /
-const SELLER_ADMIN_API_BASE_URL = (process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1').replace(/\/$/, '');
+// Proxy configuration
+const PROXY_BASE_URL = process.env.PROXY_BASE_URL || '';
+const PROXY_SECRET = process.env.PROXY_SECRET || '';
+
+// Original API base URL (the target that the proxy will forward to)
+const ORIGINAL_API_BASE_URL = (process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1').replace(/\/$/, '');
+
+// If proxy is configured, use proxy URL, otherwise use original API URL
+const SELLER_ADMIN_API_BASE_URL = PROXY_BASE_URL || ORIGINAL_API_BASE_URL;
 const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
 
 /**
@@ -56,22 +63,57 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     
     // Ensure endpoint starts with / if base URL doesn't end with /
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
     
-    console.log(`[Seller Admin API] Making request to: ${url}`);
+    let url;
+    let finalHeaders = { ...headers };
+    
+    // If using proxy, construct the request differently
+    if (PROXY_BASE_URL) {
+      // Build the target URL (original API URL + endpoint + query params)
+      const targetUrl = `${ORIGINAL_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
+      
+      // Proxy URL with target URL as query parameter
+      const proxyQueryString = new URLSearchParams();
+      proxyQueryString.append('url', targetUrl);
+      url = `${PROXY_BASE_URL}?${proxyQueryString.toString()}`;
+      
+      // Add proxy secret to headers if configured
+      // Try multiple common header names for proxy authentication
+      if (PROXY_SECRET) {
+        finalHeaders['X-Proxy-Secret'] = PROXY_SECRET;
+        // Also try alternative header names (uncomment if your proxy uses a different name)
+        // finalHeaders['Proxy-Secret'] = PROXY_SECRET;
+        // finalHeaders['X-API-Key'] = PROXY_SECRET;
+      }
+      
+      // Keep the original API headers - the proxy should forward these to the target API
+      // The Authorization and Token-Type headers will be sent to the proxy,
+      // and the proxy should forward them to sdeal.nl/rest/V1
+      
+      console.log(`[Seller Admin API] Using proxy: ${PROXY_BASE_URL}`);
+      console.log(`[Seller Admin API] Target URL: ${targetUrl}`);
+      console.log(`[Seller Admin API] Proxy URL: ${url}`);
+    } else {
+      // Direct request to API
+      url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
+      console.log(`[Seller Admin API] Direct request to: ${url}`);
+    }
+    
     console.log(`[Seller Admin API] Base URL: ${SELLER_ADMIN_API_BASE_URL}`);
     console.log(`[Seller Admin API] Endpoint: ${cleanEndpoint}`);
     console.log(`[Seller Admin API] Full URL: ${url}`);
     console.log(`[Seller Admin API] Headers:`, {
-      Authorization: headers.Authorization ? `${headers.Authorization.substring(0, 10)}...` : 'missing',
-      'Token-Type': headers['Token-Type'],
-      'Content-Type': headers['Content-Type'],
-      'Accept': headers['Accept']
+      Authorization: finalHeaders.Authorization ? `${finalHeaders.Authorization.substring(0, 10)}...` : 'missing',
+      'Token-Type': finalHeaders['Token-Type'],
+      'X-Proxy-Secret': finalHeaders['X-Proxy-Secret'] ? '***' : 'missing',
+      'Content-Type': finalHeaders['Content-Type'],
+      'Accept': finalHeaders['Accept'],
+      'User-Agent': finalHeaders['User-Agent'] ? finalHeaders['User-Agent'].substring(0, 50) + '...' : 'missing'
     });
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: headers
+      headers: finalHeaders
     });
 
     if (!response.ok) {

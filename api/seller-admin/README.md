@@ -8,10 +8,25 @@ Deze directory bevat de integratie met de externe SDeal Seller Admin API.
 
 Voeg toe aan je `.env` bestand of Vercel environment variables:
 
+**Basis configuratie (direct naar API):**
 ```env
 SELLER_ADMIN_API_BASE_URL=https://www.sdeal.nl/rest/V1
 SELLER_ADMIN_ACCESS_TOKEN=your_access_token_here
 ```
+
+**Met proxy server (aanbevolen om Cloudflare blocking te voorkomen):**
+```env
+SELLER_ADMIN_API_BASE_URL=https://www.sdeal.nl/rest/V1
+SELLER_ADMIN_ACCESS_TOKEN=your_access_token_here
+PROXY_BASE_URL=https://caityapps.com/proxy
+PROXY_SECRET=your_proxy_secret_here
+```
+
+**Hoe de proxy werkt:**
+- Als `PROXY_BASE_URL` is ingesteld, worden alle requests via de proxy gestuurd
+- De proxy verwacht het doel-URL als query parameter: `?url=<target_url>`
+- De proxy verwacht authenticatie via header: `X-Proxy-Secret: <PROXY_SECRET>`
+- De originele API headers (Authorization, Token-Type) worden doorgegeven aan de proxy, die ze doorstuurt naar het doel
 
 ### 2. Endpoints Gebruiken
 
