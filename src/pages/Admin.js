@@ -265,7 +265,14 @@ const Admin = () => {
                 <div className="stat-card highlight">
                   <h3>Sellers met Orders</h3>
                   <p className="stat-number">{overviewData.sellersWithOrders || 0}</p>
-                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers die een order hebben gehad</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    Sellers die een order hebben gehad
+                    {overviewData.totalOrdersCount && (
+                      <span style={{ display: 'block', marginTop: '3px' }}>
+                        (uit {overviewData.totalOrdersCount.toLocaleString('nl-NL')} orders)
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div className="stat-card highlight">
                   <h3>New Model Sellers</h3>

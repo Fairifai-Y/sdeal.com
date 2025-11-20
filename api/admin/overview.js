@@ -86,11 +86,14 @@ module.exports = async (req, res) => {
     
     // 2. Get sellers with orders (unique suppliers from orders)
     let sellersWithOrders = 0;
+    let totalOrdersCount = 0;
     const ordersCacheKey = 'api_sellers_with_orders';
+    const ordersCountCacheKey = 'api_total_orders_count';
     
-    if (cache[ordersCacheKey] && (now - cache[ordersCacheKey].timestamp) < cacheTTL) {
+    if (cache[ordersCacheKey] && cache[ordersCountCacheKey] && (now - cache[ordersCacheKey].timestamp) < cacheTTL) {
       sellersWithOrders = cache[ordersCacheKey].value;
-      console.log('[Overview] Using cached sellers with orders:', sellersWithOrders);
+      totalOrdersCount = cache[ordersCountCacheKey].value;
+      console.log('[Overview] Using cached sellers with orders:', sellersWithOrders, 'from', totalOrdersCount, 'orders');
     } else {
       try {
         const ordersData = await makeRequest('/supplier/orders/', {
@@ -100,6 +103,15 @@ module.exports = async (req, res) => {
         
         if (ordersData && ordersData.items && ordersData.items.length > 0) {
           const uniqueSupplierIds = new Set();
+          let ordersCount = ordersData.items.length;
+          
+          // Get total count from API if available
+          if (ordersData.total_count) {
+            totalOrdersCount = ordersData.total_count;
+          } else {
+            totalOrdersCount = ordersCount; // Start with first page count
+          }
+          
           ordersData.items.forEach(order => {
             if (order.supplier_id) {
               uniqueSupplierIds.add(String(order.supplier_id));
@@ -116,6 +128,7 @@ module.exports = async (req, res) => {
                   'searchCriteria[currentPage]': page
                 });
                 if (pageData && pageData.items) {
+                  ordersCount += pageData.items.length;
                   pageData.items.forEach(order => {
                     if (order.supplier_id) {
                       uniqueSupplierIds.add(String(order.supplier_id));
@@ -127,17 +140,25 @@ module.exports = async (req, res) => {
                 break;
               }
             }
+            // If we couldn't get total_count from API, use the sum of fetched pages
+            if (!ordersData.total_count) {
+              totalOrdersCount = ordersCount;
+            }
           }
           
           sellersWithOrders = uniqueSupplierIds.size;
           cache[ordersCacheKey] = { value: sellersWithOrders, timestamp: now };
+          cache[ordersCountCacheKey] = { value: totalOrdersCount, timestamp: now };
           global.apiCache = cache;
-          console.log('[Overview] Fetched sellers with orders (cached):', sellersWithOrders);
+          console.log('[Overview] Fetched sellers with orders (cached):', sellersWithOrders, 'from', totalOrdersCount, 'orders');
         }
       } catch (ordersError) {
         console.error('Error fetching sellers with orders:', ordersError);
         if (cache[ordersCacheKey]) {
           sellersWithOrders = cache[ordersCacheKey].value;
+        }
+        if (cache[ordersCountCacheKey]) {
+          totalOrdersCount = cache[ordersCountCacheKey].value;
         }
       }
     }
@@ -159,9 +180,6 @@ module.exports = async (req, res) => {
     const newCustomers = allSelections.filter(s => s.isNewCustomer).length;
     const existingCustomers = newModelCustomers - newCustomers;
     const withRecurring = allSelections.filter(s => s.mollieMandateId !== null).length;
-    
-    // Use API total if available, otherwise use database count
-    const totalCustomers = totalCustomersFromAPI > 0 ? totalCustomersFromAPI : newModelCustomers;
 
     // Stats by package
     const statsByPackage = {
@@ -189,6 +207,7 @@ module.exports = async (req, res) => {
         // Three main seller counts
         totalBalanceSellers, // Sellers with balance record (from balance endpoint)
         sellersWithOrders, // Sellers that have had orders (from orders endpoint)
+        totalOrdersCount, // Total number of orders used to calculate sellersWithOrders
         newModelCustomers, // Sellers from database (New Model)
         
         // Legacy fields (kept for backwards compatibility)
