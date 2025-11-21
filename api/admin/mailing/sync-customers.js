@@ -223,17 +223,33 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
         // Log first order structure to see what fields are available
         if (page === 1 && orders.length > 0) {
           console.log(`[Sync Customers] First order structure:`, Object.keys(orders[0]));
-          console.log(`[Sync Customers] First order sample:`, JSON.stringify(orders[0], null, 2).substring(0, 500));
+          console.log(`[Sync Customers] First order sample:`, JSON.stringify(orders[0], null, 2).substring(0, 1000));
+          
+          // Also log a few more orders to see if structure varies
+          if (orders.length > 1) {
+            console.log(`[Sync Customers] Second order keys:`, Object.keys(orders[1]));
+          }
+          if (orders.length > 2) {
+            console.log(`[Sync Customers] Third order keys:`, Object.keys(orders[2]));
+          }
         }
 
         // Extract customer info from orders
         // Note: /supplier/orders/ might not have customer_email in list, need to check order details
         let customersFoundInPage = 0;
+        let skippedNoEmail = 0;
+        
         for (const order of orders) {
           // Try different field names for customer email from order list
-          let email = order.customer_email || order.customerEmail || 
+          // Check all possible locations where email might be stored
+          let email = order.customer_email || 
+                     order.customerEmail || 
+                     order.email ||
+                     order.customer_email_address ||
                      (order.extension_attributes?.customer_email) ||
                      (order.billing_address?.email) ||
+                     (order.shipping_address?.email) ||
+                     (order.address?.email) ||
                      order.customer_name; // Sometimes email is in customer_name
           
           // If no email in list, try to get from order details (but this is slow for 75k orders)
@@ -243,6 +259,11 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
             if (order.customer_name && order.customer_name.includes('@')) {
               email = order.customer_name;
             } else {
+              // Log missing email for first few orders to debug
+              if (skippedNoEmail < 3 && page <= 2) {
+                console.log(`[Sync Customers] Order ${order.id || order.entity_id || 'unknown'} has no email. Available fields:`, Object.keys(order).filter(k => k.toLowerCase().includes('email') || k.toLowerCase().includes('customer') || k.toLowerCase().includes('name')));
+              }
+              skippedNoEmail++;
               // Skip this order - no email available
               continue;
             }
@@ -283,7 +304,7 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
           }
         }
         
-        console.log(`[Sync Customers] Page ${page}: Extracted ${customersFoundInPage} new customers from ${orders.length} orders`);
+        console.log(`[Sync Customers] Page ${page}: Extracted ${customersFoundInPage} new customers from ${orders.length} orders (${skippedNoEmail} skipped - no email)`);
 
         syncStatus.progress.processed += orders.length;
         console.log(`[Sync Customers] Page ${page}: Found ${uniqueCustomers.size} unique customers so far`);
@@ -361,12 +382,12 @@ async function syncCustomersFromMagento(options = {}) {
   syncStatus.errors = [];
 
   try {
-    // Try different customer endpoints (like the working implementation)
-    // Note: These endpoints might not be available with current credentials
-    // We'll fallback to orders-based sync which is more reliable
+    // Try different customer endpoints
+    // Magento REST API customers endpoints (require Bearer token if configured)
     const endpointsToTry = [
+      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
       { endpoint: '/customers', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
-      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
+      { endpoint: '/customers/list', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
     ];
 
     let firstPageData = null;
@@ -446,13 +467,23 @@ async function syncCustomersFromMagento(options = {}) {
     }
 
     if (!firstPageData || !workingEndpoint) {
-      console.warn('[Sync Customers] All customer endpoints failed. Falling back to orders-based sync...');
+      console.warn('[Sync Customers] ⚠️ All customer endpoints failed. Possible reasons:');
+      console.warn('[Sync Customers] 1. MAGENTO_BEARER_TOKEN might be required but not set');
+      console.warn('[Sync Customers] 2. Customer endpoints might not be available in this Magento instance');
+      console.warn('[Sync Customers] 3. Endpoints might require different authentication');
       console.warn('[Sync Customers] Last error:', lastError?.message || 'Unknown error');
       if (lastError?.status) {
         console.warn('[Sync Customers] HTTP status:', lastError.status, lastError.statusText);
       }
+      if (lastError?.details) {
+        const detailsStr = typeof lastError.details === 'string' 
+          ? lastError.details.substring(0, 300) 
+          : JSON.stringify(lastError.details).substring(0, 300);
+        console.warn('[Sync Customers] Error details:', detailsStr);
+      }
       // Fallback to orders-based sync (this works because /supplier/orders/ endpoint is available)
-      console.log('[Sync Customers] Switching to orders-based sync method...');
+      console.log('[Sync Customers] 🔄 Switching to orders-based sync method...');
+      console.log('[Sync Customers] Note: This will extract customers from order data, which may be slower but more reliable.');
       return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
     }
 

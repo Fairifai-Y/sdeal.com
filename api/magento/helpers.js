@@ -127,9 +127,13 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     };
     
-    // Add Bearer token if configured (optional for Magento API)
+    // Add Bearer token if configured (REQUIRED for most Magento REST API endpoints)
     if (MAGENTO_BEARER_TOKEN) {
       headers['Authorization'] = `Bearer ${MAGENTO_BEARER_TOKEN}`;
+      console.log('[Magento API] Using Bearer token for authentication');
+    } else {
+      console.warn('[Magento API] ⚠️ No MAGENTO_BEARER_TOKEN configured. Customer endpoints may require authentication.');
+      console.warn('[Magento API] Set MAGENTO_BEARER_TOKEN environment variable if customer endpoints fail.');
     }
     
     // Build query string from queryParams object
