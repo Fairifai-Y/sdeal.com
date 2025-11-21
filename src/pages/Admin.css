@@ -570,3 +570,88 @@
   }
 }
 
+/* Mailing Section Styles */
+.admin-submenu {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.admin-submenu-button {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-submenu-button:hover {
+  border-color: #e2603f;
+  color: #e2603f;
+}
+
+.admin-submenu-button.active {
+  background: #e2603f;
+  border-color: #e2603f;
+  color: white;
+}
+
+.admin-button-primary {
+  padding: 10px 20px;
+  background: #e2603f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-button-primary:hover {
+  background: #d55a38;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(226, 96, 63, 0.3);
+}
+
+.admin-button-secondary {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-button-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.admin-button-small {
+  padding: 6px 12px;
+  background: #e2603f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-button-small:hover {
+  background: #d55a38;
+}
+

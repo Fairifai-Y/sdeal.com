@@ -54,6 +54,34 @@
       "dest": "/api/admin/search-customers.js"
     },
     {
+      "src": "/api/admin/mailing/consumers",
+      "dest": "/api/admin/mailing/consumers.js"
+    },
+    {
+      "src": "/api/admin/mailing/templates",
+      "dest": "/api/admin/mailing/templates.js"
+    },
+    {
+      "src": "/api/admin/mailing/workflows",
+      "dest": "/api/admin/mailing/workflows.js"
+    },
+    {
+      "src": "/api/admin/mailing/campaigns",
+      "dest": "/api/admin/mailing/campaigns.js"
+    },
+    {
+      "src": "/api/admin/mailing/bounces",
+      "dest": "/api/admin/mailing/bounces.js"
+    },
+    {
+      "src": "/api/admin/mailing/sync-customers",
+      "dest": "/api/admin/mailing/sync-customers.js"
+    },
+    {
+      "src": "/api/magento/customers",
+      "dest": "/api/magento/customers.js"
+    },
+    {
       "src": "/api/seller-admin/orders",
       "dest": "/api/seller-admin/orders.js"
     },

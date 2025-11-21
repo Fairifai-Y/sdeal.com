@@ -18,6 +18,22 @@ const Admin = () => {
   const [sellerInfo, setSellerInfo] = useState(null);
   const [loadingSellerInfo, setLoadingSellerInfo] = useState(false);
   const [sellerInfoError, setSellerInfoError] = useState(null);
+  
+  // Mailing section state
+  const [mailingSubsection, setMailingSubsection] = useState('consumers');
+  const [mailingData, setMailingData] = useState({
+    consumers: null,
+    templates: null,
+    workflows: null,
+    campaigns: null,
+    bounces: null
+  });
+  const [mailingLoading, setMailingLoading] = useState(false);
+  
+  // Sync state
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncPolling, setSyncPolling] = useState(false);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -51,6 +67,98 @@ const Admin = () => {
     }
   };
 
+  const fetchMailingData = async (subsection) => {
+    setMailingLoading(true);
+    try {
+      const endpoint = `/api/admin/mailing/${subsection}`;
+      const response = await fetch(endpoint);
+      const result = await response.json();
+      
+      if (result.success) {
+        setMailingData(prev => ({
+          ...prev,
+          [subsection]: result.data
+        }));
+      } else {
+        console.error('Error fetching mailing data:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching mailing data:', error);
+    } finally {
+      setMailingLoading(false);
+    }
+  };
+
+  const fetchSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/mailing/sync-customers');
+      const result = await response.json();
+      
+      if (result.success) {
+        setSyncStatus(result.data);
+        
+        // Continue polling if sync is running
+        if (result.data.isRunning) {
+          if (!syncPolling) {
+            setSyncPolling(true);
+          }
+        } else {
+          setSyncPolling(false);
+          // Refresh consumers data when sync completes
+          if (mailingSubsection === 'consumers') {
+            fetchMailingData('consumers');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching sync status:', error);
+      setSyncPolling(false);
+    }
+  };
+
+  const startSync = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await fetch('/api/admin/mailing/sync-customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          batchSize: 100,
+          delayBetweenBatches: 1000
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Start polling for status
+        setSyncPolling(true);
+        fetchSyncStatus();
+      } else {
+        alert('Error starting sync: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error starting sync:', error);
+      alert('Error starting sync: ' + error.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // Poll sync status when sync is running
+  useEffect(() => {
+    if (syncPolling) {
+      const interval = setInterval(() => {
+        fetchSyncStatus();
+      }, 2000); // Poll every 2 seconds
+      
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncPolling]);
+
   const searchCustomers = async (query) => {
     setIsSearching(true);
     try {
@@ -78,10 +186,19 @@ const Admin = () => {
         // Don't fetch default data if searching
         return;
       }
-      fetchSectionData(activeSection);
+      if (activeSection === 'mailing') {
+        // Always fetch mailing data for current subsection when section is active
+        fetchMailingData(mailingSubsection);
+        // Also fetch sync status if on consumers subsection
+        if (mailingSubsection === 'consumers') {
+          fetchSyncStatus();
+        }
+      } else {
+        fetchSectionData(activeSection);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, activeSection]);
+  }, [isAuthenticated, activeSection, mailingSubsection]);
 
   // Search customers
   useEffect(() => {
@@ -527,9 +644,456 @@ const Admin = () => {
           </div>
         );
 
+      case 'mailing':
+        return renderMailingContent();
+
       default:
         return <div>Selecteer een sectie</div>;
     }
+  };
+
+  const renderMailingContent = () => {
+    if (mailingLoading) {
+      return <div className="admin-loading">Loading...</div>;
+    }
+
+    return (
+      <div className="admin-section-content">
+        <h2>Mailing</h2>
+        
+        {/* Mailing Submenu */}
+        <div className="admin-submenu">
+          <button
+            className={`admin-submenu-button ${mailingSubsection === 'consumers' ? 'active' : ''}`}
+            onClick={() => setMailingSubsection('consumers')}
+          >
+            Consumenten
+          </button>
+          <button
+            className={`admin-submenu-button ${mailingSubsection === 'templates' ? 'active' : ''}`}
+            onClick={() => setMailingSubsection('templates')}
+          >
+            Templates
+          </button>
+          <button
+            className={`admin-submenu-button ${mailingSubsection === 'workflows' ? 'active' : ''}`}
+            onClick={() => setMailingSubsection('workflows')}
+          >
+            Workflows
+          </button>
+          <button
+            className={`admin-submenu-button ${mailingSubsection === 'campaigns' ? 'active' : ''}`}
+            onClick={() => setMailingSubsection('campaigns')}
+          >
+            Campagnes
+          </button>
+          <button
+            className={`admin-submenu-button ${mailingSubsection === 'bounces' ? 'active' : ''}`}
+            onClick={() => setMailingSubsection('bounces')}
+          >
+            Bounces
+          </button>
+        </div>
+
+        {/* Mailing Subsection Content */}
+        {mailingSubsection === 'consumers' && renderConsumersContent()}
+        {mailingSubsection === 'templates' && renderTemplatesContent()}
+        {mailingSubsection === 'workflows' && renderWorkflowsContent()}
+        {mailingSubsection === 'campaigns' && renderCampaignsContent()}
+        {mailingSubsection === 'bounces' && renderBouncesContent()}
+      </div>
+    );
+  };
+
+  const renderConsumersContent = () => {
+    const consumers = mailingData.consumers?.consumers || [];
+    const pagination = mailingData.consumers?.pagination;
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>Consumenten</h3>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="admin-button-secondary"
+              onClick={startSync}
+              disabled={syncLoading || (syncStatus?.isRunning)}
+            >
+              {syncLoading ? 'Starten...' : syncStatus?.isRunning ? 'Sync Loopt...' : 'Sync van Magento'}
+            </button>
+            <button className="admin-button-primary">Nieuwe Consument</button>
+          </div>
+        </div>
+
+        {/* Sync Status */}
+        {syncStatus && (
+          <div style={{ 
+            marginBottom: '20px', 
+            padding: '15px', 
+            backgroundColor: syncStatus.isRunning ? '#e3f2fd' : '#e8f5e9',
+            borderRadius: '8px',
+            border: `2px solid ${syncStatus.isRunning ? '#2196f3' : '#4caf50'}`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h4 style={{ margin: 0 }}>
+                {syncStatus.isRunning ? '🔄 Sync Loopt...' : '✅ Sync Voltooid'}
+              </h4>
+              {syncStatus.startedAt && (
+                <span style={{ fontSize: '12px', color: '#666' }}>
+                  Gestart: {new Date(syncStatus.startedAt).toLocaleString('nl-NL')}
+                </span>
+              )}
+            </div>
+            
+            {syncStatus.progress && (
+              <div>
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span>Voortgang:</span>
+                    <span>
+                      {syncStatus.progress.processed.toLocaleString('nl-NL')} / {syncStatus.progress.total.toLocaleString('nl-NL')} 
+                      ({syncStatus.progress.totalPages > 0 ? Math.round((syncStatus.progress.processed / syncStatus.progress.total) * 100) : 0}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '20px', 
+                    backgroundColor: '#e0e0e0', 
+                    borderRadius: '10px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${syncStatus.progress.total > 0 ? (syncStatus.progress.processed / syncStatus.progress.total) * 100 : 0}%`,
+                      height: '100%',
+                      backgroundColor: syncStatus.isRunning ? '#2196f3' : '#4caf50',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '14px' }}>
+                  <div>
+                    <strong>Pagina:</strong> {syncStatus.progress.currentPage} / {syncStatus.progress.totalPages}
+                  </div>
+                  <div style={{ color: '#4caf50' }}>
+                    <strong>Aangemaakt:</strong> {syncStatus.progress.created.toLocaleString('nl-NL')}
+                  </div>
+                  <div style={{ color: '#2196f3' }}>
+                    <strong>Bijgewerkt:</strong> {syncStatus.progress.updated.toLocaleString('nl-NL')}
+                  </div>
+                  {syncStatus.progress.errors > 0 && (
+                    <div style={{ color: '#f44336' }}>
+                      <strong>Fouten:</strong> {syncStatus.progress.errors.toLocaleString('nl-NL')}
+                    </div>
+                  )}
+                </div>
+
+                {syncStatus.completedAt && (
+                  <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+                    Voltooid: {new Date(syncStatus.completedAt).toLocaleString('nl-NL')}
+                    {syncStatus.duration && (
+                      <span> (Duur: {Math.round(syncStatus.duration / 1000 / 60)} minuten)</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {pagination && (
+          <div style={{ marginBottom: '15px', color: '#666' }}>
+            Totaal: {pagination.total} consumenten
+          </div>
+        )}
+
+        {consumers.length > 0 ? (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Email</th>
+                  <th>Store</th>
+                  <th>Land</th>
+                  <th>Uitgeschreven</th>
+                  <th>Laatste Contact</th>
+                  <th>Emails Verstuurd</th>
+                  <th>Emails Geopend</th>
+                  <th>Emails Geklikt</th>
+                  <th>Datum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {consumers.map((consumer) => (
+                  <tr key={consumer.id}>
+                    <td>{consumer.firstName} {consumer.lastName}</td>
+                    <td>{consumer.email}</td>
+                    <td>{consumer.store}</td>
+                    <td>{consumer.country || '-'}</td>
+                    <td>{consumer.isUnsubscribed ? '✓' : '-'}</td>
+                    <td>{consumer.lastContactAt ? new Date(consumer.lastContactAt).toLocaleDateString('nl-NL') : '-'}</td>
+                    <td>{consumer.totalEmailsSent}</td>
+                    <td>{consumer.totalEmailsOpened}</td>
+                    <td>{consumer.totalEmailsClicked}</td>
+                    <td>{new Date(consumer.createdAt).toLocaleDateString('nl-NL')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen consumenten gevonden
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTemplatesContent = () => {
+    const templates = mailingData.templates || [];
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>Email Templates</h3>
+          <button className="admin-button-primary">Nieuw Template</button>
+        </div>
+
+        {templates.length > 0 ? (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Categorie</th>
+                  <th>Onderwerp</th>
+                  <th>Actief</th>
+                  <th>Campagnes</th>
+                  <th>Workflows</th>
+                  <th>Datum</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templates.map((template) => (
+                  <tr key={template.id}>
+                    <td>{template.name}</td>
+                    <td>{template.category || '-'}</td>
+                    <td>{template.subject}</td>
+                    <td>{template.isActive ? '✓' : '✗'}</td>
+                    <td>{template._count?.campaigns || 0}</td>
+                    <td>{template._count?.workflowSteps || 0}</td>
+                    <td>{new Date(template.createdAt).toLocaleDateString('nl-NL')}</td>
+                    <td>
+                      <button className="admin-button-small">Bewerken</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen templates gevonden
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderWorkflowsContent = () => {
+    const workflows = mailingData.workflows || [];
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>Email Workflows</h3>
+          <button className="admin-button-primary">Nieuwe Workflow</button>
+        </div>
+
+        {workflows.length > 0 ? (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Trigger Type</th>
+                  <th>Stappen</th>
+                  <th>Uitvoeringen</th>
+                  <th>Actief</th>
+                  <th>Datum</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workflows.map((workflow) => (
+                  <tr key={workflow.id}>
+                    <td>{workflow.name}</td>
+                    <td>{workflow.triggerType}</td>
+                    <td>{workflow._count?.steps || 0}</td>
+                    <td>{workflow._count?.executions || 0}</td>
+                    <td>{workflow.isActive ? '✓' : '✗'}</td>
+                    <td>{new Date(workflow.createdAt).toLocaleDateString('nl-NL')}</td>
+                    <td>
+                      <button className="admin-button-small">Bewerken</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen workflows gevonden
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCampaignsContent = () => {
+    const campaigns = mailingData.campaigns?.campaigns || [];
+    const pagination = mailingData.campaigns?.pagination;
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>Email Campagnes</h3>
+          <button className="admin-button-primary">Nieuwe Campagne</button>
+        </div>
+
+        {pagination && (
+          <div style={{ marginBottom: '15px', color: '#666' }}>
+            Totaal: {pagination.total} campagnes
+          </div>
+        )}
+
+        {campaigns.length > 0 ? (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Onderwerp</th>
+                  <th>Status</th>
+                  <th>Template</th>
+                  <th>Ontvangers</th>
+                  <th>Verstuurd</th>
+                  <th>Geopend</th>
+                  <th>Geklikt</th>
+                  <th>Gebounced</th>
+                  <th>Datum</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((campaign) => (
+                  <tr key={campaign.id}>
+                    <td>{campaign.name}</td>
+                    <td>{campaign.subject}</td>
+                    <td>{campaign.status}</td>
+                    <td>{campaign.template?.name || '-'}</td>
+                    <td>{campaign.totalRecipients}</td>
+                    <td>{campaign.totalSent}</td>
+                    <td>{campaign.totalOpened}</td>
+                    <td>{campaign.totalClicked}</td>
+                    <td>{campaign.totalBounced}</td>
+                    <td>{new Date(campaign.createdAt).toLocaleDateString('nl-NL')}</td>
+                    <td>
+                      <button className="admin-button-small">Bekijken</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen campagnes gevonden
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderBouncesContent = () => {
+    const bounces = mailingData.bounces?.bounces || [];
+    const statistics = mailingData.bounces?.statistics;
+    const pagination = mailingData.bounces?.pagination;
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>Email Bounces</h3>
+          <button className="admin-button-secondary">Cleanup Oude Bounces</button>
+        </div>
+
+        {statistics && (
+          <div className="admin-stats-grid" style={{ marginBottom: '20px' }}>
+            <div className="stat-card">
+              <h3>Totaal Bounces</h3>
+              <p className="stat-number">{statistics.total}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Hard Bounces</h3>
+              <p className="stat-number">{statistics.hard}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Soft Bounces</h3>
+              <p className="stat-number">{statistics.soft}</p>
+            </div>
+          </div>
+        )}
+
+        {pagination && (
+          <div style={{ marginBottom: '15px', color: '#666' }}>
+            Totaal: {pagination.total} bounces
+          </div>
+        )}
+
+        {bounces.length > 0 ? (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Naam</th>
+                  <th>Campagne</th>
+                  <th>Type</th>
+                  <th>Reden</th>
+                  <th>Datum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bounces.map((bounce) => (
+                  <tr key={bounce.id}>
+                    <td>{bounce.consumer?.email || '-'}</td>
+                    <td>{bounce.consumer ? `${bounce.consumer.firstName} ${bounce.consumer.lastName}` : '-'}</td>
+                    <td>{bounce.campaign?.name || '-'}</td>
+                    <td>
+                      <span style={{ 
+                        color: bounce.bounceType === 'hard' ? 'red' : 'orange',
+                        fontWeight: 'bold'
+                      }}>
+                        {bounce.bounceType || '-'}
+                      </span>
+                    </td>
+                    <td>{bounce.bounceReason || '-'}</td>
+                    <td>{new Date(bounce.occurredAt).toLocaleDateString('nl-NL')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen bounces gevonden
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -563,6 +1127,12 @@ const Admin = () => {
             onClick={() => setActiveSection('customers')}
           >
             Klanten
+          </button>
+          <button 
+            className={`admin-nav-button ${activeSection === 'mailing' ? 'active' : ''}`}
+            onClick={() => setActiveSection('mailing')}
+          >
+            Mailing
           </button>
         </div>
         
