@@ -338,12 +338,41 @@ async function syncCustomersFromMagento(options = {}) {
       try {
         console.log(`[Sync Customers] Trying endpoint: ${endpoint}`);
         firstPageData = await makeRequest(endpoint, params);
-        console.log(`[Sync Customers] ✅ Endpoint ${endpoint} worked! Response keys:`, Object.keys(firstPageData || {}));
-        console.log('[Sync Customers] First page response sample:', JSON.stringify(firstPageData, null, 2).substring(0, 500));
-        workingEndpoint = endpoint;
-        break;
+        
+        // Log response details
+        console.log(`[Sync Customers] ✅ Endpoint ${endpoint} returned data`);
+        console.log(`[Sync Customers] Response type:`, typeof firstPageData);
+        console.log(`[Sync Customers] Response is array:`, Array.isArray(firstPageData));
+        console.log(`[Sync Customers] Response keys:`, firstPageData ? Object.keys(firstPageData) : 'null/undefined');
+        
+        if (firstPageData) {
+          // Check if it's a valid response structure
+          const hasItems = firstPageData.items !== undefined;
+          const hasTotalCount = firstPageData.total_count !== undefined || firstPageData.totalCount !== undefined;
+          const isArray = Array.isArray(firstPageData);
+          
+          console.log(`[Sync Customers] Response structure check:`, {
+            hasItems,
+            hasTotalCount,
+            isArray,
+            itemCount: hasItems ? (firstPageData.items?.length || 0) : (isArray ? firstPageData.length : 0)
+          });
+          
+          // Log sample of response
+          const sample = JSON.stringify(firstPageData, null, 2);
+          console.log(`[Sync Customers] Response sample (first 1000 chars):`, sample.substring(0, 1000));
+        }
+        
+        // If we got data (even if empty), consider it a working endpoint
+        if (firstPageData !== null && firstPageData !== undefined) {
+          workingEndpoint = endpoint;
+          break;
+        }
       } catch (error) {
         console.warn(`[Sync Customers] ❌ Endpoint ${endpoint} failed:`, error.message);
+        if (error.details) {
+          console.warn(`[Sync Customers] Error details:`, typeof error.details === 'string' ? error.details.substring(0, 500) : error.details);
+        }
         lastError = error;
         continue;
       }
