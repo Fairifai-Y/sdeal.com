@@ -1,4 +1,4 @@
-const { makeRequest, buildSearchCriteria } = require('../seller-admin/helpers');
+const { makeRequest } = require('./helpers');
 
 /**
  * Get customers from Magento API

@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
-const { makeRequest } = require('../../seller-admin/helpers');
+const { makeRequest: makeMagentoRequest } = require('../../magento/helpers');
+const { makeRequest: makeSellerAdminRequest } = require('../../seller-admin/helpers');
 const crypto = require('crypto');
 
 const globalForPrisma = global;
@@ -203,7 +204,8 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
         syncStatus.progress.currentPage = page;
         console.log(`[Sync Customers] Fetching orders page ${page} to extract customers...`);
 
-        const ordersData = await makeRequest('/supplier/orders/', {
+        // Use Seller Admin API for orders (this uses admin token)
+        const ordersData = await makeSellerAdminRequest('/supplier/orders/', {
           'searchCriteria[pageSize]': batchSize,
           'searchCriteria[currentPage]': page
         });
@@ -383,7 +385,8 @@ async function syncCustomersFromMagento(options = {}) {
           setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
         });
         
-        const requestPromise = makeRequest(endpoint, params);
+        // Use Magento API helper (NO admin token headers)
+        const requestPromise = makeMagentoRequest(endpoint, params);
         firstPageData = await Promise.race([requestPromise, timeoutPromise]);
         
         // Log response details
@@ -484,10 +487,10 @@ async function syncCustomersFromMagento(options = {}) {
         syncStatus.progress.currentPage = page;
         console.log(`[Sync Customers] Processing page ${page}/${pagesToProcess}...`);
 
-        // Fetch customers for this page
+        // Fetch customers for this page using Magento API (NO admin token)
         let data;
         try {
-          data = await makeRequest(endpointToUse, {
+          data = await makeMagentoRequest(endpointToUse, {
             'searchCriteria[pageSize]': batchSize,
             'searchCriteria[currentPage]': page
           });

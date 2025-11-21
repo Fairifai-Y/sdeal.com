@@ -1,4 +1,4 @@
-const { makeRequest } = require('../seller-admin/helpers');
+const { makeRequest } = require('./helpers');
 
 /**
  * Test endpoint to check Magento customers API
