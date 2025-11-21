@@ -210,40 +210,78 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
 
         const orders = ordersData?.items || [];
         
+        console.log(`[Sync Customers] Orders page ${page}: received ${orders.length} orders`);
+        
         if (orders.length === 0) {
+          console.log(`[Sync Customers] No more orders, stopping at page ${page}`);
           hasMore = false;
           break;
         }
 
+        // Log first order structure to see what fields are available
+        if (page === 1 && orders.length > 0) {
+          console.log(`[Sync Customers] First order structure:`, Object.keys(orders[0]));
+          console.log(`[Sync Customers] First order sample:`, JSON.stringify(orders[0], null, 2).substring(0, 500));
+        }
+
         // Extract customer info from orders
+        // Note: /supplier/orders/ might not have customer_email in list, need to check order details
+        let customersFoundInPage = 0;
         for (const order of orders) {
-          // Try different field names for customer email
-          const email = order.customer_email || order.customerEmail || 
-                       (order.extension_attributes?.customer_email) ||
-                       (order.billing_address?.email);
+          // Try different field names for customer email from order list
+          let email = order.customer_email || order.customerEmail || 
+                     (order.extension_attributes?.customer_email) ||
+                     (order.billing_address?.email) ||
+                     order.customer_name; // Sometimes email is in customer_name
+          
+          // If no email in list, try to get from order details (but this is slow for 75k orders)
+          // For now, skip orders without email in the list
+          if (!email || !email.includes('@')) {
+            // Try to extract from customer_name if it looks like an email
+            if (order.customer_name && order.customer_name.includes('@')) {
+              email = order.customer_name;
+            } else {
+              // Skip this order - no email available
+              continue;
+            }
+          }
           
           if (email && email.includes('@')) {
-            const firstName = order.customer_firstname || order.first_name || 
-                            (order.billing_address?.firstname) || '';
-            const lastName = order.customer_lastname || order.last_name || 
-                           (order.billing_address?.lastname) || '';
+            // Extract name from order or use email prefix
+            let firstName = order.customer_firstname || order.first_name || 
+                          (order.billing_address?.firstname) || '';
+            let lastName = order.customer_lastname || order.last_name || 
+                         (order.billing_address?.lastname) || '';
+            
+            // If no name, try to extract from customer_name
+            if (!firstName && !lastName && order.customer_name && !order.customer_name.includes('@')) {
+              const nameParts = order.customer_name.trim().split(/\s+/);
+              if (nameParts.length > 0) {
+                firstName = nameParts[0];
+                lastName = nameParts.slice(1).join(' ') || '';
+              }
+            }
             
             // Determine store from order
+            // For /supplier/orders/, we might need to infer from supplier or use default
             const storeId = order.store_id || order.storeId || 1;
             const store = storeMapping[storeId] || 'NL';
 
             if (!uniqueCustomers.has(email)) {
               uniqueCustomers.set(email, {
                 email,
-                firstName,
-                lastName,
+                firstName: firstName || '',
+                lastName: lastName || '',
                 store,
-                country: order.shipping_countryid || order.country_id || store,
-                phone: order.customer_phone || order.telephone || null
+                country: order.shipping_countryid || order.country_id || order.shipping_country || store,
+                phone: order.customer_phone || order.telephone || order.phone || null
               });
+              customersFoundInPage++;
             }
           }
         }
+        
+        console.log(`[Sync Customers] Page ${page}: Extracted ${customersFoundInPage} new customers from ${orders.length} orders`);
 
         syncStatus.progress.processed += orders.length;
         console.log(`[Sync Customers] Page ${page}: Found ${uniqueCustomers.size} unique customers so far`);
@@ -322,10 +360,11 @@ async function syncCustomersFromMagento(options = {}) {
 
   try {
     // Try different customer endpoints (like the working implementation)
+    // Note: These endpoints might not be available with current credentials
+    // We'll fallback to orders-based sync which is more reliable
     const endpointsToTry = [
       { endpoint: '/customers', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
-      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
-      { endpoint: '/customers/list', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
+      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
     ];
 
     let firstPageData = null;
@@ -337,15 +376,26 @@ async function syncCustomersFromMagento(options = {}) {
     for (const { endpoint, params } of endpointsToTry) {
       try {
         console.log(`[Sync Customers] Trying endpoint: ${endpoint}`);
-        firstPageData = await makeRequest(endpoint, params);
+        console.log(`[Sync Customers] Request params:`, params);
+        
+        // Add timeout wrapper (10 seconds - customers endpoint might not exist)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
+        });
+        
+        const requestPromise = makeRequest(endpoint, params);
+        firstPageData = await Promise.race([requestPromise, timeoutPromise]);
         
         // Log response details
         console.log(`[Sync Customers] ✅ Endpoint ${endpoint} returned data`);
         console.log(`[Sync Customers] Response type:`, typeof firstPageData);
         console.log(`[Sync Customers] Response is array:`, Array.isArray(firstPageData));
-        console.log(`[Sync Customers] Response keys:`, firstPageData ? Object.keys(firstPageData) : 'null/undefined');
+        console.log(`[Sync Customers] Response is null:`, firstPageData === null);
+        console.log(`[Sync Customers] Response is undefined:`, firstPageData === undefined);
         
         if (firstPageData) {
+          console.log(`[Sync Customers] Response keys:`, Object.keys(firstPageData));
+          
           // Check if it's a valid response structure
           const hasItems = firstPageData.items !== undefined;
           const hasTotalCount = firstPageData.total_count !== undefined || firstPageData.totalCount !== undefined;
@@ -359,19 +409,33 @@ async function syncCustomersFromMagento(options = {}) {
           });
           
           // Log sample of response
-          const sample = JSON.stringify(firstPageData, null, 2);
-          console.log(`[Sync Customers] Response sample (first 1000 chars):`, sample.substring(0, 1000));
+          try {
+            const sample = JSON.stringify(firstPageData, null, 2);
+            console.log(`[Sync Customers] Response sample (first 1000 chars):`, sample.substring(0, 1000));
+          } catch (stringifyError) {
+            console.warn(`[Sync Customers] Could not stringify response:`, stringifyError.message);
+          }
+        } else {
+          console.warn(`[Sync Customers] Endpoint ${endpoint} returned null/undefined`);
         }
         
         // If we got data (even if empty), consider it a working endpoint
         if (firstPageData !== null && firstPageData !== undefined) {
           workingEndpoint = endpoint;
+          console.log(`[Sync Customers] ✅ Using endpoint: ${workingEndpoint}`);
           break;
         }
       } catch (error) {
-        console.warn(`[Sync Customers] ❌ Endpoint ${endpoint} failed:`, error.message);
+        console.error(`[Sync Customers] ❌ Endpoint ${endpoint} failed:`, error.message);
+        console.error(`[Sync Customers] Error stack:`, error.stack);
         if (error.details) {
-          console.warn(`[Sync Customers] Error details:`, typeof error.details === 'string' ? error.details.substring(0, 500) : error.details);
+          const detailsStr = typeof error.details === 'string' 
+            ? error.details.substring(0, 500) 
+            : JSON.stringify(error.details).substring(0, 500);
+          console.error(`[Sync Customers] Error details:`, detailsStr);
+        }
+        if (error.status) {
+          console.error(`[Sync Customers] HTTP status:`, error.status, error.statusText);
         }
         lastError = error;
         continue;
@@ -381,7 +445,11 @@ async function syncCustomersFromMagento(options = {}) {
     if (!firstPageData || !workingEndpoint) {
       console.warn('[Sync Customers] All customer endpoints failed. Falling back to orders-based sync...');
       console.warn('[Sync Customers] Last error:', lastError?.message || 'Unknown error');
-      // Fallback to orders-based sync
+      if (lastError?.status) {
+        console.warn('[Sync Customers] HTTP status:', lastError.status, lastError.statusText);
+      }
+      // Fallback to orders-based sync (this works because /supplier/orders/ endpoint is available)
+      console.log('[Sync Customers] Switching to orders-based sync method...');
       return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
     }
 
@@ -396,12 +464,12 @@ async function syncCustomersFromMagento(options = {}) {
     console.log(`[Sync Customers] Found ${totalCount} customers, ${totalPages} pages to process using endpoint: ${workingEndpoint}`);
     
     if (totalCount === 0) {
-      console.warn('[Sync Customers] No customers found. Response structure:', Object.keys(firstPageData || {}));
+      console.warn('[Sync Customers] No customers found via customer endpoint. Response structure:', Object.keys(firstPageData || {}));
       console.warn('[Sync Customers] Full response:', JSON.stringify(firstPageData, null, 2));
       
-      // If no customers found, maybe the endpoint requires different params or doesn't exist
-      // Try to get customers from orders as fallback
-      console.log('[Sync Customers] Attempting to extract customers from orders as fallback...');
+      // If no customers found, the endpoint might not be available or requires different permissions
+      // Use orders-based sync as fallback (this is more reliable since /supplier/orders/ works)
+      console.log('[Sync Customers] Customer endpoint returned 0 results. Switching to orders-based sync...');
       return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
     }
 
