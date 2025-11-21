@@ -19,8 +19,9 @@ const PROXY_SECRET = process.env.PROXY_SECRET || '';
 // Magento API base URL (the target that the proxy will forward to)
 const MAGENTO_API_BASE_URL = (process.env.MAGENTO_API_BASE_URL || 'https://www.sdeal.nl/rest/V1').replace(/\/$/, '');
 
-// Optional Bearer token for Magento API (if needed)
-const MAGENTO_BEARER_TOKEN = process.env.MAGENTO_BEARER_TOKEN || '';
+// Bearer token for Magento API
+// Use MAGENTO_BEARER_TOKEN if set, otherwise fallback to SELLER_ADMIN_ACCESS_TOKEN
+const MAGENTO_BEARER_TOKEN = process.env.MAGENTO_BEARER_TOKEN || process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
 
 /**
  * Decompress response if it's gzipped or deflated
@@ -130,10 +131,11 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     // Add Bearer token if configured (REQUIRED for most Magento REST API endpoints)
     if (MAGENTO_BEARER_TOKEN) {
       headers['Authorization'] = `Bearer ${MAGENTO_BEARER_TOKEN}`;
-      console.log('[Magento API] Using Bearer token for authentication');
+      const tokenSource = process.env.MAGENTO_BEARER_TOKEN ? 'MAGENTO_BEARER_TOKEN' : 'SELLER_ADMIN_ACCESS_TOKEN';
+      console.log(`[Magento API] Using Bearer token for authentication (from ${tokenSource})`);
     } else {
-      console.warn('[Magento API] ⚠️ No MAGENTO_BEARER_TOKEN configured. Customer endpoints may require authentication.');
-      console.warn('[Magento API] Set MAGENTO_BEARER_TOKEN environment variable if customer endpoints fail.');
+      console.warn('[Magento API] ⚠️ No Bearer token configured (MAGENTO_BEARER_TOKEN or SELLER_ADMIN_ACCESS_TOKEN).');
+      console.warn('[Magento API] Customer endpoints may require authentication.');
     }
     
     // Build query string from queryParams object
