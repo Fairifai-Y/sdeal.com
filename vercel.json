@@ -82,6 +82,10 @@
       "dest": "/api/magento/customers.js"
     },
     {
+      "src": "/api/magento/test-customers",
+      "dest": "/api/magento/test-customers.js"
+    },
+    {
       "src": "/api/seller-admin/orders",
       "dest": "/api/seller-admin/orders.js"
     },

@@ -173,6 +173,130 @@ async function processBatch(customers, storeMapping = {}) {
 }
 
 /**
+ * Sync customers from orders (fallback method)
+ */
+async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delayBetweenBatches = 1000) {
+  console.log('[Sync Customers] Using orders-based sync as fallback...');
+  
+  syncStatus.isRunning = true;
+  syncStatus.startedAt = new Date();
+  syncStatus.progress = {
+    total: 0,
+    processed: 0,
+    created: 0,
+    updated: 0,
+    errors: 0,
+    currentPage: 0,
+    totalPages: 0
+  };
+  syncStatus.errors = [];
+
+  try {
+    // Get orders and extract unique customers
+    const uniqueCustomers = new Map(); // email -> customer data
+    let page = 1;
+    let hasMore = true;
+    const maxPages = 100; // Limit to prevent infinite loops
+
+    while (hasMore && page <= maxPages) {
+      try {
+        syncStatus.progress.currentPage = page;
+        console.log(`[Sync Customers] Fetching orders page ${page} to extract customers...`);
+
+        const ordersData = await makeRequest('/supplier/orders/', {
+          'searchCriteria[pageSize]': batchSize,
+          'searchCriteria[currentPage]': page
+        });
+
+        const orders = ordersData?.items || [];
+        
+        if (orders.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        // Extract customer info from orders
+        for (const order of orders) {
+          // Try different field names for customer email
+          const email = order.customer_email || order.customerEmail || 
+                       (order.extension_attributes?.customer_email) ||
+                       (order.billing_address?.email);
+          
+          if (email && email.includes('@')) {
+            const firstName = order.customer_firstname || order.first_name || 
+                            (order.billing_address?.firstname) || '';
+            const lastName = order.customer_lastname || order.last_name || 
+                           (order.billing_address?.lastname) || '';
+            
+            // Determine store from order
+            const storeId = order.store_id || order.storeId || 1;
+            const store = storeMapping[storeId] || 'NL';
+
+            if (!uniqueCustomers.has(email)) {
+              uniqueCustomers.set(email, {
+                email,
+                firstName,
+                lastName,
+                store,
+                country: order.shipping_countryid || order.country_id || store,
+                phone: order.customer_phone || order.telephone || null
+              });
+            }
+          }
+        }
+
+        syncStatus.progress.processed += orders.length;
+        console.log(`[Sync Customers] Page ${page}: Found ${uniqueCustomers.size} unique customers so far`);
+
+        if (orders.length < batchSize) {
+          hasMore = false;
+        }
+
+        page++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+
+      } catch (pageError) {
+        console.error(`[Sync Customers] Error processing orders page ${page}:`, pageError);
+        syncStatus.errors.push({
+          page,
+          error: pageError.message
+        });
+        hasMore = false;
+        break;
+      }
+    }
+
+    // Process all unique customers
+    const customersArray = Array.from(uniqueCustomers.values());
+    syncStatus.progress.total = customersArray.length;
+    syncStatus.progress.totalPages = 1;
+
+    console.log(`[Sync Customers] Processing ${customersArray.length} unique customers from orders...`);
+    const batchResults = await processBatch(customersArray, storeMapping);
+
+    syncStatus.progress.created = batchResults.created;
+    syncStatus.progress.updated = batchResults.updated;
+    syncStatus.progress.errors += batchResults.errors.length;
+    syncStatus.errors.push(...batchResults.errors);
+
+    syncStatus.completedAt = new Date();
+    console.log(`[Sync Customers] Orders-based sync completed: ${batchResults.created} created, ${batchResults.updated} updated`);
+
+    return syncStatus.progress;
+
+  } catch (error) {
+    console.error('[Sync Customers] Fatal error in orders-based sync:', error);
+    syncStatus.errors.push({
+      fatal: true,
+      error: error.message
+    });
+    throw error;
+  } finally {
+    syncStatus.isRunning = false;
+  }
+}
+
+/**
  * Sync customers from Magento to database
  */
 async function syncCustomersFromMagento(options = {}) {
@@ -197,21 +321,64 @@ async function syncCustomersFromMagento(options = {}) {
   syncStatus.errors = [];
 
   try {
-    // First, get total count
-    console.log('[Sync Customers] Fetching first page to get total count...');
-    const firstPageData = await makeRequest('/customers/search', {
-      'searchCriteria[pageSize]': 1,
-      'searchCriteria[currentPage]': 1
-    });
+    // Try different customer endpoints (like the working implementation)
+    const endpointsToTry = [
+      { endpoint: '/customers', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
+      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
+      { endpoint: '/customers/list', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
+    ];
 
-    const totalCount = firstPageData.total_count || 0;
-    const totalPages = Math.ceil(totalCount / batchSize);
+    let firstPageData = null;
+    let workingEndpoint = null;
+    let lastError = null;
+
+    console.log('[Sync Customers] Trying different customer endpoints...');
+    
+    for (const { endpoint, params } of endpointsToTry) {
+      try {
+        console.log(`[Sync Customers] Trying endpoint: ${endpoint}`);
+        firstPageData = await makeRequest(endpoint, params);
+        console.log(`[Sync Customers] ✅ Endpoint ${endpoint} worked! Response keys:`, Object.keys(firstPageData || {}));
+        console.log('[Sync Customers] First page response sample:', JSON.stringify(firstPageData, null, 2).substring(0, 500));
+        workingEndpoint = endpoint;
+        break;
+      } catch (error) {
+        console.warn(`[Sync Customers] ❌ Endpoint ${endpoint} failed:`, error.message);
+        lastError = error;
+        continue;
+      }
+    }
+
+    if (!firstPageData || !workingEndpoint) {
+      console.warn('[Sync Customers] All customer endpoints failed. Falling back to orders-based sync...');
+      console.warn('[Sync Customers] Last error:', lastError?.message || 'Unknown error');
+      // Fallback to orders-based sync
+      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
+    }
+
+    // Check response structure - Magento might return different formats
+    const totalCount = firstPageData?.total_count || firstPageData?.totalCount || 
+                      (firstPageData?.items ? firstPageData.items.length : 0);
+    const totalPages = totalCount > 0 ? Math.ceil(totalCount / batchSize) : 0;
     
     syncStatus.progress.total = totalCount;
     syncStatus.progress.totalPages = totalPages;
 
-    console.log(`[Sync Customers] Found ${totalCount} customers, ${totalPages} pages to process`);
+    console.log(`[Sync Customers] Found ${totalCount} customers, ${totalPages} pages to process using endpoint: ${workingEndpoint}`);
+    
+    if (totalCount === 0) {
+      console.warn('[Sync Customers] No customers found. Response structure:', Object.keys(firstPageData || {}));
+      console.warn('[Sync Customers] Full response:', JSON.stringify(firstPageData, null, 2));
+      
+      // If no customers found, maybe the endpoint requires different params or doesn't exist
+      // Try to get customers from orders as fallback
+      console.log('[Sync Customers] Attempting to extract customers from orders as fallback...');
+      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
+    }
 
+    // Store workingEndpoint for use in the loop
+    const endpointToUse = workingEndpoint;
+    
     // Process pages
     const pagesToProcess = maxPages ? Math.min(maxPages, totalPages) : totalPages;
     
@@ -221,12 +388,26 @@ async function syncCustomersFromMagento(options = {}) {
         console.log(`[Sync Customers] Processing page ${page}/${pagesToProcess}...`);
 
         // Fetch customers for this page
-        const data = await makeRequest('/customers/search', {
-          'searchCriteria[pageSize]': batchSize,
-          'searchCriteria[currentPage]': page
-        });
+        let data;
+        try {
+          data = await makeRequest(endpointToUse, {
+            'searchCriteria[pageSize]': batchSize,
+            'searchCriteria[currentPage]': page
+          });
+          
+          // Log response structure for debugging
+          if (page === 1) {
+            console.log('[Sync Customers] Page 1 response keys:', Object.keys(data || {}));
+            console.log('[Sync Customers] Page 1 response sample:', JSON.stringify(data, null, 2).substring(0, 1000));
+          }
+        } catch (error) {
+          console.error(`[Sync Customers] Error fetching page ${page}:`, error);
+          console.error(`[Sync Customers] Error details:`, error.details);
+          throw error;
+        }
 
-        const customers = data.items || [];
+        // Handle different response structures
+        const customers = data?.items || data?.data || data || [];
         
         if (customers.length === 0) {
           console.log(`[Sync Customers] No customers on page ${page}, stopping`);
