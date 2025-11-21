@@ -110,7 +110,35 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
     requestOptions.body = body;
   }
   
-  return fetch(proxyUrlWithParams, requestOptions);
+  console.log(`[Magento API] Proxy request: ${method} ${proxyUrlWithParams}`);
+  console.log(`[Magento API] Proxy headers:`, Object.keys(forwardHeaders).join(', '));
+  
+  const startTime = Date.now();
+  const timeoutMs = 30000; // 30 second timeout
+  
+  try {
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Proxy request timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+    
+    // Race between fetch and timeout
+    const response = await Promise.race([
+      fetch(proxyUrlWithParams, requestOptions),
+      timeoutPromise
+    ]);
+    
+    const duration = Date.now() - startTime;
+    console.log(`[Magento API] Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
+    return response;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Magento API] Proxy request failed after ${duration}ms:`, error.message);
+    console.error(`[Magento API] Error stack:`, error.stack);
+    throw error;
+  }
 }
 
 /**
@@ -170,7 +198,9 @@ const makeRequest = async (endpoint, queryParams = {}) => {
       const proxyHeaders = { ...headers };
       delete proxyHeaders['Accept-Encoding'];
       
+      console.log('[Magento API] Making proxy request...');
       response = await makeProxyRequest(targetUrl, 'GET', proxyHeaders);
+      console.log(`[Magento API] Proxy response received: ${response.status} ${response.statusText}`);
     } else {
       // Direct request to Magento API (not recommended due to Cloudflare)
       console.warn('[Magento API] Direct request (no proxy configured) - may be blocked by Cloudflare');
@@ -178,11 +208,13 @@ const makeRequest = async (endpoint, queryParams = {}) => {
         method: 'GET',
         headers: headers
       });
+      console.log(`[Magento API] Direct response received: ${response.status} ${response.statusText}`);
     }
     
     // Get response as array buffer first to handle potential gzip compression
     const contentType = response.headers.get('content-type') || '';
     const contentEncoding = response.headers.get('content-encoding') || '';
+    console.log(`[Magento API] Response headers - Content-Type: ${contentType}, Content-Encoding: ${contentEncoding}`);
     
     let responseText;
     let responseData;
@@ -223,15 +255,21 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     }
     
     // For successful responses, handle potential gzip
+    console.log('[Magento API] Reading response body...');
     const buffer = await response.arrayBuffer();
+    console.log(`[Magento API] Response buffer size: ${buffer.byteLength} bytes`);
+    
     responseText = await decompressResponse(buffer, contentEncoding);
+    console.log(`[Magento API] Decompressed response length: ${responseText.length} characters`);
+    console.log(`[Magento API] Response preview (first 200 chars):`, responseText.substring(0, 200));
     
     // Try to parse as JSON
     try {
       responseData = JSON.parse(responseText);
+      console.log(`[Magento API] ✅ Successfully parsed JSON response. Type: ${typeof responseData}, Keys: ${responseData ? Object.keys(responseData).join(', ') : 'null'}`);
     } catch (parseError) {
       console.error('[Magento API] Failed to parse JSON response:', parseError.message);
-      console.error('[Magento API] Response preview:', responseText.substring(0, 200));
+      console.error('[Magento API] Response preview:', responseText.substring(0, 500));
       throw new Error(`Failed to parse JSON response: ${parseError.message}. Response may be gzipped or invalid JSON.`);
     }
     
