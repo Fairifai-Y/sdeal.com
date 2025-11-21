@@ -176,8 +176,8 @@ async function processBatch(customers, storeMapping = {}) {
 /**
  * Sync customers from orders (fallback method)
  */
-async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delayBetweenBatches = 1000) {
-  console.log('[Sync Customers] Using orders-based sync as fallback...');
+async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delayBetweenBatches = 1000, maxPages = null) {
+  console.log('[Sync Customers] Using orders-based sync (standard Magento API - NO admin token)...');
   
   syncStatus.isRunning = true;
   syncStatus.startedAt = new Date();
@@ -197,15 +197,16 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
     const uniqueCustomers = new Map(); // email -> customer data
     let page = 1;
     let hasMore = true;
-    const maxPages = 100; // Limit to prevent infinite loops
+    const maxPagesLimit = maxPages || 1000; // Limit to prevent infinite loops (or use provided limit)
 
-    while (hasMore && page <= maxPages) {
+    while (hasMore && page <= maxPagesLimit) {
       try {
         syncStatus.progress.currentPage = page;
         console.log(`[Sync Customers] Fetching orders page ${page} to extract customers...`);
 
-        // Use Seller Admin API for orders (this uses admin token)
-        const ordersData = await makeSellerAdminRequest('/supplier/orders/', {
+        // Use STANDARD Magento API for orders (NO admin token - uses Bearer token if configured)
+        // This is the standard Magento REST API, not the Seller Admin API
+        const ordersData = await makeMagentoRequest('/orders', {
           'searchCriteria[pageSize]': batchSize,
           'searchCriteria[currentPage]': page
         });
@@ -481,10 +482,10 @@ async function syncCustomersFromMagento(options = {}) {
           : JSON.stringify(lastError.details).substring(0, 300);
         console.warn('[Sync Customers] Error details:', detailsStr);
       }
-      // Fallback to orders-based sync (this works because /supplier/orders/ endpoint is available)
-      console.log('[Sync Customers] 🔄 Switching to orders-based sync method...');
-      console.log('[Sync Customers] Note: This will extract customers from order data, which may be slower but more reliable.');
-      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
+      // Fallback to orders-based sync (uses standard Magento API - NO admin token)
+      console.log('[Sync Customers] 🔄 Switching to orders-based sync method (standard Magento API)...');
+      console.log('[Sync Customers] Note: This will extract customers from order data using standard Magento REST API (no admin token needed).');
+      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
     }
 
     // Check response structure - Magento might return different formats
@@ -502,9 +503,9 @@ async function syncCustomersFromMagento(options = {}) {
       console.warn('[Sync Customers] Full response:', JSON.stringify(firstPageData, null, 2));
       
       // If no customers found, the endpoint might not be available or requires different permissions
-      // Use orders-based sync as fallback (this is more reliable since /supplier/orders/ works)
-      console.log('[Sync Customers] Customer endpoint returned 0 results. Switching to orders-based sync...');
-      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches);
+      // Use orders-based sync as fallback (uses standard Magento API - NO admin token)
+      console.log('[Sync Customers] Customer endpoint returned 0 results. Switching to orders-based sync (standard Magento API)...');
+      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
     }
 
     // Store workingEndpoint for use in the loop
@@ -628,13 +629,20 @@ module.exports = async (req, res) => {
         batchSize = 100,
         maxPages = null,
         delayBetweenBatches = 1000,
-        storeMapping = {}
+        storeMapping = {},
+        testMode = false // Test mode: max 100 orders
       } = req.body;
+
+      // In test mode, limit to 1 page (100 orders max)
+      const finalMaxPages = testMode ? 1 : (maxPages ? parseInt(maxPages) : null);
+      const finalBatchSize = testMode ? 100 : parseInt(batchSize);
+
+      console.log(`[Sync Customers] Starting sync (testMode: ${testMode}, maxPages: ${finalMaxPages}, batchSize: ${finalBatchSize})`);
 
       // Start sync in background (don't await)
       syncCustomersFromMagento({
-        batchSize: parseInt(batchSize),
-        maxPages: maxPages ? parseInt(maxPages) : null,
+        batchSize: finalBatchSize,
+        maxPages: finalMaxPages,
         delayBetweenBatches: parseInt(delayBetweenBatches),
         storeMapping
       }).catch(error => {

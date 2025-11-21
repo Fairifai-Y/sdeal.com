@@ -151,6 +151,14 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     const targetUrl = `${MAGENTO_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
     
     console.log(`[Magento API] Target URL: ${targetUrl}`);
+    console.log(`[Magento API] Headers:`, {
+      'Content-Type': headers['Content-Type'],
+      'Accept': headers['Accept'],
+      'Authorization': headers['Authorization'] ? `${headers['Authorization'].substring(0, 15)}...` : 'none (no Bearer token)',
+      'User-Agent': headers['User-Agent'] ? headers['User-Agent'].substring(0, 50) + '...' : 'missing',
+      'X-Proxy-Secret': PROXY_BASE_URL ? '***' : 'not using proxy'
+    });
+    console.log(`[Magento API] ⚠️ NO admin token headers (Token-Type, etc.) - Magento REST API uses Bearer token only`);
     
     // If using proxy, route through proxy
     let response;

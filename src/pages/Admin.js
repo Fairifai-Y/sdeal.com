@@ -116,7 +116,7 @@ const Admin = () => {
     }
   };
 
-  const startSync = async () => {
+  const startSync = async (testMode = false) => {
     setSyncLoading(true);
     try {
       const response = await fetch('/api/admin/mailing/sync-customers', {
@@ -126,7 +126,8 @@ const Admin = () => {
         },
         body: JSON.stringify({
           batchSize: 100,
-          delayBetweenBatches: 1000
+          delayBetweenBatches: 1000,
+          testMode: testMode // Test mode: max 100 orders (1 page)
         })
       });
       
@@ -136,6 +137,9 @@ const Admin = () => {
         // Start polling for status
         setSyncPolling(true);
         fetchSyncStatus();
+        if (testMode) {
+          alert('Test import gestart! Maximaal 100 orders worden geïmporteerd.');
+        }
       } else {
         alert('Error starting sync: ' + (result.error || 'Unknown error'));
       }
@@ -716,10 +720,19 @@ const Admin = () => {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button 
               className="admin-button-secondary"
-              onClick={startSync}
+              onClick={() => startSync(false)}
               disabled={syncLoading || (syncStatus?.isRunning)}
             >
               {syncLoading ? 'Starten...' : syncStatus?.isRunning ? 'Sync Loopt...' : 'Sync van Magento'}
+            </button>
+            <button 
+              className="admin-button-secondary"
+              onClick={() => startSync(true)}
+              disabled={syncLoading || (syncStatus?.isRunning)}
+              style={{ backgroundColor: '#ff9800', color: 'white' }}
+              title="Test import: maximaal 100 orders"
+            >
+              {syncLoading ? 'Testen...' : 'Test Import (100 orders)'}
             </button>
             <button className="admin-button-primary">Nieuwe Consument</button>
           </div>
