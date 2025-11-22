@@ -10,6 +10,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Increase max header size to prevent 431 errors
+// Default is 8KB, increase to 32KB
+const http = require('http');
+const server = http.createServer({
+  maxHeaderSize: 32768 // 32KB
+}, app);
+
 // Middleware
 app.use(helmet());
 app.use(cors());
@@ -32,6 +39,54 @@ app.get('/api/health', (req, res) => {
 // Package selection routes
 const packageRoutes = require('./routes/package');
 app.use('/api/package', packageRoutes);
+
+// Local test route for sync customers (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  // Import sync function
+  const syncCustomersHandler = require('../api/admin/mailing/sync-customers');
+  
+  // Proxy sync customers endpoint for local testing
+  app.all('/api/admin/mailing/sync-customers', async (req, res) => {
+    // Convert Express req/res to Vercel-style handler
+    const vercelReq = {
+      method: req.method,
+      body: req.body,
+      query: req.query
+    };
+    
+    const vercelRes = {
+      status: (code) => ({
+        json: (data) => {
+          res.status(code).json(data);
+        },
+        end: () => {
+          res.status(code).end();
+        }
+      }),
+      json: (data) => {
+        res.json(data);
+      },
+      setHeader: (name, value) => {
+        res.setHeader(name, value);
+      },
+      end: () => {
+        res.end();
+      }
+    };
+    
+    try {
+      await syncCustomersHandler(vercelReq, vercelRes);
+    } catch (error) {
+      console.error('[Local Sync] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+  
+  console.log('✅ Local sync endpoint enabled: /api/admin/mailing/sync-customers');
+}
 
 app.get('/api/countries', (req, res) => {
   const countries = [
@@ -573,8 +628,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with increased header size
+server.listen(PORT, () => {
   console.log(`SDeal server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Max header size: 32KB (to prevent 431 errors)`);
 }); 
