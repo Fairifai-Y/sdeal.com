@@ -116,14 +116,15 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   console.log(`[Magento API] Proxy headers:`, Object.keys(forwardHeaders).join(', '));
   
   const startTime = Date.now();
-  const timeoutMs = 30000; // 30 second timeout
+  const timeoutMs = 15000; // 15 second timeout (reduced from 30s)
   
   console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
   
   try {
-    // Create timeout promise
+    // Create timeout promise with cleanup
+    let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         console.error(`[Magento API] ⏱️ Timeout triggered after ${timeoutMs}ms`);
         reject(new Error(`Proxy request timeout after ${timeoutMs}ms`));
       }, timeoutMs);
@@ -151,14 +152,28 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
     
     // Race between fetch and timeout
     console.log(`[Magento API] Racing fetch vs timeout...`);
-    const response = await Promise.race([
-      fetchPromise,
-      timeoutPromise
-    ]);
-    
-    const duration = Date.now() - startTime;
-    console.log(`[Magento API] Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
-    return response;
+    let response;
+    try {
+      response = await Promise.race([
+        fetchPromise,
+        timeoutPromise
+      ]);
+      
+      // Clear timeout if fetch completed
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      const duration = Date.now() - startTime;
+      console.log(`[Magento API] Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
+      return response;
+    } catch (raceError) {
+      // Clear timeout on error
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      throw raceError;
+    }
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Magento API] Proxy request failed after ${duration}ms:`, error.message);

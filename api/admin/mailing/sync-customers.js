@@ -80,11 +80,11 @@ async function processBatch(customers, storeMapping = {}) {
 
       // Determine store from website_id or default
       const websiteId = customer.website_id || 1;
-      const store = storeMapping[websiteId] || 'NL'; // Default to NL
+      const store = storeMapping[websiteId] || customer.store || 'NL'; // Default to NL
       
-      // Extract name
-      const firstName = customer.firstname || '';
-      const lastName = customer.lastname || '';
+      // Extract name - support both camelCase and lowercase field names
+      const firstName = customer.firstname || customer.firstName || '';
+      const lastName = customer.lastname || customer.lastName || '';
 
       if (existingEmails.has(email)) {
         // Prepare for update
@@ -94,8 +94,8 @@ async function processBatch(customers, storeMapping = {}) {
           firstName: firstName || existing.firstName,
           lastName: lastName || existing.lastName,
           store: store || existing.store,
-          country: customer.country_id || existing.country,
-          phone: customer.telephone || existing.phone
+          country: customer.country_id || customer.country || existing.country,
+          phone: customer.telephone || customer.phone || existing.phone
         });
       } else {
         // Prepare for create
@@ -105,8 +105,8 @@ async function processBatch(customers, storeMapping = {}) {
           lastName,
           email,
           store,
-          country: customer.country_id || store,
-          phone: customer.telephone,
+          country: customer.country_id || customer.country || store,
+          phone: customer.telephone || customer.phone,
           source: 'magento_sync',
           sourceUrl: null,
           unsubscribeToken,
@@ -125,6 +125,7 @@ async function processBatch(customers, storeMapping = {}) {
 
   // Bulk create new consumers
   if (toCreate.length > 0) {
+    console.log(`[Sync Customers] Creating ${toCreate.length} new consumers...`);
     try {
       // Use createMany for better performance
       const createResult = await prisma.consumer.createMany({
@@ -132,21 +133,28 @@ async function processBatch(customers, storeMapping = {}) {
         skipDuplicates: true
       });
       results.created = createResult.count;
+      console.log(`[Sync Customers] ✅ Successfully created ${createResult.count} consumers`);
     } catch (error) {
-      console.error(`[Sync Customers] Error bulk creating ${toCreate.length} consumers:`, error);
+      console.error(`[Sync Customers] Error bulk creating ${toCreate.length} consumers:`, error.message);
+      console.error(`[Sync Customers] Error details:`, error);
       // Fallback to individual creates
+      console.log(`[Sync Customers] Falling back to individual creates...`);
       for (const data of toCreate) {
         try {
           await prisma.consumer.create({ data });
           results.created++;
         } catch (createError) {
+          console.error(`[Sync Customers] Error creating consumer ${data.email}:`, createError.message);
           results.errors.push({
             customer: data.email,
             error: createError.message
           });
         }
       }
+      console.log(`[Sync Customers] Individual creates completed: ${results.created} created`);
     }
+  } else {
+    console.log(`[Sync Customers] No new consumers to create`);
   }
 
   // Bulk update existing consumers
@@ -168,12 +176,16 @@ async function processBatch(customers, storeMapping = {}) {
         });
         results.updated++;
       } catch (error) {
+        console.error(`[Sync Customers] Error updating consumer ${data.email}:`, error.message);
         results.errors.push({
           customer: data.email,
           error: error.message
         });
       }
     }
+    console.log(`[Sync Customers] ✅ Successfully updated ${results.updated} consumers`);
+  } else {
+    console.log(`[Sync Customers] No existing consumers to update`);
   }
 
   return results;
@@ -298,15 +310,22 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
             const store = storeMapping[storeId] || 'NL';
 
             if (!uniqueCustomers.has(email)) {
-              uniqueCustomers.set(email, {
+              const customerData = {
                 email,
-                firstName: firstName || '',
-                lastName: lastName || '',
+                firstname: firstName || '', // Note: using 'firstname' (lowercase) to match Magento API format
+                lastname: lastName || '',   // Note: using 'lastname' (lowercase) to match Magento API format
                 store,
-                country: order.shipping_countryid || order.country_id || order.shipping_country || store,
-                phone: order.customer_phone || order.telephone || order.phone || null
-              });
+                country_id: order.shipping_countryid || order.country_id || order.shipping_country || store,
+                telephone: order.customer_phone || order.telephone || order.phone || null,
+                website_id: storeId || 1
+              };
+              uniqueCustomers.set(email, customerData);
               customersFoundInPage++;
+              
+              // Log first few customers for debugging
+              if (customersFoundInPage <= 3) {
+                console.log(`[Sync Customers] Sample customer ${customersFoundInPage}:`, customerData);
+              }
             }
           }
         }
