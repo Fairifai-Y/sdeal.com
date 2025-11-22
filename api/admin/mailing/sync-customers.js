@@ -90,34 +90,54 @@ async function processBatch(customers, storeMapping = {}) {
       // Check if consumer exists (individual query like working project)
       // Use semaphore to limit concurrent queries
       let existingConsumer = null;
-      let retries = 2;
+      let retries = 3; // More retries for connection errors
       let checkSuccess = false;
       
       while (retries > 0 && !checkSuccess) {
         await querySemaphore.acquire();
         try {
-          existingConsumer = await prisma.consumer.findFirst({
-            where: { email: email },
-            select: {
-              email: true,
-              firstName: true,
-              lastName: true,
-              store: true,
-              country: true,
-              phone: true
-            }
-          });
+          existingConsumer = await Promise.race([
+            prisma.consumer.findFirst({
+              where: { email: email },
+              select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+                store: true,
+                country: true,
+                phone: true
+              }
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Query timeout')), 15000)
+            )
+          ]);
           checkSuccess = true;
         } catch (error) {
           retries--;
           const isConnectionError = error.message.includes("connection") || 
                                     error.message.includes("timeout") ||
+                                    error.message.includes("Can't reach database") ||
+                                    error.message.includes("Query timeout") ||
                                     error.code === 'P1001' ||
                                     error.code === 'P1008';
           
           if (isConnectionError && retries > 0) {
-            console.warn(`[Sync Customers] Connection error checking ${email}, retrying... (${retries} retries left)`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const delay = 2000 * (4 - retries); // Exponential backoff: 2s, 4s, 6s
+            console.warn(`[Sync Customers] Connection error checking ${email}, retrying in ${delay}ms... (${retries} retries left)`);
+            console.warn(`[Sync Customers] Error details:`, error.message);
+            
+            // If it's a "Can't reach database" error, try to disconnect and reconnect
+            if (error.message.includes("Can't reach database")) {
+              try {
+                await prisma.$disconnect();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              } catch (disconnectError) {
+                // Ignore disconnect errors
+              }
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
           } else {
             console.error(`[Sync Customers] Error checking consumer ${email}:`, error.message);
             results.errors.push({
@@ -129,7 +149,7 @@ async function processBatch(customers, storeMapping = {}) {
         } finally {
           querySemaphore.release();
           // Small delay after each query to let connection pool recover
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
 
@@ -137,33 +157,40 @@ async function processBatch(customers, storeMapping = {}) {
       if (!checkSuccess || !existingConsumer) {
         // Create new consumer (individual query like working project)
         const unsubscribeToken = crypto.randomBytes(32).toString('hex');
-        let createRetries = 2;
+        let createRetries = 3; // More retries for connection errors
         let createSuccess = false;
         
         while (createRetries > 0 && !createSuccess) {
           await querySemaphore.acquire();
           try {
-            await prisma.consumer.create({
-              data: {
-                firstName,
-                lastName,
-                email,
-                store,
-                country: customer.country_id || customer.country || store,
-                phone: customer.telephone || customer.phone,
-                source: 'magento_sync',
-                sourceUrl: null,
-                unsubscribeToken,
-                preferences: customer.custom_attributes ? 
-                  JSON.parse(JSON.stringify(customer.custom_attributes)) : null
-              }
-            });
+            await Promise.race([
+              prisma.consumer.create({
+                data: {
+                  firstName,
+                  lastName,
+                  email,
+                  store,
+                  country: customer.country_id || customer.country || store,
+                  phone: customer.telephone || customer.phone,
+                  source: 'magento_sync',
+                  sourceUrl: null,
+                  unsubscribeToken,
+                  preferences: customer.custom_attributes ? 
+                    JSON.parse(JSON.stringify(customer.custom_attributes)) : null
+                }
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Create timeout')), 15000)
+              )
+            ]);
             results.created++;
             createSuccess = true;
           } catch (error) {
             createRetries--;
             const isConnectionError = error.message.includes("connection") || 
                                       error.message.includes("timeout") ||
+                                      error.message.includes("Can't reach database") ||
+                                      error.message.includes("Create timeout") ||
                                       error.code === 'P1001' ||
                                       error.code === 'P1008';
             
@@ -172,8 +199,21 @@ async function processBatch(customers, storeMapping = {}) {
               console.log(`[Sync Customers] Consumer ${email} already exists, skipping`);
               createSuccess = true; // Stop retrying, it's a duplicate
             } else if (isConnectionError && createRetries > 0) {
-              console.warn(`[Sync Customers] Connection error creating ${email}, retrying... (${createRetries} retries left)`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              const delay = 2000 * (4 - createRetries); // Exponential backoff: 2s, 4s, 6s
+              console.warn(`[Sync Customers] Connection error creating ${email}, retrying in ${delay}ms... (${createRetries} retries left)`);
+              console.warn(`[Sync Customers] Error details:`, error.message);
+              
+              // If it's a "Can't reach database" error, try to disconnect and reconnect
+              if (error.message.includes("Can't reach database")) {
+                try {
+                  await prisma.$disconnect();
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (disconnectError) {
+                  // Ignore disconnect errors
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, delay));
             } else {
               console.error(`[Sync Customers] Error creating consumer ${email}:`, error.message);
               results.errors.push({
@@ -184,40 +224,60 @@ async function processBatch(customers, storeMapping = {}) {
             }
           } finally {
             querySemaphore.release();
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
       } else {
         // Update existing consumer (individual query)
-        let updateRetries = 2;
+        let updateRetries = 3; // More retries for connection errors
         let updateSuccess = false;
         
         while (updateRetries > 0 && !updateSuccess) {
           await querySemaphore.acquire();
           try {
-            await prisma.consumer.update({
-              where: { email: email },
-              data: {
-                firstName: firstName || existingConsumer.firstName,
-                lastName: lastName || existingConsumer.lastName,
-                store: store || existingConsumer.store,
-                country: customer.country_id || customer.country || existingConsumer.country,
-                phone: customer.telephone || customer.phone || existingConsumer.phone,
-                updatedAt: new Date()
-              }
-            });
+            await Promise.race([
+              prisma.consumer.update({
+                where: { email: email },
+                data: {
+                  firstName: firstName || existingConsumer.firstName,
+                  lastName: lastName || existingConsumer.lastName,
+                  store: store || existingConsumer.store,
+                  country: customer.country_id || customer.country || existingConsumer.country,
+                  phone: customer.telephone || customer.phone || existingConsumer.phone,
+                  updatedAt: new Date()
+                }
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Update timeout')), 15000)
+              )
+            ]);
             results.updated++;
             updateSuccess = true;
           } catch (error) {
             updateRetries--;
             const isConnectionError = error.message.includes("connection") || 
                                       error.message.includes("timeout") ||
+                                      error.message.includes("Can't reach database") ||
+                                      error.message.includes("Update timeout") ||
                                       error.code === 'P1001' ||
                                       error.code === 'P1008';
             
             if (isConnectionError && updateRetries > 0) {
-              console.warn(`[Sync Customers] Connection error updating ${email}, retrying... (${updateRetries} retries left)`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              const delay = 2000 * (4 - updateRetries); // Exponential backoff: 2s, 4s, 6s
+              console.warn(`[Sync Customers] Connection error updating ${email}, retrying in ${delay}ms... (${updateRetries} retries left)`);
+              console.warn(`[Sync Customers] Error details:`, error.message);
+              
+              // If it's a "Can't reach database" error, try to disconnect and reconnect
+              if (error.message.includes("Can't reach database")) {
+                try {
+                  await prisma.$disconnect();
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (disconnectError) {
+                  // Ignore disconnect errors
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, delay));
             } else {
               console.error(`[Sync Customers] Error updating consumer ${email}:`, error.message);
               results.errors.push({
@@ -228,7 +288,7 @@ async function processBatch(customers, storeMapping = {}) {
             }
           } finally {
             querySemaphore.release();
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
       }
