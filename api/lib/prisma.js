@@ -28,6 +28,9 @@ const prisma = globalForPrisma.prisma || new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
+  // Connection pool settings (these are hints, actual pool is managed by Neon pooler)
+  // For Neon pooler, connection_limit and pool_timeout are set via connection string
+  // Add ?connection_limit=10&pool_timeout=20 to DATABASE_URL if needed
 });
 
 // Always reuse the same instance in serverless (Vercel keeps the same global between requests)

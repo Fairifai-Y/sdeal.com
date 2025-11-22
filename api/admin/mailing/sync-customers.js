@@ -37,34 +37,65 @@ async function processBatch(customers, storeMapping = {}) {
 
   // Get existing consumers in batch (limit to prevent connection pool issues)
   // Process in smaller chunks if needed
-  const chunkSize = 50; // Smaller chunks to avoid connection pool exhaustion
+  const chunkSize = 25; // Even smaller chunks to avoid connection pool exhaustion
   const existingEmails = new Set();
   const existingMap = new Map();
   
+  // Process chunks sequentially with delays to avoid connection pool exhaustion
   for (let i = 0; i < emails.length; i += chunkSize) {
     const emailChunk = emails.slice(i, i + chunkSize);
-    try {
-      const existingConsumers = await prisma.consumer.findMany({
-        where: {
-          email: { in: emailChunk }
-        },
-        select: {
-          email: true,
-          firstName: true,
-          lastName: true,
-          store: true,
-          country: true,
-          phone: true
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+      try {
+        const existingConsumers = await Promise.race([
+          prisma.consumer.findMany({
+            where: {
+              email: { in: emailChunk }
+            },
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+              store: true,
+              country: true,
+              phone: true
+            }
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Query timeout')), 8000)
+          )
+        ]);
+        
+        existingConsumers.forEach(c => {
+          existingEmails.add(c.email);
+          existingMap.set(c.email, c);
+        });
+        
+        success = true;
+        
+        // Small delay between chunks to let connection pool recover
+        if (i + chunkSize < emails.length) {
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
-      });
-      
-      existingConsumers.forEach(c => {
-        existingEmails.add(c.email);
-        existingMap.set(c.email, c);
-      });
-    } catch (error) {
-      console.error(`[Sync Customers] Error fetching existing consumers chunk ${i}-${i + chunkSize}:`, error.message);
-      // Continue with next chunk
+      } catch (error) {
+        retries--;
+        const isConnectionError = error.message.includes("connection") || 
+                                  error.message.includes("timeout") ||
+                                  error.message.includes("Query timeout") ||
+                                  error.code === 'P1001' ||
+                                  error.code === 'P1008';
+        
+        if (isConnectionError && retries > 0) {
+          console.warn(`[Sync Customers] Connection error fetching chunk ${i}-${i + chunkSize}, retrying... (${retries} retries left)`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+        } else {
+          console.error(`[Sync Customers] Error fetching existing consumers chunk ${i}-${i + chunkSize}:`, error.message);
+          // Continue with next chunk even if this one failed
+          success = true; // Stop retrying
+        }
+      }
     }
   }
 
@@ -123,82 +154,145 @@ async function processBatch(customers, storeMapping = {}) {
     }
   }
 
-  // Bulk create new consumers
+  // Bulk create new consumers in smaller chunks to avoid connection pool issues
   if (toCreate.length > 0) {
-    console.log(`[Sync Customers] Creating ${toCreate.length} new consumers...`);
-    try {
-      // Use createMany for better performance
-      const createResult = await prisma.consumer.createMany({
-        data: toCreate,
-        skipDuplicates: true
-      });
-      results.created = createResult.count;
-      console.log(`[Sync Customers] ✅ Successfully created ${createResult.count} consumers`);
-    } catch (error) {
-      console.error(`[Sync Customers] Error bulk creating ${toCreate.length} consumers:`, error.message);
-      console.error(`[Sync Customers] Error details:`, error);
-      // Fallback to individual creates with retry
-      console.log(`[Sync Customers] Falling back to individual creates with retry...`);
-      for (const data of toCreate) {
-        let retries = 3;
-        let success = false;
-        
-        while (retries > 0 && !success) {
-          try {
-            await prisma.consumer.create({ data });
-            results.created++;
-            success = true;
-          } catch (createError) {
-            retries--;
-            const isConnectionError = createError.message.includes("Can't reach database") || 
-                                    createError.message.includes("connection") ||
-                                    createError.code === 'P1001';
-            
-            if (isConnectionError && retries > 0) {
-              console.warn(`[Sync Customers] Database connection error for ${data.email}, retrying... (${retries} retries left)`);
-              // Wait before retry (exponential backoff)
-              await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
-            } else {
-              console.error(`[Sync Customers] Error creating consumer ${data.email}:`, createError.message);
-              results.errors.push({
-                customer: data.email,
-                error: createError.message
-              });
-              success = true; // Stop retrying
+    console.log(`[Sync Customers] Creating ${toCreate.length} new consumers in chunks...`);
+    const createChunkSize = 25; // Smaller chunks for creates too
+    
+    for (let i = 0; i < toCreate.length; i += createChunkSize) {
+      const createChunk = toCreate.slice(i, i + createChunkSize);
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        try {
+          const createResult = await Promise.race([
+            prisma.consumer.createMany({
+              data: createChunk,
+              skipDuplicates: true
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Create timeout')), 8000)
+            )
+          ]);
+          
+          results.created += createResult.count;
+          success = true;
+          
+          // Small delay between create chunks
+          if (i + createChunkSize < toCreate.length) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        } catch (error) {
+          retries--;
+          const isConnectionError = error.message.includes("connection") || 
+                                    error.message.includes("timeout") ||
+                                    error.message.includes("Create timeout") ||
+                                    error.code === 'P1001' ||
+                                    error.code === 'P1008';
+          
+          if (isConnectionError && retries > 0) {
+            console.warn(`[Sync Customers] Connection error creating chunk ${i}-${i + createChunkSize}, retrying... (${retries} retries left)`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+          } else {
+            console.error(`[Sync Customers] Error bulk creating chunk ${i}-${i + createChunkSize}:`, error.message);
+            // Fallback to individual creates with retry
+            console.log(`[Sync Customers] Falling back to individual creates for chunk ${i}-${i + createChunkSize}...`);
+            for (const data of createChunk) {
+              let individualRetries = 2;
+              let individualSuccess = false;
+              
+              while (individualRetries > 0 && !individualSuccess) {
+                try {
+                  await prisma.consumer.create({ data });
+                  results.created++;
+                  individualSuccess = true;
+                } catch (createError) {
+                  individualRetries--;
+                  const isConnError = createError.message.includes("connection") || 
+                                      createError.message.includes("timeout") ||
+                                      createError.code === 'P1001' ||
+                                      createError.code === 'P1008';
+                  
+                  if (isConnError && individualRetries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  } else {
+                    console.error(`[Sync Customers] Error creating consumer ${data.email}:`, createError.message);
+                    results.errors.push({
+                      customer: data.email,
+                      error: createError.message
+                    });
+                    individualSuccess = true; // Stop retrying
+                  }
+                }
+              }
             }
+            success = true; // Stop retrying chunk
           }
         }
       }
-      console.log(`[Sync Customers] Individual creates completed: ${results.created} created`);
     }
+    
+    console.log(`[Sync Customers] ✅ Successfully created ${results.created} consumers`);
   } else {
     console.log(`[Sync Customers] No new consumers to create`);
   }
 
   // Bulk update existing consumers
-  // Do updates sequentially to avoid connection pool exhaustion
+  // Do updates sequentially with delays to avoid connection pool exhaustion
   if (toUpdate.length > 0) {
     console.log(`[Sync Customers] Updating ${toUpdate.length} existing consumers sequentially...`);
-    for (const data of toUpdate) {
-      try {
-        await prisma.consumer.update({
-          where: { email: data.email },
-          data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            store: data.store,
-            country: data.country,
-            phone: data.phone,
-            updatedAt: new Date()
+    for (let i = 0; i < toUpdate.length; i++) {
+      const data = toUpdate[i];
+      let retries = 2;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        try {
+          await Promise.race([
+            prisma.consumer.update({
+              where: { email: data.email },
+              data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                store: data.store,
+                country: data.country,
+                phone: data.phone,
+                updatedAt: new Date()
+              }
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Update timeout')), 8000)
+            )
+          ]);
+          
+          results.updated++;
+          success = true;
+          
+          // Small delay every 10 updates to let connection pool recover
+          if ((i + 1) % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
-        });
-        results.updated++;
-      } catch (error) {
-        console.error(`[Sync Customers] Error updating consumer ${data.email}:`, error.message);
-        results.errors.push({
-          customer: data.email,
-          error: error.message
-        });
+        } catch (error) {
+          retries--;
+          const isConnectionError = error.message.includes("connection") || 
+                                    error.message.includes("timeout") ||
+                                    error.message.includes("Update timeout") ||
+                                    error.code === 'P1001' ||
+                                    error.code === 'P1008';
+          
+          if (isConnectionError && retries > 0) {
+            console.warn(`[Sync Customers] Connection error updating ${data.email}, retrying... (${retries} retries left)`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } else {
+            console.error(`[Sync Customers] Error updating consumer ${data.email}:`, error.message);
+            results.errors.push({
+              customer: data.email,
+              error: error.message
+            });
+            success = true; // Stop retrying
+          }
+        }
       }
     }
     console.log(`[Sync Customers] ✅ Successfully updated ${results.updated} consumers`);
