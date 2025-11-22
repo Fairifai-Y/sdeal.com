@@ -116,7 +116,7 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   console.log(`[Magento API] Proxy headers:`, Object.keys(forwardHeaders).join(', '));
   
   const startTime = Date.now();
-  const timeoutMs = 15000; // 15 second timeout (reduced from 30s)
+  const timeoutMs = 30000; // 30 second timeout
   
   console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
   
@@ -130,25 +130,9 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
       }, timeoutMs);
     });
     
-    // Create fetch promise with logging
-    const fetchPromise = (async () => {
-      try {
-        console.log(`[Magento API] 🔄 Calling fetch()...`);
-        const fetchStartTime = Date.now();
-        const response = await fetch(proxyUrlWithParams, requestOptions);
-        const fetchDuration = Date.now() - fetchStartTime;
-        const totalDuration = Date.now() - startTime;
-        console.log(`[Magento API] ✅ Fetch completed in ${fetchDuration}ms (total: ${totalDuration}ms): ${response.status} ${response.statusText}`);
-        return response;
-      } catch (fetchError) {
-        const errorDuration = Date.now() - startTime;
-        console.error(`[Magento API] ❌ Fetch failed after ${errorDuration}ms:`, fetchError.message);
-        console.error(`[Magento API] ❌ Fetch error name:`, fetchError.name);
-        console.error(`[Magento API] ❌ Fetch error code:`, fetchError.code);
-        console.error(`[Magento API] ❌ Fetch error stack:`, fetchError.stack);
-        throw fetchError;
-      }
-    })();
+    // Create fetch promise - simplified version
+    console.log(`[Magento API] 🔄 Calling fetch()...`);
+    const fetchPromise = fetch(proxyUrlWithParams, requestOptions);
     
     // Race between fetch and timeout
     console.log(`[Magento API] Racing fetch vs timeout...`);
@@ -165,13 +149,15 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
       }
       
       const duration = Date.now() - startTime;
-      console.log(`[Magento API] Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
+      console.log(`[Magento API] ✅ Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
       return response;
     } catch (raceError) {
       // Clear timeout on error
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
+      const duration = Date.now() - startTime;
+      console.error(`[Magento API] ❌ Race error after ${duration}ms:`, raceError.message);
       throw raceError;
     }
   } catch (error) {
