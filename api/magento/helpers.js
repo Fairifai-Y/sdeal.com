@@ -130,17 +130,24 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
     });
     
     // Create fetch promise with logging
-    const fetchPromise = fetch(proxyUrlWithParams, requestOptions)
-      .then(response => {
-        const duration = Date.now() - startTime;
-        console.log(`[Magento API] ✅ Fetch completed in ${duration}ms: ${response.status} ${response.statusText}`);
+    const fetchPromise = (async () => {
+      try {
+        console.log(`[Magento API] 🔄 Calling fetch()...`);
+        const fetchStartTime = Date.now();
+        const response = await fetch(proxyUrlWithParams, requestOptions);
+        const fetchDuration = Date.now() - fetchStartTime;
+        const totalDuration = Date.now() - startTime;
+        console.log(`[Magento API] ✅ Fetch completed in ${fetchDuration}ms (total: ${totalDuration}ms): ${response.status} ${response.statusText}`);
         return response;
-      })
-      .catch(fetchError => {
-        const duration = Date.now() - startTime;
-        console.error(`[Magento API] ❌ Fetch failed after ${duration}ms:`, fetchError.message);
+      } catch (fetchError) {
+        const errorDuration = Date.now() - startTime;
+        console.error(`[Magento API] ❌ Fetch failed after ${errorDuration}ms:`, fetchError.message);
+        console.error(`[Magento API] ❌ Fetch error name:`, fetchError.name);
+        console.error(`[Magento API] ❌ Fetch error code:`, fetchError.code);
+        console.error(`[Magento API] ❌ Fetch error stack:`, fetchError.stack);
         throw fetchError;
-      });
+      }
+    })();
     
     // Race between fetch and timeout
     console.log(`[Magento API] Racing fetch vs timeout...`);

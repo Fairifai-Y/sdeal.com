@@ -1,16 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../../lib/prisma');
 const { makeRequest: makeMagentoRequest } = require('../../magento/helpers');
 const { makeRequest: makeSellerAdminRequest } = require('../../seller-admin/helpers');
 const crypto = require('crypto');
-
-const globalForPrisma = global;
-const prisma = globalForPrisma.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
 
 // In-memory sync status (in production, use Redis or database)
 const syncStatus = {
@@ -44,23 +35,39 @@ async function processBatch(customers, storeMapping = {}) {
   const toUpdate = [];
   const emails = customers.map(c => c.email).filter(Boolean);
 
-  // Get existing consumers in batch
-  const existingConsumers = await prisma.consumer.findMany({
-    where: {
-      email: { in: emails }
-    },
-    select: {
-      email: true,
-      firstName: true,
-      lastName: true,
-      store: true,
-      country: true,
-      phone: true
+  // Get existing consumers in batch (limit to prevent connection pool issues)
+  // Process in smaller chunks if needed
+  const chunkSize = 50; // Smaller chunks to avoid connection pool exhaustion
+  const existingEmails = new Set();
+  const existingMap = new Map();
+  
+  for (let i = 0; i < emails.length; i += chunkSize) {
+    const emailChunk = emails.slice(i, i + chunkSize);
+    try {
+      const existingConsumers = await prisma.consumer.findMany({
+        where: {
+          email: { in: emailChunk }
+        },
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+          store: true,
+          country: true,
+          phone: true
+        }
+      });
+      
+      existingConsumers.forEach(c => {
+        existingEmails.add(c.email);
+        existingMap.set(c.email, c);
+      });
+    } catch (error) {
+      console.error(`[Sync Customers] Error fetching existing consumers chunk ${i}-${i + chunkSize}:`, error.message);
+      // Continue with next chunk
     }
-  });
+  }
 
-  const existingEmails = new Set(existingConsumers.map(c => c.email));
-  const existingMap = new Map(existingConsumers.map(c => [c.email, c]));
 
   // Process each customer
   for (const customer of customers) {
@@ -143,31 +150,30 @@ async function processBatch(customers, storeMapping = {}) {
   }
 
   // Bulk update existing consumers
+  // Do updates sequentially to avoid connection pool exhaustion
   if (toUpdate.length > 0) {
-    // Prisma doesn't have updateMany with different values, so we update individually
-    // But we can use Promise.all for parallel updates
-    const updatePromises = toUpdate.map(data => 
-      prisma.consumer.update({
-        where: { email: data.email },
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          store: data.store,
-          country: data.country,
-          phone: data.phone,
-          updatedAt: new Date()
-        }
-      }).catch(error => {
+    console.log(`[Sync Customers] Updating ${toUpdate.length} existing consumers sequentially...`);
+    for (const data of toUpdate) {
+      try {
+        await prisma.consumer.update({
+          where: { email: data.email },
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            store: data.store,
+            country: data.country,
+            phone: data.phone,
+            updatedAt: new Date()
+          }
+        });
+        results.updated++;
+      } catch (error) {
         results.errors.push({
           customer: data.email,
           error: error.message
         });
-        return null;
-      })
-    );
-
-    const updateResults = await Promise.all(updatePromises);
-    results.updated = updateResults.filter(r => r !== null).length;
+      }
+    }
   }
 
   return results;
@@ -328,13 +334,39 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
       }
     }
 
-    // Process all unique customers
+    // Process all unique customers in smaller batches to avoid connection pool exhaustion
     const customersArray = Array.from(uniqueCustomers.values());
     syncStatus.progress.total = customersArray.length;
     syncStatus.progress.totalPages = 1;
 
-    console.log(`[Sync Customers] Processing ${customersArray.length} unique customers from orders...`);
-    const batchResults = await processBatch(customersArray, storeMapping);
+    console.log(`[Sync Customers] Processing ${customersArray.length} unique customers from orders in smaller batches...`);
+    
+    // Process in smaller batches (50 at a time) to avoid connection pool issues
+    const processingBatchSize = 50;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    const allErrors = [];
+    
+    for (let i = 0; i < customersArray.length; i += processingBatchSize) {
+      const batch = customersArray.slice(i, i + processingBatchSize);
+      console.log(`[Sync Customers] Processing batch ${Math.floor(i / processingBatchSize) + 1}/${Math.ceil(customersArray.length / processingBatchSize)} (${batch.length} customers)...`);
+      
+      const batchResults = await processBatch(batch, storeMapping);
+      totalCreated += batchResults.created;
+      totalUpdated += batchResults.updated;
+      allErrors.push(...batchResults.errors);
+      
+      // Small delay between batches to let connection pool recover
+      if (i + processingBatchSize < customersArray.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    const batchResults = {
+      created: totalCreated,
+      updated: totalUpdated,
+      errors: allErrors
+    };
 
     syncStatus.progress.created = batchResults.created;
     syncStatus.progress.updated = batchResults.updated;
@@ -383,110 +415,11 @@ async function syncCustomersFromMagento(options = {}) {
   syncStatus.errors = [];
 
   try {
-    // Try different customer endpoints
-    // Magento REST API customers endpoints (require Bearer token if configured)
-    const endpointsToTry = [
-      { endpoint: '/customers/search', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
-      { endpoint: '/customers', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } },
-      { endpoint: '/customers/list', params: { 'searchCriteria[pageSize]': 1, 'searchCriteria[currentPage]': 1 } }
-    ];
-
-    let firstPageData = null;
-    let workingEndpoint = null;
-    let lastError = null;
-
-    console.log('[Sync Customers] Trying different customer endpoints...');
-    
-    for (const { endpoint, params } of endpointsToTry) {
-      try {
-        console.log(`[Sync Customers] Trying endpoint: ${endpoint}`);
-        console.log(`[Sync Customers] Request params:`, params);
-        
-        // Add timeout wrapper (10 seconds - customers endpoint might not exist)
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
-        });
-        
-        // Use Magento API helper (NO admin token headers)
-        const requestPromise = makeMagentoRequest(endpoint, params);
-        firstPageData = await Promise.race([requestPromise, timeoutPromise]);
-        
-        // Log response details
-        console.log(`[Sync Customers] ✅ Endpoint ${endpoint} returned data`);
-        console.log(`[Sync Customers] Response type:`, typeof firstPageData);
-        console.log(`[Sync Customers] Response is array:`, Array.isArray(firstPageData));
-        console.log(`[Sync Customers] Response is null:`, firstPageData === null);
-        console.log(`[Sync Customers] Response is undefined:`, firstPageData === undefined);
-        
-        if (firstPageData) {
-          console.log(`[Sync Customers] Response keys:`, Object.keys(firstPageData));
-          
-          // Check if it's a valid response structure
-          const hasItems = firstPageData.items !== undefined;
-          const hasTotalCount = firstPageData.total_count !== undefined || firstPageData.totalCount !== undefined;
-          const isArray = Array.isArray(firstPageData);
-          
-          console.log(`[Sync Customers] Response structure check:`, {
-            hasItems,
-            hasTotalCount,
-            isArray,
-            itemCount: hasItems ? (firstPageData.items?.length || 0) : (isArray ? firstPageData.length : 0)
-          });
-          
-          // Log sample of response
-          try {
-            const sample = JSON.stringify(firstPageData, null, 2);
-            console.log(`[Sync Customers] Response sample (first 1000 chars):`, sample.substring(0, 1000));
-          } catch (stringifyError) {
-            console.warn(`[Sync Customers] Could not stringify response:`, stringifyError.message);
-          }
-        } else {
-          console.warn(`[Sync Customers] Endpoint ${endpoint} returned null/undefined`);
-        }
-        
-        // If we got data (even if empty), consider it a working endpoint
-        if (firstPageData !== null && firstPageData !== undefined) {
-          workingEndpoint = endpoint;
-          console.log(`[Sync Customers] ✅ Using endpoint: ${workingEndpoint}`);
-          break;
-        }
-      } catch (error) {
-        console.error(`[Sync Customers] ❌ Endpoint ${endpoint} failed:`, error.message);
-        console.error(`[Sync Customers] Error stack:`, error.stack);
-        if (error.details) {
-          const detailsStr = typeof error.details === 'string' 
-            ? error.details.substring(0, 500) 
-            : JSON.stringify(error.details).substring(0, 500);
-          console.error(`[Sync Customers] Error details:`, detailsStr);
-        }
-        if (error.status) {
-          console.error(`[Sync Customers] HTTP status:`, error.status, error.statusText);
-        }
-        lastError = error;
-        continue;
-      }
-    }
-
-    if (!firstPageData || !workingEndpoint) {
-      console.warn('[Sync Customers] ⚠️ All customer endpoints failed. Possible reasons:');
-      console.warn('[Sync Customers] 1. MAGENTO_BEARER_TOKEN might be required but not set');
-      console.warn('[Sync Customers] 2. Customer endpoints might not be available in this Magento instance');
-      console.warn('[Sync Customers] 3. Endpoints might require different authentication');
-      console.warn('[Sync Customers] Last error:', lastError?.message || 'Unknown error');
-      if (lastError?.status) {
-        console.warn('[Sync Customers] HTTP status:', lastError.status, lastError.statusText);
-      }
-      if (lastError?.details) {
-        const detailsStr = typeof lastError.details === 'string' 
-          ? lastError.details.substring(0, 300) 
-          : JSON.stringify(lastError.details).substring(0, 300);
-        console.warn('[Sync Customers] Error details:', detailsStr);
-      }
-      // Fallback to orders-based sync (uses standard Magento API - NO admin token)
-      console.log('[Sync Customers] 🔄 Switching to orders-based sync method (standard Magento API)...');
-      console.log('[Sync Customers] Note: This will extract customers from order data using standard Magento REST API (no admin token needed).');
-      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
-    }
+    // Skip customer endpoints - they don't work reliably (timeouts, 404s, 400s)
+    // Use orders-based sync directly (this works and is more reliable)
+    console.log('[Sync Customers] Using orders-based sync method (standard Magento API)...');
+    console.log('[Sync Customers] Note: Extracting customers from order data using standard Magento REST API (no admin token needed).');
+    return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
 
     // Check response structure - Magento might return different formats
     const totalCount = firstPageData?.total_count || firstPageData?.totalCount || 

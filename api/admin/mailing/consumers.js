@@ -1,13 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
-const globalForPrisma = global;
-const prisma = globalForPrisma.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+const prisma = require('../../lib/prisma');
 
 module.exports = async (req, res) => {
   // CORS headers
