@@ -21,9 +21,44 @@ const syncStatus = {
 };
 
 /**
+ * Simple semaphore to limit concurrent database queries
+ * This prevents connection pool exhaustion
+ */
+class QuerySemaphore {
+  constructor(maxConcurrent = 2) {
+    this.maxConcurrent = maxConcurrent;
+    this.current = 0;
+    this.queue = [];
+  }
+
+  async acquire() {
+    return new Promise((resolve) => {
+      if (this.current < this.maxConcurrent) {
+        this.current++;
+        resolve();
+      } else {
+        this.queue.push(resolve);
+      }
+    });
+  }
+
+  release() {
+    this.current--;
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
+      this.current++;
+      next();
+    }
+  }
+}
+
+// Global semaphore to limit concurrent queries (max 2 at a time)
+const querySemaphore = new QuerySemaphore(2);
+
+/**
  * Process a batch of customers (using individual queries like the working project)
  * This approach avoids connection pool exhaustion by using individual queries
- * instead of bulk operations
+ * and limiting concurrent queries with a semaphore
  */
 async function processBatch(customers, storeMapping = {}) {
   const results = {
@@ -53,11 +88,13 @@ async function processBatch(customers, storeMapping = {}) {
       const lastName = customer.lastname || customer.lastName || '';
 
       // Check if consumer exists (individual query like working project)
+      // Use semaphore to limit concurrent queries
       let existingConsumer = null;
       let retries = 2;
       let checkSuccess = false;
       
       while (retries > 0 && !checkSuccess) {
+        await querySemaphore.acquire();
         try {
           existingConsumer = await prisma.consumer.findFirst({
             where: { email: email },
@@ -80,7 +117,7 @@ async function processBatch(customers, storeMapping = {}) {
           
           if (isConnectionError && retries > 0) {
             console.warn(`[Sync Customers] Connection error checking ${email}, retrying... (${retries} retries left)`);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
           } else {
             console.error(`[Sync Customers] Error checking consumer ${email}:`, error.message);
             results.errors.push({
@@ -89,61 +126,22 @@ async function processBatch(customers, storeMapping = {}) {
             });
             checkSuccess = true; // Stop retrying, skip this customer
           }
+        } finally {
+          querySemaphore.release();
+          // Small delay after each query to let connection pool recover
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
 
       // Skip if check failed
-      if (!checkSuccess) {
-        continue;
-      }
-
-      if (existingConsumer) {
-        // Update existing consumer (individual query)
-        let updateRetries = 2;
-        let updateSuccess = false;
-        
-        while (updateRetries > 0 && !updateSuccess) {
-          try {
-            await prisma.consumer.update({
-              where: { email: email },
-              data: {
-                firstName: firstName || existingConsumer.firstName,
-                lastName: lastName || existingConsumer.lastName,
-                store: store || existingConsumer.store,
-                country: customer.country_id || customer.country || existingConsumer.country,
-                phone: customer.telephone || customer.phone || existingConsumer.phone,
-                updatedAt: new Date()
-              }
-            });
-            results.updated++;
-            updateSuccess = true;
-          } catch (error) {
-            updateRetries--;
-            const isConnectionError = error.message.includes("connection") || 
-                                      error.message.includes("timeout") ||
-                                      error.code === 'P1001' ||
-                                      error.code === 'P1008';
-            
-            if (isConnectionError && updateRetries > 0) {
-              console.warn(`[Sync Customers] Connection error updating ${email}, retrying... (${updateRetries} retries left)`);
-              await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
-              console.error(`[Sync Customers] Error updating consumer ${email}:`, error.message);
-              results.errors.push({
-                customer: email,
-                error: `Update failed: ${error.message}`
-              });
-              updateSuccess = true; // Stop retrying
-            }
-          }
-        }
-      } else {
+      if (!checkSuccess || !existingConsumer) {
         // Create new consumer (individual query like working project)
         const unsubscribeToken = crypto.randomBytes(32).toString('hex');
         let createRetries = 2;
         let createSuccess = false;
         
         while (createRetries > 0 && !createSuccess) {
+          await querySemaphore.acquire();
           try {
             await prisma.consumer.create({
               data: {
@@ -175,7 +173,7 @@ async function processBatch(customers, storeMapping = {}) {
               createSuccess = true; // Stop retrying, it's a duplicate
             } else if (isConnectionError && createRetries > 0) {
               console.warn(`[Sync Customers] Connection error creating ${email}, retrying... (${createRetries} retries left)`);
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise(resolve => setTimeout(resolve, 1000));
             } else {
               console.error(`[Sync Customers] Error creating consumer ${email}:`, error.message);
               results.errors.push({
@@ -184,13 +182,55 @@ async function processBatch(customers, storeMapping = {}) {
               });
               createSuccess = true; // Stop retrying
             }
+          } finally {
+            querySemaphore.release();
+            await new Promise(resolve => setTimeout(resolve, 200));
           }
         }
-      }
-
-      // Small delay every 10 customers to let connection pool recover
-      if ((i + 1) % 10 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        // Update existing consumer (individual query)
+        let updateRetries = 2;
+        let updateSuccess = false;
+        
+        while (updateRetries > 0 && !updateSuccess) {
+          await querySemaphore.acquire();
+          try {
+            await prisma.consumer.update({
+              where: { email: email },
+              data: {
+                firstName: firstName || existingConsumer.firstName,
+                lastName: lastName || existingConsumer.lastName,
+                store: store || existingConsumer.store,
+                country: customer.country_id || customer.country || existingConsumer.country,
+                phone: customer.telephone || customer.phone || existingConsumer.phone,
+                updatedAt: new Date()
+              }
+            });
+            results.updated++;
+            updateSuccess = true;
+          } catch (error) {
+            updateRetries--;
+            const isConnectionError = error.message.includes("connection") || 
+                                      error.message.includes("timeout") ||
+                                      error.code === 'P1001' ||
+                                      error.code === 'P1008';
+            
+            if (isConnectionError && updateRetries > 0) {
+              console.warn(`[Sync Customers] Connection error updating ${email}, retrying... (${updateRetries} retries left)`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.error(`[Sync Customers] Error updating consumer ${email}:`, error.message);
+              results.errors.push({
+                customer: email,
+                error: `Update failed: ${error.message}`
+              });
+              updateSuccess = true; // Stop retrying
+            }
+          } finally {
+            querySemaphore.release();
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
       }
 
     } catch (error) {
@@ -375,8 +415,10 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
 
     console.log(`[Sync Customers] Processing ${customersArray.length} unique customers from orders in smaller batches...`);
     
-    // Process in smaller batches (50 at a time) to avoid connection pool issues
-    const processingBatchSize = 50;
+    // Process in very small batches (10 at a time) to avoid connection pool issues
+    // Each customer does 2-3 queries, so 10 customers = 20-30 queries max
+    // With connection pool of 5, we need to be very careful
+    const processingBatchSize = 10;
     let totalCreated = 0;
     let totalUpdated = 0;
     const allErrors = [];
@@ -390,9 +432,20 @@ async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delay
       totalUpdated += batchResults.updated;
       allErrors.push(...batchResults.errors);
       
-      // Small delay between batches to let connection pool recover
+      // Longer delay between batches to let connection pool fully recover
+      // Disconnect and reconnect to release all connections
       if (i + processingBatchSize < customersArray.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log(`[Sync Customers] Waiting 2 seconds before next batch to let connection pool recover...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Force disconnect to release all connections
+        try {
+          await prisma.$disconnect();
+          // Small delay to ensure connections are released
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (disconnectError) {
+          // Ignore disconnect errors
+        }
       }
     }
     
