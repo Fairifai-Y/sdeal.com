@@ -137,18 +137,36 @@ async function processBatch(customers, storeMapping = {}) {
     } catch (error) {
       console.error(`[Sync Customers] Error bulk creating ${toCreate.length} consumers:`, error.message);
       console.error(`[Sync Customers] Error details:`, error);
-      // Fallback to individual creates
-      console.log(`[Sync Customers] Falling back to individual creates...`);
+      // Fallback to individual creates with retry
+      console.log(`[Sync Customers] Falling back to individual creates with retry...`);
       for (const data of toCreate) {
-        try {
-          await prisma.consumer.create({ data });
-          results.created++;
-        } catch (createError) {
-          console.error(`[Sync Customers] Error creating consumer ${data.email}:`, createError.message);
-          results.errors.push({
-            customer: data.email,
-            error: createError.message
-          });
+        let retries = 3;
+        let success = false;
+        
+        while (retries > 0 && !success) {
+          try {
+            await prisma.consumer.create({ data });
+            results.created++;
+            success = true;
+          } catch (createError) {
+            retries--;
+            const isConnectionError = createError.message.includes("Can't reach database") || 
+                                    createError.message.includes("connection") ||
+                                    createError.code === 'P1001';
+            
+            if (isConnectionError && retries > 0) {
+              console.warn(`[Sync Customers] Database connection error for ${data.email}, retrying... (${retries} retries left)`);
+              // Wait before retry (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+            } else {
+              console.error(`[Sync Customers] Error creating consumer ${data.email}:`, createError.message);
+              results.errors.push({
+                customer: data.email,
+                error: createError.message
+              });
+              success = true; // Stop retrying
+            }
+          }
         }
       }
       console.log(`[Sync Customers] Individual creates completed: ${results.created} created`);

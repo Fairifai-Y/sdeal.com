@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+// Use shared Prisma client from root (same as API endpoints)
+const prisma = require('../../api/lib/prisma');
 
 // Get client IP address
 const getClientIP = (req) => {
