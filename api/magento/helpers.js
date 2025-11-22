@@ -76,6 +76,8 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   const proxyUrl = proxyBaseUrl.replace(/\/$/, '');
   
   console.log(`[Magento API] Routing ${method} ${targetUrl} through ${proxyUrl}`);
+  console.log(`[Magento API] Proxy base URL: ${proxyBaseUrl}`);
+  console.log(`[Magento API] Proxy secret configured: ${proxySecret ? 'Yes (***)' : 'No'}`);
   
   // Proxy expects:
   // 1. Secret in header: X-Proxy-Secret
@@ -116,17 +118,34 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   const startTime = Date.now();
   const timeoutMs = 30000; // 30 second timeout
   
+  console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
+  
   try {
     // Create timeout promise
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
+        console.error(`[Magento API] ⏱️ Timeout triggered after ${timeoutMs}ms`);
         reject(new Error(`Proxy request timeout after ${timeoutMs}ms`));
       }, timeoutMs);
     });
     
+    // Create fetch promise with logging
+    const fetchPromise = fetch(proxyUrlWithParams, requestOptions)
+      .then(response => {
+        const duration = Date.now() - startTime;
+        console.log(`[Magento API] ✅ Fetch completed in ${duration}ms: ${response.status} ${response.statusText}`);
+        return response;
+      })
+      .catch(fetchError => {
+        const duration = Date.now() - startTime;
+        console.error(`[Magento API] ❌ Fetch failed after ${duration}ms:`, fetchError.message);
+        throw fetchError;
+      });
+    
     // Race between fetch and timeout
+    console.log(`[Magento API] Racing fetch vs timeout...`);
     const response = await Promise.race([
-      fetch(proxyUrlWithParams, requestOptions),
+      fetchPromise,
       timeoutPromise
     ]);
     
@@ -136,6 +155,7 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Magento API] Proxy request failed after ${duration}ms:`, error.message);
+    console.error(`[Magento API] Error name:`, error.name);
     console.error(`[Magento API] Error stack:`, error.stack);
     throw error;
   }
