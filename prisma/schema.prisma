@@ -11,44 +11,44 @@ datasource db {
 }
 
 model PackageSelection {
-  id                 String   @id @default(cuid())
-  package            String   // A, B, or C
-  addonDealCSS       Boolean  @default(false)
-  addonCAAS          Boolean  @default(false)
-  addonFairifAI      Boolean  @default(false)
-  agreementAccepted  Boolean
-  agreementVersion   String   @default("SellerAgreement_6.3_2026-01")
-  termsVersion       String   @default("SellerTerms_2026-01")
-  language           String   // en, nl, de, fr
-  ipAddress          String?
-  sellerEmail        String?  // Optional: if you want to track seller email
-  sellerId           String   // Required: seller ID
-  startDate          String   // "immediate" or "2026-01-01"
-  commissionPercentage Float?  // Commission percentage (12% min for A, 4% min for B/C)
-  billingPeriod      String?  // "monthly" or "yearly"
-  
+  id                   String  @id @default(cuid())
+  package              String // A, B, or C
+  addonDealCSS         Boolean @default(false)
+  addonCAAS            Boolean @default(false)
+  addonFairifAI        Boolean @default(false)
+  agreementAccepted    Boolean
+  agreementVersion     String  @default("SellerAgreement_6.3_2026-01")
+  termsVersion         String  @default("SellerTerms_2026-01")
+  language             String // en, nl, de, fr
+  ipAddress            String?
+  sellerEmail          String? // Optional: if you want to track seller email
+  sellerId             String // Required: seller ID
+  startDate            String // "immediate" or "2026-01-01"
+  commissionPercentage Float? // Commission percentage (12% min for A, 4% min for B/C)
+  billingPeriod        String? // "monthly" or "yearly"
+
   // New customer registration fields (NAW + business details)
-  isNewCustomer      Boolean  @default(false)
-  companyName        String?
-  firstName          String?
-  lastName           String?
-  street             String?
-  city               String?
-  postalCode         String?
-  country            String?
-  phone              String?
-  kvkNumber          String?  // Chamber of Commerce number
-  vatNumber         String?  // VAT/BTW number
-  iban              String?  // IBAN
-  bic               String?  // BIC
-  
+  isNewCustomer Boolean @default(false)
+  companyName   String?
+  firstName     String?
+  lastName      String?
+  street        String?
+  city          String?
+  postalCode    String?
+  country       String?
+  phone         String?
+  kvkNumber     String? // Chamber of Commerce number
+  vatNumber     String? // VAT/BTW number
+  iban          String? // IBAN
+  bic           String? // BIC
+
   // Mollie payment fields
-  molliePaymentId   String?  // Mollie payment ID
-  mollieCustomerId  String?  // Mollie customer ID for recurring payments
-  mollieMandateId   String?  // Mollie mandate ID for recurring payments
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  molliePaymentId  String? // Mollie payment ID
+  mollieCustomerId String? // Mollie customer ID for recurring payments
+  mollieMandateId  String? // Mollie mandate ID for recurring payments
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([package])
   @@index([createdAt])
@@ -58,89 +58,115 @@ model PackageSelection {
 }
 
 model Consumer {
-  id                String   @id @default(cuid())
-  firstName         String
-  lastName          String
-  email             String   @unique
-  store             String   // Store identifier (e.g., "NL", "BE", "DE", "FR")
-  country           String?  // Country code (derived from store or explicit)
-  
+  id        String  @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  store     String // Store identifier (e.g., "NL", "BE", "DE", "FR")
+  country   String? // Country code (derived from store or explicit)
+
+  // Purchase tracking (like working project)
+  purchaseDate DateTime? // Date of first purchase (from order)
+
   // Email tracking fields
-  isUnsubscribed    Boolean  @default(false)
-  unsubscribedAt    DateTime?
-  unsubscribeToken  String?  @unique // Unique token for unsubscribe links
-  
+  isUnsubscribed   Boolean   @default(false)
+  unsubscribedAt   DateTime?
+  unsubscribeToken String?   @unique // Unique token for unsubscribe links
+
   // Last contact tracking
-  lastContactAt     DateTime? // Last time an email was sent to this consumer
-  lastEmailOpenedAt DateTime? // Last time any email was opened
+  lastContactAt      DateTime? // Last time an email was sent to this consumer
+  lastEmailOpenedAt  DateTime? // Last time any email was opened
   lastEmailClickedAt DateTime? // Last time any link in email was clicked
-  
+
   // Statistics (aggregated for quick access)
-  totalEmailsSent   Int      @default(0)
-  totalEmailsOpened Int      @default(0)
-  totalEmailsClicked Int     @default(0)
-  
+  totalEmailsSent    Int @default(0)
+  totalEmailsOpened  Int @default(0)
+  totalEmailsClicked Int @default(0)
+
   // Source tracking
-  source            String?  // How they signed up (e.g., "website", "newsletter", "manual")
-  sourceUrl         String?  // URL where they signed up
-  
+  source    String? // How they signed up (e.g., "website", "newsletter", "manual", "magento_sync")
+  sourceUrl String? // URL where they signed up
+
   // Additional optional fields
-  phone             String?
-  dateOfBirth       DateTime?
-  preferences       Json?    // JSON field for storing preferences (language, interests, etc.)
-  
+  phone       String?
+  dateOfBirth DateTime?
+  preferences Json? // JSON field for storing preferences (language, interests, etc.)
+
   // Relations
-  emailCampaigns    EmailCampaign[]
-  emailEvents       EmailEvent[]
+  emailCampaigns     EmailCampaign[]
+  emailEvents        EmailEvent[]
   workflowExecutions EmailWorkflowExecution[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  listMemberships    EmailListMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint: email only (one consumer per email address)
+  @@unique([email])
   @@index([email])
   @@index([store])
   @@index([country])
+  @@index([purchaseDate])
   @@index([isUnsubscribed])
   @@index([lastContactAt])
   @@index([createdAt])
 }
 
+// Sync status tracking (for watermark system)
+model SyncStatus {
+  id             String    @id @default(cuid())
+  syncType       String // "full" or "incremental"
+  lastEntityId   Int? // Last processed Magento order entity_id (watermark)
+  lastSyncAt     DateTime? // Last sync timestamp
+  status         String    @default("stopped") // stopped, running, error
+  totalProcessed Int       @default(0)
+  totalCreated   Int       @default(0)
+  totalErrors    Int       @default(0)
+  errorMessage   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([syncType])
+  @@index([lastSyncAt])
+}
+
 model EmailCampaign {
-  id                String   @id @default(cuid())
-  name              String   // Campaign name (e.g., "Weekly Newsletter", "Product Launch")
-  subject           String   // Email subject line
-  
+  id      String @id @default(cuid())
+  name    String // Campaign name (e.g., "Weekly Newsletter", "Product Launch")
+  subject String // Email subject line
+
   // Campaign status
-  status            String   @default("draft") // draft, scheduled, sending, sent, cancelled
-  scheduledAt       DateTime? // When to send (for scheduled campaigns)
-  sentAt            DateTime? // When it was actually sent
-  
+  status      String    @default("draft") // draft, scheduled, sending, sent, cancelled
+  scheduledAt DateTime? // When to send (for scheduled campaigns)
+  sentAt      DateTime? // When it was actually sent
+
   // Recipients
-  consumerId        String?  // If sent to specific consumer (for individual emails)
-  consumer          Consumer? @relation(fields: [consumerId], references: [id], onDelete: Cascade)
-  
+  consumerId String? // If sent to specific consumer (for individual emails)
+  consumer   Consumer? @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
   // Bulk campaign tracking
-  totalRecipients   Int      @default(0)
-  totalSent         Int      @default(0)
-  totalDelivered    Int      @default(0)
-  totalOpened       Int      @default(0)
-  totalClicked      Int      @default(0)
-  totalBounced     Int      @default(0)
-  totalUnsubscribed Int      @default(0)
-  
+  totalRecipients   Int @default(0)
+  totalSent         Int @default(0)
+  totalDelivered    Int @default(0)
+  totalOpened       Int @default(0)
+  totalClicked      Int @default(0)
+  totalBounced      Int @default(0)
+  totalUnsubscribed Int @default(0)
+
   // Filter criteria (stored as JSON for flexibility)
-  filterCriteria    Json?    // Store, country, tags, etc.
-  
+  filterCriteria Json? // Store, country, tags, etc.
+
   // Template reference
-  templateId        String?
-  template          EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  
+  templateId String?
+  template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
   // Relations
-  emailEvents       EmailEvent[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  emailEvents EmailEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([status])
   @@index([scheduledAt])
   @@index([sentAt])
@@ -149,27 +175,27 @@ model EmailCampaign {
 }
 
 model EmailEvent {
-  id                String   @id @default(cuid())
-  campaignId        String
-  campaign          EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  consumerId        String
-  consumer          Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
-  
+  id         String        @id @default(cuid())
+  campaignId String
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  consumerId String
+  consumer   Consumer      @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
   // Event type
-  eventType         String   // sent, delivered, opened, clicked, bounced, unsubscribed, complained
-  bounceType        String?  // soft, hard (only for bounced events)
-  bounceReason      String?  // Reason for bounce (only for bounced events)
-  eventData         Json?    // Additional event data (clicked URL, bounce reason, etc.)
-  
+  eventType    String // sent, delivered, opened, clicked, bounced, unsubscribed, complained
+  bounceType   String? // soft, hard (only for bounced events)
+  bounceReason String? // Reason for bounce (only for bounced events)
+  eventData    Json? // Additional event data (clicked URL, bounce reason, etc.)
+
   // Timestamps
-  occurredAt        DateTime @default(now())
-  
+  occurredAt DateTime @default(now())
+
   // User agent and IP (for opens/clicks)
-  userAgent         String?
-  ipAddress         String?
-  
-  createdAt         DateTime @default(now())
-  
+  userAgent String?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
   @@index([campaignId])
   @@index([consumerId])
   @@index([eventType])
@@ -178,110 +204,162 @@ model EmailEvent {
 }
 
 model EmailTemplate {
-  id                String   @id @default(cuid())
-  name              String   // Template name (e.g., "Welcome Email", "Newsletter")
-  subject           String   // Email subject (can contain variables like {{firstName}})
-  htmlContent       String   // HTML email content with variables
-  textContent       String?  // Plain text version (optional)
-  
+  id          String  @id @default(cuid())
+  name        String // Template name (e.g., "Welcome Email", "Newsletter")
+  subject     String // Email subject (can contain variables like {{firstName}})
+  htmlContent String // HTML email content with variables
+  textContent String? // Plain text version (optional)
+
   // Variables that can be used in this template
-  availableVariables Json?    // Array of variable names and descriptions
+  availableVariables Json? // Array of variable names and descriptions
   // Example: [{"name": "firstName", "description": "Consumer's first name"}, ...]
-  
+
   // Template metadata
-  category          String?  // welcome, newsletter, transactional, promotional
-  isActive          Boolean  @default(true)
-  
+  category String? // welcome, newsletter, transactional, promotional
+  isActive Boolean @default(true)
+
   // Relations
-  campaigns         EmailCampaign[]
-  workflowSteps     EmailWorkflowStep[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  campaigns     EmailCampaign[]
+  workflowSteps EmailWorkflowStep[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([category])
   @@index([isActive])
   @@index([createdAt])
 }
 
 model EmailWorkflow {
-  id                String   @id @default(cuid())
-  name              String   // Workflow name (e.g., "Welcome Series", "Abandoned Cart")
-  description       String?  // Workflow description
-  
+  id          String  @id @default(cuid())
+  name        String // Workflow name (e.g., "Welcome Series", "Abandoned Cart")
+  description String? // Workflow description
+
   // Trigger configuration
-  triggerType       String   // consumer_signup, consumer_purchase, date_based, manual
-  triggerConditions Json?    // Conditions for triggering (e.g., store, country, etc.)
-  
+  triggerType       String // consumer_signup, consumer_purchase, email_opened, email_clicked, payment_completed, consumer_created, date_based, manual
+  triggerConditions Json? // Conditions for triggering (e.g., store, country, specific email template, etc.)
+
   // Workflow status
-  isActive          Boolean  @default(true)
-  
+  isActive Boolean @default(true)
+
   // Relations
-  steps             EmailWorkflowStep[]
-  executions        EmailWorkflowExecution[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  steps      EmailWorkflowStep[]
+  executions EmailWorkflowExecution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([triggerType])
   @@index([isActive])
   @@index([createdAt])
 }
 
 model EmailWorkflowStep {
-  id                String   @id @default(cuid())
-  workflowId        String
-  workflow          EmailWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  templateId       String
-  template          EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  
+  id         String         @id @default(cuid())
+  workflowId String
+  workflow   EmailWorkflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  templateId String?
+  template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
   // Step configuration
-  stepOrder         Int      // Order in the workflow (1, 2, 3, ...)
-  delayDays         Int      @default(0) // Days to wait before sending (0 = immediate)
-  delayHours        Int      @default(0) // Additional hours to wait
-  delayMinutes      Int      @default(0) // Additional minutes to wait
-  
+  stepOrder    Int // Order in the workflow (1, 2, 3, ...)
+  actionType   String @default("send_email") // send_email, add_to_list, remove_from_list, update_field, custom
+  actionConfig Json? // Action-specific configuration (listId for add_to_list, field updates, etc.)
+
+  delayDays    Int @default(0) // Days to wait before executing (0 = immediate)
+  delayHours   Int @default(0) // Additional hours to wait
+  delayMinutes Int @default(0) // Additional minutes to wait
+
   // Conditions for this step
-  conditions        Json?    // Optional conditions (e.g., only if consumer hasn't opened previous email)
-  
+  conditions Json? // Optional conditions (e.g., only if consumer hasn't opened previous email)
+
   // Step status
-  isActive          Boolean  @default(true)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workflowId, stepOrder])
   @@index([workflowId])
   @@index([templateId])
   @@index([stepOrder])
-  @@unique([workflowId, stepOrder])
+  @@index([actionType])
+}
+
+// Maillijsten (Email Lists)
+model EmailList {
+  id          String  @id @default(cuid())
+  name        String // List name (e.g., "VIP Customers", "Newsletter Subscribers")
+  description String? // List description
+
+  // List configuration
+  isPublic    Boolean @default(false) // Can consumers subscribe directly?
+  doubleOptIn Boolean @default(true) // Require email confirmation
+
+  // List statistics
+  totalConsumers Int @default(0) // Cached count of consumers in list
+
+  // Relations
+  listMembers EmailListMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+// Many-to-many relationship between Consumers and Email Lists
+model EmailListMember {
+  id         String    @id @default(cuid())
+  listId     String
+  list       EmailList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  consumerId String
+  consumer   Consumer  @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  // Membership status
+  status         String    @default("subscribed") // subscribed, unsubscribed, pending (for double opt-in)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  // Source tracking
+  source           String? // How they joined (workflow, manual, import, etc.)
+  sourceWorkflowId String? // If added via workflow
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listId, consumerId])
+  @@index([listId])
+  @@index([consumerId])
+  @@index([status])
 }
 
 model EmailWorkflowExecution {
-  id                String   @id @default(cuid())
-  workflowId        String
-  workflow          EmailWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  consumerId        String
-  consumer          Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
-  
+  id         String        @id @default(cuid())
+  workflowId String
+  workflow   EmailWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  consumerId String
+  consumer   Consumer      @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
   // Execution status
-  status            String   @default("active") // active, completed, cancelled, paused
-  currentStep       Int      @default(1) // Current step number in the workflow
-  
+  status      String @default("active") // active, completed, cancelled, paused
+  currentStep Int    @default(1) // Current step number in the workflow
+
   // Timing
-  startedAt         DateTime @default(now())
-  completedAt       DateTime?
-  nextStepAt        DateTime? // When the next step should be executed
-  
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  nextStepAt  DateTime? // When the next step should be executed
+
   // Execution data
-  executionData     Json?    // Store any execution-specific data
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  executionData Json? // Store any execution-specific data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workflowId, consumerId])
   @@index([workflowId])
   @@index([consumerId])
   @@index([status])
   @@index([nextStepAt])
-  @@unique([workflowId, consumerId])
 }
-

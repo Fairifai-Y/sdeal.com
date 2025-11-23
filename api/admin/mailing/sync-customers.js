@@ -1,666 +1,320 @@
 const prisma = require('../../lib/prisma');
 const { makeRequest: makeMagentoRequest } = require('../../magento/helpers');
-const { makeRequest: makeSellerAdminRequest } = require('../../seller-admin/helpers');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-// In-memory sync status (in production, use Redis or database)
+// Checkpoint file location
+const CHECKPOINT_FILE = path.join(__dirname, '../../../server/sync-checkpoint.json');
+
+// In-memory sync status and stop flag
 const syncStatus = {
   isRunning: false,
+  shouldStop: false,
   progress: {
-    total: 0,
-    processed: 0,
-    created: 0,
-    updated: 0,
-    errors: 0,
+    totalProcessed: 0,
+    totalCreated: 0,
+    totalSkipped: 0,
+    totalErrors: 0,
     currentPage: 0,
-    totalPages: 0
+    lastEntityId: 0
   },
   errors: [],
   startedAt: null,
   completedAt: null
 };
 
+// Store mapping
+const storeMapping = {
+  1: 'NL',
+  2: 'DE',
+  3: 'BE',
+  4: 'FR'
+};
+
 /**
- * Simple semaphore to limit concurrent database queries
- * This prevents connection pool exhaustion
+ * Convert Magento order to consumer data
  */
-class QuerySemaphore {
-  constructor(maxConcurrent = 2) {
-    this.maxConcurrent = maxConcurrent;
-    this.current = 0;
-    this.queue = [];
+function convertOrderToConsumer(order, storeMapping = {}) {
+  const email = order.customer_email || 
+               order.customerEmail || 
+               order.email ||
+               (order.billing_address?.email) ||
+               (order.shipping_address?.email);
+  
+  if (!email || !email.includes('@')) {
+    return null;
   }
 
-  async acquire() {
-    return new Promise((resolve) => {
-      if (this.current < this.maxConcurrent) {
-        this.current++;
-        resolve();
-      } else {
-        this.queue.push(resolve);
-      }
-    });
-  }
-
-  release() {
-    this.current--;
-    if (this.queue.length > 0) {
-      const next = this.queue.shift();
-      this.current++;
-      next();
+  let firstName = order.customer_firstname || 
+                 order.first_name || 
+                 (order.billing_address?.firstname) || '';
+  let lastName = order.customer_lastname || 
+                order.last_name || 
+                (order.billing_address?.lastname) || '';
+  
+  if (!firstName && !lastName && order.customer_name && !order.customer_name.includes('@')) {
+    const nameParts = order.customer_name.trim().split(/\s+/);
+    if (nameParts.length > 0) {
+      firstName = nameParts[0];
+      lastName = nameParts.slice(1).join(' ') || '';
     }
   }
-}
+  
+  if (!firstName && !lastName) {
+    const emailPrefix = email.split('@')[0];
+    firstName = emailPrefix || 'Unknown';
+    lastName = 'Customer';
+  }
 
-// Global semaphore to limit concurrent queries (max 2 at a time)
-const querySemaphore = new QuerySemaphore(2);
+  const storeId = order.store_id || order.storeId || 1;
+  const store = storeMapping[storeId] || 'NL';
+  const purchaseDate = order.created_at ? new Date(order.created_at) : new Date();
 
-/**
- * Process a batch of customers (using individual queries like the working project)
- * This approach avoids connection pool exhaustion by using individual queries
- * and limiting concurrent queries with a semaphore
- */
-async function processBatch(customers, storeMapping = {}) {
-  const results = {
-    created: 0,
-    updated: 0,
-    errors: []
+  return {
+    firstName,
+    lastName,
+    email,
+    store,
+    country: order.shipping_countryid || order.country_id || order.shipping_country || store,
+    phone: order.customer_phone || order.telephone || order.phone || null,
+    purchaseDate,
+    source: 'magento_sync',
+    sourceUrl: null,
+    unsubscribeToken: crypto.randomBytes(32).toString('hex')
   };
-
-  // Process each customer individually (like the working project)
-  // This is slower but much safer for connection pools
-  for (let i = 0; i < customers.length; i++) {
-    const customer = customers[i];
-    
-    try {
-      const email = customer.email;
-      if (!email) {
-        results.errors.push({ customer: 'unknown', error: 'Missing email' });
-        continue;
-      }
-
-      // Determine store from website_id or default
-      const websiteId = customer.website_id || 1;
-      const store = storeMapping[websiteId] || customer.store || 'NL'; // Default to NL
-      
-      // Extract name - support both camelCase and lowercase field names
-      const firstName = customer.firstname || customer.firstName || '';
-      const lastName = customer.lastname || customer.lastName || '';
-
-      // Check if consumer exists (individual query like working project)
-      // Use semaphore to limit concurrent queries
-      let existingConsumer = null;
-      let retries = 3; // More retries for connection errors
-      let checkSuccess = false;
-      
-      while (retries > 0 && !checkSuccess) {
-        await querySemaphore.acquire();
-        try {
-          existingConsumer = await Promise.race([
-            prisma.consumer.findFirst({
-              where: { email: email },
-              select: {
-                email: true,
-                firstName: true,
-                lastName: true,
-                store: true,
-                country: true,
-                phone: true
-              }
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Query timeout')), 15000)
-            )
-          ]);
-          checkSuccess = true;
-        } catch (error) {
-          retries--;
-          const isConnectionError = error.message.includes("connection") || 
-                                    error.message.includes("timeout") ||
-                                    error.message.includes("Can't reach database") ||
-                                    error.message.includes("Query timeout") ||
-                                    error.code === 'P1001' ||
-                                    error.code === 'P1008';
-          
-          if (isConnectionError && retries > 0) {
-            const delay = 2000 * (4 - retries); // Exponential backoff: 2s, 4s, 6s
-            console.warn(`[Sync Customers] Connection error checking ${email}, retrying in ${delay}ms... (${retries} retries left)`);
-            console.warn(`[Sync Customers] Error details:`, error.message);
-            
-            // If it's a "Can't reach database" error, try to disconnect and reconnect
-            if (error.message.includes("Can't reach database")) {
-              try {
-                await prisma.$disconnect();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              } catch (disconnectError) {
-                // Ignore disconnect errors
-              }
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, delay));
-          } else {
-            console.error(`[Sync Customers] Error checking consumer ${email}:`, error.message);
-            results.errors.push({
-              customer: email,
-              error: `Check failed: ${error.message}`
-            });
-            checkSuccess = true; // Stop retrying, skip this customer
-          }
-        } finally {
-          querySemaphore.release();
-          // Small delay after each query to let connection pool recover
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
-
-      // Skip if check failed
-      if (!checkSuccess || !existingConsumer) {
-        // Create new consumer (individual query like working project)
-        const unsubscribeToken = crypto.randomBytes(32).toString('hex');
-        let createRetries = 3; // More retries for connection errors
-        let createSuccess = false;
-        
-        while (createRetries > 0 && !createSuccess) {
-          await querySemaphore.acquire();
-          try {
-            await Promise.race([
-              prisma.consumer.create({
-                data: {
-                  firstName,
-                  lastName,
-                  email,
-                  store,
-                  country: customer.country_id || customer.country || store,
-                  phone: customer.telephone || customer.phone,
-                  source: 'magento_sync',
-                  sourceUrl: null,
-                  unsubscribeToken,
-                  preferences: customer.custom_attributes ? 
-                    JSON.parse(JSON.stringify(customer.custom_attributes)) : null
-                }
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Create timeout')), 15000)
-              )
-            ]);
-            results.created++;
-            createSuccess = true;
-          } catch (error) {
-            createRetries--;
-            const isConnectionError = error.message.includes("connection") || 
-                                      error.message.includes("timeout") ||
-                                      error.message.includes("Can't reach database") ||
-                                      error.message.includes("Create timeout") ||
-                                      error.code === 'P1001' ||
-                                      error.code === 'P1008';
-            
-            // Skip duplicates (unique constraint violation)
-            if (error.code === 'P2002') {
-              console.log(`[Sync Customers] Consumer ${email} already exists, skipping`);
-              createSuccess = true; // Stop retrying, it's a duplicate
-            } else if (isConnectionError && createRetries > 0) {
-              const delay = 2000 * (4 - createRetries); // Exponential backoff: 2s, 4s, 6s
-              console.warn(`[Sync Customers] Connection error creating ${email}, retrying in ${delay}ms... (${createRetries} retries left)`);
-              console.warn(`[Sync Customers] Error details:`, error.message);
-              
-              // If it's a "Can't reach database" error, try to disconnect and reconnect
-              if (error.message.includes("Can't reach database")) {
-                try {
-                  await prisma.$disconnect();
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (disconnectError) {
-                  // Ignore disconnect errors
-                }
-              }
-              
-              await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-              console.error(`[Sync Customers] Error creating consumer ${email}:`, error.message);
-              results.errors.push({
-                customer: email,
-                error: `Create failed: ${error.message}`
-              });
-              createSuccess = true; // Stop retrying
-            }
-          } finally {
-            querySemaphore.release();
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        }
-      } else {
-        // Update existing consumer (individual query)
-        let updateRetries = 3; // More retries for connection errors
-        let updateSuccess = false;
-        
-        while (updateRetries > 0 && !updateSuccess) {
-          await querySemaphore.acquire();
-          try {
-            await Promise.race([
-              prisma.consumer.update({
-                where: { email: email },
-                data: {
-                  firstName: firstName || existingConsumer.firstName,
-                  lastName: lastName || existingConsumer.lastName,
-                  store: store || existingConsumer.store,
-                  country: customer.country_id || customer.country || existingConsumer.country,
-                  phone: customer.telephone || customer.phone || existingConsumer.phone,
-                  updatedAt: new Date()
-                }
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Update timeout')), 15000)
-              )
-            ]);
-            results.updated++;
-            updateSuccess = true;
-          } catch (error) {
-            updateRetries--;
-            const isConnectionError = error.message.includes("connection") || 
-                                      error.message.includes("timeout") ||
-                                      error.message.includes("Can't reach database") ||
-                                      error.message.includes("Update timeout") ||
-                                      error.code === 'P1001' ||
-                                      error.code === 'P1008';
-            
-            if (isConnectionError && updateRetries > 0) {
-              const delay = 2000 * (4 - updateRetries); // Exponential backoff: 2s, 4s, 6s
-              console.warn(`[Sync Customers] Connection error updating ${email}, retrying in ${delay}ms... (${updateRetries} retries left)`);
-              console.warn(`[Sync Customers] Error details:`, error.message);
-              
-              // If it's a "Can't reach database" error, try to disconnect and reconnect
-              if (error.message.includes("Can't reach database")) {
-                try {
-                  await prisma.$disconnect();
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (disconnectError) {
-                  // Ignore disconnect errors
-                }
-              }
-              
-              await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-              console.error(`[Sync Customers] Error updating consumer ${email}:`, error.message);
-              results.errors.push({
-                customer: email,
-                error: `Update failed: ${error.message}`
-              });
-              updateSuccess = true; // Stop retrying
-            }
-          } finally {
-            querySemaphore.release();
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        }
-      }
-
-    } catch (error) {
-      console.error(`[Sync Customers] Error processing customer ${customer.email}:`, error);
-      results.errors.push({
-        customer: customer.email || 'unknown',
-        error: error.message
-      });
-    }
-  }
-
-  console.log(`[Sync Customers] ✅ Batch completed: ${results.created} created, ${results.updated} updated, ${results.errors.length} errors`);
-  return results;
 }
 
 /**
- * Sync customers from orders (fallback method)
+ * Load checkpoint from file
  */
-async function syncCustomersFromOrders(storeMapping = {}, batchSize = 100, delayBetweenBatches = 1000, maxPages = null) {
-  console.log('[Sync Customers] Using orders-based sync (standard Magento API - NO admin token)...');
+function loadCheckpoint() {
+  try {
+    if (fs.existsSync(CHECKPOINT_FILE)) {
+      const data = fs.readFileSync(CHECKPOINT_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.warn('[Sync] Could not load checkpoint:', error.message);
+  }
+  return null;
+}
+
+/**
+ * Save checkpoint to file
+ */
+function saveCheckpoint(checkpoint) {
+  try {
+    fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify(checkpoint, null, 2));
+  } catch (error) {
+    console.error('[Sync] Could not save checkpoint:', error.message);
+  }
+}
+
+/**
+ * Clear checkpoint file
+ */
+function clearCheckpoint() {
+  try {
+    if (fs.existsSync(CHECKPOINT_FILE)) {
+      fs.unlinkSync(CHECKPOINT_FILE);
+    }
+  } catch (error) {
+    // Ignore
+  }
+}
+
+/**
+ * Main sync function with checkpoint support
+ */
+async function syncOrders(options = {}) {
+  const {
+    pageSize = 500,
+    startPage = 1,
+    maxPages = null,
+    resume = true,
+    fullSync = false
+  } = options;
+  
+  // Load checkpoint if resuming
+  let checkpoint = null;
+  if (resume && !fullSync) {
+    checkpoint = loadCheckpoint();
+    if (checkpoint) {
+      console.log('[Sync] Resuming from checkpoint:', checkpoint.lastPage);
+    }
+  }
+  
+  const currentPage = checkpoint ? checkpoint.lastPage + 1 : startPage;
+  const totalCreated = checkpoint ? checkpoint.totalCreated : 0;
+  const totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
+  const totalErrors = checkpoint ? checkpoint.totalErrors : 0;
+  const lastEntityId = checkpoint ? checkpoint.lastEntityId : 0;
   
   syncStatus.isRunning = true;
+  syncStatus.shouldStop = false;
   syncStatus.startedAt = new Date();
   syncStatus.progress = {
-    total: 0,
-    processed: 0,
-    created: 0,
-    updated: 0,
-    errors: 0,
-    currentPage: 0,
-    totalPages: 0
+    totalProcessed: 0,
+    totalCreated: totalCreated,
+    totalSkipped: totalSkipped,
+    totalErrors: totalErrors,
+    currentPage: currentPage - 1,
+    lastEntityId: lastEntityId
   };
   syncStatus.errors = [];
-
+  
+  let page = currentPage;
+  let hasMore = true;
+  let sessionCreated = 0;
+  let sessionSkipped = 0;
+  let sessionErrors = 0;
+  let highestEntityId = lastEntityId;
+  
   try {
-    // Get orders and extract unique customers
-    const uniqueCustomers = new Map(); // email -> customer data
-    let page = 1;
-    let hasMore = true;
-    const maxPagesLimit = maxPages || 1000; // Limit to prevent infinite loops (or use provided limit)
-
-    while (hasMore && page <= maxPagesLimit) {
-      try {
-        syncStatus.progress.currentPage = page;
-        console.log(`[Sync Customers] Fetching orders page ${page} to extract customers...`);
-
-        // Use STANDARD Magento API for orders (NO admin token - uses Bearer token if configured)
-        // This is the standard Magento REST API, not the Seller Admin API
-        const ordersData = await makeMagentoRequest('/orders', {
-          'searchCriteria[pageSize]': batchSize,
-          'searchCriteria[currentPage]': page
-        });
-
-        const orders = ordersData?.items || [];
-        
-        console.log(`[Sync Customers] Orders page ${page}: received ${orders.length} orders`);
-        
-        if (orders.length === 0) {
-          console.log(`[Sync Customers] No more orders, stopping at page ${page}`);
-          hasMore = false;
-          break;
-        }
-
-        // Log first order structure to see what fields are available
-        if (page === 1 && orders.length > 0) {
-          console.log(`[Sync Customers] First order structure:`, Object.keys(orders[0]));
-          console.log(`[Sync Customers] First order sample:`, JSON.stringify(orders[0], null, 2).substring(0, 1000));
-          
-          // Also log a few more orders to see if structure varies
-          if (orders.length > 1) {
-            console.log(`[Sync Customers] Second order keys:`, Object.keys(orders[1]));
-          }
-          if (orders.length > 2) {
-            console.log(`[Sync Customers] Third order keys:`, Object.keys(orders[2]));
-          }
-        }
-
-        // Extract customer info from orders
-        // Note: /supplier/orders/ might not have customer_email in list, need to check order details
-        let customersFoundInPage = 0;
-        let skippedNoEmail = 0;
-        
-        for (const order of orders) {
-          // Try different field names for customer email from order list
-          // Check all possible locations where email might be stored
-          let email = order.customer_email || 
-                     order.customerEmail || 
-                     order.email ||
-                     order.customer_email_address ||
-                     (order.extension_attributes?.customer_email) ||
-                     (order.billing_address?.email) ||
-                     (order.shipping_address?.email) ||
-                     (order.address?.email) ||
-                     order.customer_name; // Sometimes email is in customer_name
-          
-          // If no email in list, try to get from order details (but this is slow for 75k orders)
-          // For now, skip orders without email in the list
-          if (!email || !email.includes('@')) {
-            // Try to extract from customer_name if it looks like an email
-            if (order.customer_name && order.customer_name.includes('@')) {
-              email = order.customer_name;
-            } else {
-              // Log missing email for first few orders to debug
-              if (skippedNoEmail < 3 && page <= 2) {
-                console.log(`[Sync Customers] Order ${order.id || order.entity_id || 'unknown'} has no email. Available fields:`, Object.keys(order).filter(k => k.toLowerCase().includes('email') || k.toLowerCase().includes('customer') || k.toLowerCase().includes('name')));
-              }
-              skippedNoEmail++;
-              // Skip this order - no email available
-              continue;
-            }
-          }
-          
-          if (email && email.includes('@')) {
-            // Extract name from order or use email prefix
-            let firstName = order.customer_firstname || order.first_name || 
-                          (order.billing_address?.firstname) || '';
-            let lastName = order.customer_lastname || order.last_name || 
-                         (order.billing_address?.lastname) || '';
-            
-            // If no name, try to extract from customer_name
-            if (!firstName && !lastName && order.customer_name && !order.customer_name.includes('@')) {
-              const nameParts = order.customer_name.trim().split(/\s+/);
-              if (nameParts.length > 0) {
-                firstName = nameParts[0];
-                lastName = nameParts.slice(1).join(' ') || '';
-              }
-            }
-            
-            // Determine store from order
-            // For /supplier/orders/, we might need to infer from supplier or use default
-            const storeId = order.store_id || order.storeId || 1;
-            const store = storeMapping[storeId] || 'NL';
-
-            if (!uniqueCustomers.has(email)) {
-              const customerData = {
-                email,
-                firstname: firstName || '', // Note: using 'firstname' (lowercase) to match Magento API format
-                lastname: lastName || '',   // Note: using 'lastname' (lowercase) to match Magento API format
-                store,
-                country_id: order.shipping_countryid || order.country_id || order.shipping_country || store,
-                telephone: order.customer_phone || order.telephone || order.phone || null,
-                website_id: storeId || 1
-              };
-              uniqueCustomers.set(email, customerData);
-              customersFoundInPage++;
-              
-              // Log first few customers for debugging
-              if (customersFoundInPage <= 3) {
-                console.log(`[Sync Customers] Sample customer ${customersFoundInPage}:`, customerData);
-              }
-            }
-          }
-        }
-        
-        console.log(`[Sync Customers] Page ${page}: Extracted ${customersFoundInPage} new customers from ${orders.length} orders (${skippedNoEmail} skipped - no email)`);
-
-        syncStatus.progress.processed += orders.length;
-        console.log(`[Sync Customers] Page ${page}: Found ${uniqueCustomers.size} unique customers so far`);
-
-        if (orders.length < batchSize) {
-          hasMore = false;
-        }
-
-        page++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
-
-      } catch (pageError) {
-        console.error(`[Sync Customers] Error processing orders page ${page}:`, pageError);
-        syncStatus.errors.push({
-          page,
-          error: pageError.message
-        });
-        hasMore = false;
+    while (hasMore && (!maxPages || page <= startPage + maxPages - 1)) {
+      // Check if we should stop
+      if (syncStatus.shouldStop) {
+        console.log('[Sync] Stop requested by user');
         break;
       }
-    }
-
-    // Process all unique customers in smaller batches to avoid connection pool exhaustion
-    const customersArray = Array.from(uniqueCustomers.values());
-    syncStatus.progress.total = customersArray.length;
-    syncStatus.progress.totalPages = 1;
-
-    console.log(`[Sync Customers] Processing ${customersArray.length} unique customers from orders in smaller batches...`);
-    
-    // Process in very small batches (10 at a time) to avoid connection pool issues
-    // Each customer does 2-3 queries, so 10 customers = 20-30 queries max
-    // With connection pool of 5, we need to be very careful
-    const processingBatchSize = 10;
-    let totalCreated = 0;
-    let totalUpdated = 0;
-    const allErrors = [];
-    
-    for (let i = 0; i < customersArray.length; i += processingBatchSize) {
-      const batch = customersArray.slice(i, i + processingBatchSize);
-      console.log(`[Sync Customers] Processing batch ${Math.floor(i / processingBatchSize) + 1}/${Math.ceil(customersArray.length / processingBatchSize)} (${batch.length} customers)...`);
       
-      const batchResults = await processBatch(batch, storeMapping);
-      totalCreated += batchResults.created;
-      totalUpdated += batchResults.updated;
-      allErrors.push(...batchResults.errors);
-      
-      // Longer delay between batches to let connection pool fully recover
-      // Disconnect and reconnect to release all connections
-      if (i + processingBatchSize < customersArray.length) {
-        console.log(`[Sync Customers] Waiting 2 seconds before next batch to let connection pool recover...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Force disconnect to release all connections
-        try {
-          await prisma.$disconnect();
-          // Small delay to ensure connections are released
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (disconnectError) {
-          // Ignore disconnect errors
-        }
-      }
-    }
-    
-    const batchResults = {
-      created: totalCreated,
-      updated: totalUpdated,
-      errors: allErrors
-    };
-
-    syncStatus.progress.created = batchResults.created;
-    syncStatus.progress.updated = batchResults.updated;
-    syncStatus.progress.errors += batchResults.errors.length;
-    syncStatus.errors.push(...batchResults.errors);
-
-    syncStatus.completedAt = new Date();
-    console.log(`[Sync Customers] Orders-based sync completed: ${batchResults.created} created, ${batchResults.updated} updated`);
-
-    return syncStatus.progress;
-
-  } catch (error) {
-    console.error('[Sync Customers] Fatal error in orders-based sync:', error);
-    syncStatus.errors.push({
-      fatal: true,
-      error: error.message
-    });
-    throw error;
-  } finally {
-    syncStatus.isRunning = false;
-  }
-}
-
-/**
- * Sync customers from Magento to database
- */
-async function syncCustomersFromMagento(options = {}) {
-  const {
-    batchSize = 100,
-    maxPages = null, // null = all pages
-    delayBetweenBatches = 1000, // 1 second delay between batches
-    storeMapping = {} // Map website_id to store code
-  } = options;
-
-  syncStatus.isRunning = true;
-  syncStatus.startedAt = new Date();
-  syncStatus.progress = {
-    total: 0,
-    processed: 0,
-    created: 0,
-    updated: 0,
-    errors: 0,
-    currentPage: 0,
-    totalPages: 0
-  };
-  syncStatus.errors = [];
-
-  try {
-    // Skip customer endpoints - they don't work reliably (timeouts, 404s, 400s)
-    // Use orders-based sync directly (this works and is more reliable)
-    console.log('[Sync Customers] Using orders-based sync method (standard Magento API)...');
-    console.log('[Sync Customers] Note: Extracting customers from order data using standard Magento REST API (no admin token needed).');
-    return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
-
-    // Check response structure - Magento might return different formats
-    const totalCount = firstPageData?.total_count || firstPageData?.totalCount || 
-                      (firstPageData?.items ? firstPageData.items.length : 0);
-    const totalPages = totalCount > 0 ? Math.ceil(totalCount / batchSize) : 0;
-    
-    syncStatus.progress.total = totalCount;
-    syncStatus.progress.totalPages = totalPages;
-
-    console.log(`[Sync Customers] Found ${totalCount} customers, ${totalPages} pages to process using endpoint: ${workingEndpoint}`);
-    
-    if (totalCount === 0) {
-      console.warn('[Sync Customers] No customers found via customer endpoint. Response structure:', Object.keys(firstPageData || {}));
-      console.warn('[Sync Customers] Full response:', JSON.stringify(firstPageData, null, 2));
-      
-      // If no customers found, the endpoint might not be available or requires different permissions
-      // Use orders-based sync as fallback (uses standard Magento API - NO admin token)
-      console.log('[Sync Customers] Customer endpoint returned 0 results. Switching to orders-based sync (standard Magento API)...');
-      return await syncCustomersFromOrders(storeMapping, batchSize, delayBetweenBatches, maxPages);
-    }
-
-    // Store workingEndpoint for use in the loop
-    const endpointToUse = workingEndpoint;
-    
-    // Process pages
-    const pagesToProcess = maxPages ? Math.min(maxPages, totalPages) : totalPages;
-    
-    for (let page = 1; page <= pagesToProcess; page++) {
       try {
         syncStatus.progress.currentPage = page;
-        console.log(`[Sync Customers] Processing page ${page}/${pagesToProcess}...`);
-
-        // Fetch customers for this page using Magento API (NO admin token)
-        let data;
-        try {
-          data = await makeMagentoRequest(endpointToUse, {
-            'searchCriteria[pageSize]': batchSize,
-            'searchCriteria[currentPage]': page
-          });
-          
-          // Log response structure for debugging
-          if (page === 1) {
-            console.log('[Sync Customers] Page 1 response keys:', Object.keys(data || {}));
-            console.log('[Sync Customers] Page 1 response sample:', JSON.stringify(data, null, 2).substring(0, 1000));
-          }
-        } catch (error) {
-          console.error(`[Sync Customers] Error fetching page ${page}:`, error);
-          console.error(`[Sync Customers] Error details:`, error.details);
-          throw error;
-        }
-
-        // Handle different response structures
-        const customers = data?.items || data?.data || data || [];
+        console.log(`[Sync] Fetching page ${page}...`);
         
-        if (customers.length === 0) {
-          console.log(`[Sync Customers] No customers on page ${page}, stopping`);
+        const ordersData = await makeMagentoRequest('/orders', {
+          'searchCriteria[pageSize]': pageSize,
+          'searchCriteria[currentPage]': page
+        });
+        
+        const orders = ordersData?.items || [];
+        
+        if (orders.length === 0) {
+          console.log(`[Sync] No more orders at page ${page}`);
+          hasMore = false;
           break;
         }
-
-        // Process batch
-        const batchResults = await processBatch(customers, storeMapping);
         
-        // Update progress
-        syncStatus.progress.processed += customers.length;
-        syncStatus.progress.created += batchResults.created;
-        syncStatus.progress.updated += batchResults.updated;
-        syncStatus.progress.errors += batchResults.errors.length;
-        syncStatus.errors.push(...batchResults.errors);
-
-        console.log(`[Sync Customers] Page ${page} completed: ${batchResults.created} created, ${batchResults.updated} updated, ${batchResults.errors.length} errors`);
-
-        // Delay between batches to avoid rate limiting
-        if (page < pagesToProcess && delayBetweenBatches > 0) {
-          await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+        console.log(`[Sync] Processing ${orders.length} orders from page ${page}...`);
+        
+        // Process each order
+        for (let i = 0; i < orders.length; i++) {
+          // Check stop flag
+          if (syncStatus.shouldStop) {
+            console.log('[Sync] Stop requested during processing');
+            break;
+          }
+          
+          const order = orders[i];
+          
+          try {
+            const entityId = order.entity_id || order.id;
+            if (entityId && entityId > highestEntityId) {
+              highestEntityId = entityId;
+            }
+            
+            const consumerData = convertOrderToConsumer(order, storeMapping);
+            
+            if (!consumerData || !consumerData.email) {
+              sessionSkipped++;
+              continue;
+            }
+            
+            const existingConsumer = await prisma.consumer.findFirst({
+              where: { email: consumerData.email }
+            });
+            
+            if (!existingConsumer) {
+              await prisma.consumer.create({ data: consumerData });
+              sessionCreated++;
+            } else {
+              sessionSkipped++;
+            }
+            
+            syncStatus.progress.totalProcessed++;
+            
+          } catch (error) {
+            console.error(`[Sync] Error processing order:`, error.message);
+            sessionErrors++;
+            syncStatus.errors.push({
+              orderId: order.entity_id || order.id || 'unknown',
+              error: error.message
+            });
+          }
         }
-
-      } catch (pageError) {
-        console.error(`[Sync Customers] Error processing page ${page}:`, pageError);
-        syncStatus.errors.push({
-          page,
-          error: pageError.message
-        });
-        syncStatus.progress.errors++;
         
-        // Continue with next page
-        continue;
+        // Update totals
+        const newTotalCreated = totalCreated + sessionCreated;
+        const newTotalSkipped = totalSkipped + sessionSkipped;
+        const newTotalErrors = totalErrors + sessionErrors;
+        
+        syncStatus.progress.totalCreated = newTotalCreated;
+        syncStatus.progress.totalSkipped = newTotalSkipped;
+        syncStatus.progress.totalErrors = newTotalErrors;
+        syncStatus.progress.lastEntityId = highestEntityId;
+        
+        // Save checkpoint after each page
+        const checkpoint = {
+          lastPage: page,
+          lastEntityId: highestEntityId,
+          totalCreated: newTotalCreated,
+          totalSkipped: newTotalSkipped,
+          totalErrors: newTotalErrors,
+          lastUpdated: new Date().toISOString()
+        };
+        saveCheckpoint(checkpoint);
+        
+        console.log(`[Sync] Page ${page} completed: ${sessionCreated} created, ${sessionSkipped} skipped, ${sessionErrors} errors`);
+        
+        // Reset session counters
+        sessionCreated = 0;
+        sessionSkipped = 0;
+        sessionErrors = 0;
+        
+        if (orders.length < pageSize) {
+          hasMore = false;
+          break;
+        }
+        
+        page++;
+        
+        // Small delay between pages
+        if (hasMore && !syncStatus.shouldStop) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+      } catch (pageError) {
+        console.error(`[Sync] Error processing page ${page}:`, pageError.message);
+        sessionErrors++;
+        syncStatus.progress.totalErrors++;
+        
+        if (pageError.message.includes('timeout') || pageError.message.includes('ECONNRESET')) {
+          console.log('[Sync] Network error, retrying...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        } else {
+          page++;
+        }
       }
     }
-
+    
     syncStatus.completedAt = new Date();
-    console.log(`[Sync Customers] Sync completed: ${syncStatus.progress.created} created, ${syncStatus.progress.updated} updated, ${syncStatus.progress.errors} errors`);
-
+    
+    // Clear checkpoint if completed successfully
+    if (!syncStatus.shouldStop && hasMore === false) {
+      clearCheckpoint();
+      console.log('[Sync] ✅ Completed successfully');
+    } else if (syncStatus.shouldStop) {
+      console.log('[Sync] ⏸️  Stopped by user');
+    } else {
+      console.log('[Sync] ⏸️  Paused (max pages reached)');
+    }
+    
+    return syncStatus.progress;
+    
   } catch (error) {
-    console.error('[Sync Customers] Fatal error:', error);
+    console.error('[Sync] Fatal error:', error);
     syncStatus.errors.push({
       fatal: true,
       error: error.message
@@ -669,14 +323,11 @@ async function syncCustomersFromMagento(options = {}) {
   } finally {
     syncStatus.isRunning = false;
   }
-
-  return syncStatus.progress;
 }
 
 module.exports = async (req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -686,10 +337,14 @@ module.exports = async (req, res) => {
   try {
     // GET - Get sync status
     if (req.method === 'GET') {
+      // Load checkpoint for additional info
+      const checkpoint = loadCheckpoint();
+      
       return res.json({
         success: true,
         data: {
           ...syncStatus,
+          checkpoint: checkpoint,
           duration: syncStatus.startedAt ? 
             (syncStatus.completedAt || new Date()) - syncStatus.startedAt : null
         }
@@ -706,37 +361,53 @@ module.exports = async (req, res) => {
       }
 
       const {
-        batchSize = 100,
+        pageSize = 500,
+        startPage = 1,
         maxPages = null,
-        delayBetweenBatches = 1000,
-        storeMapping = {},
-        testMode = false // Test mode: max 100 orders
+        fullSync = false,
+        resume = true
       } = req.body;
 
-      // In test mode, limit to 1 page (100 orders max)
-      const finalMaxPages = testMode ? 1 : (maxPages ? parseInt(maxPages) : null);
-      const finalBatchSize = testMode ? 100 : parseInt(batchSize);
+      console.log(`[Sync] Starting sync (pageSize: ${pageSize}, startPage: ${startPage}, maxPages: ${maxPages || 'unlimited'}, fullSync: ${fullSync})`);
 
-      console.log(`[Sync Customers] Starting sync (testMode: ${testMode}, maxPages: ${finalMaxPages}, batchSize: ${finalBatchSize})`);
-
-      // Start sync in background (don't await)
-      syncCustomersFromMagento({
-        batchSize: finalBatchSize,
-        maxPages: finalMaxPages,
-        delayBetweenBatches: parseInt(delayBetweenBatches),
-        storeMapping
+      // Start sync in background
+      syncOrders({
+        pageSize: parseInt(pageSize),
+        startPage: parseInt(startPage),
+        maxPages: maxPages ? parseInt(maxPages) : null,
+        fullSync: fullSync,
+        resume: resume
       }).catch(error => {
-        console.error('[Sync Customers] Background sync error:', error);
+        console.error('[Sync] Background sync error:', error);
+        syncStatus.isRunning = false;
       });
 
       return res.json({
         success: true,
         message: 'Sync started',
         data: {
-          status: 'started',
-          estimatedTime: syncStatus.progress.totalPages ? 
-            `${Math.ceil(syncStatus.progress.totalPages * delayBetweenBatches / 1000 / 60)} minutes` : 
-            'calculating...'
+          status: 'started'
+        }
+      });
+    }
+
+    // DELETE - Stop sync
+    if (req.method === 'DELETE') {
+      if (!syncStatus.isRunning) {
+        return res.status(400).json({
+          success: false,
+          error: 'Sync is not running'
+        });
+      }
+
+      syncStatus.shouldStop = true;
+      console.log('[Sync] Stop requested');
+
+      return res.json({
+        success: true,
+        message: 'Stop requested. Sync will stop after current page.',
+        data: {
+          status: 'stopping'
         }
       });
     }
@@ -747,11 +418,10 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Sync Customers API] Error:', error);
+    console.error('[Sync API] Error:', error);
     return res.status(500).json({
       success: false,
       error: error.message || 'Internal server error'
     });
   }
 };
-

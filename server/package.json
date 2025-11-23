@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:sync": "node test-sync.js",
+    "test:api": "node test-magento-api.js",
+    "test:sync100": "node test-sync-100.js",
     "prisma:generate": "cd .. && prisma generate",
     "prisma:migrate": "cd .. && prisma migrate dev",
     "prisma:studio": "cd .. && prisma studio",

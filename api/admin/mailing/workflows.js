@@ -90,7 +90,9 @@ module.exports = async (req, res) => {
           isActive: isActive !== undefined ? isActive : true,
           steps: steps ? {
             create: steps.map((step, index) => ({
-              templateId: step.templateId,
+              templateId: step.templateId || null,
+              actionType: step.actionType || 'send_email',
+              actionConfig: step.actionConfig ? JSON.parse(JSON.stringify(step.actionConfig)) : null,
               stepOrder: step.stepOrder || (index + 1),
               delayDays: step.delayDays || 0,
               delayHours: step.delayHours || 0,
@@ -157,7 +159,9 @@ module.exports = async (req, res) => {
         await prisma.emailWorkflowStep.createMany({
           data: steps.map((step, index) => ({
             workflowId: id,
-            templateId: step.templateId,
+            templateId: step.templateId || null,
+            actionType: step.actionType || 'send_email',
+            actionConfig: step.actionConfig ? JSON.parse(JSON.stringify(step.actionConfig)) : null,
             stepOrder: step.stepOrder || (index + 1),
             delayDays: step.delayDays || 0,
             delayHours: step.delayHours || 0,

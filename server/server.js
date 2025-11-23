@@ -86,6 +86,45 @@ if (process.env.NODE_ENV !== 'production') {
   });
   
   console.log('✅ Local sync endpoint enabled: /api/admin/mailing/sync-customers');
+  
+  // Add all mailing API endpoints for local development
+  const mailingEndpoints = [
+    { path: '/api/admin/mailing/templates', handler: require('../api/admin/mailing/templates') },
+    { path: '/api/admin/mailing/workflows', handler: require('../api/admin/mailing/workflows') },
+    { path: '/api/admin/mailing/lists', handler: require('../api/admin/mailing/lists') },
+    { path: '/api/admin/mailing/campaigns', handler: require('../api/admin/mailing/campaigns') }
+  ];
+  
+  mailingEndpoints.forEach(({ path, handler }) => {
+    app.all(path, async (req, res) => {
+      const vercelReq = {
+        method: req.method,
+        body: req.body,
+        query: req.query
+      };
+      
+      const vercelRes = {
+        status: (code) => ({
+          json: (data) => res.status(code).json(data),
+          end: () => res.status(code).end()
+        }),
+        json: (data) => res.json(data),
+        setHeader: (name, value) => res.setHeader(name, value),
+        end: () => res.end()
+      };
+      
+      try {
+        await handler(vercelReq, vercelRes);
+      } catch (error) {
+        console.error(`[Local API] Error in ${path}:`, error);
+        res.status(500).json({
+          success: false,
+          error: error.message
+        });
+      }
+    });
+    console.log(`✅ Local endpoint enabled: ${path}`);
+  });
 }
 
 app.get('/api/countries', (req, res) => {

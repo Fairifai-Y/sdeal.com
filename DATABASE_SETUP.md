@@ -13,13 +13,17 @@ Alle code gebruikt dezelfde Prisma client via `api/lib/prisma.js`.
 
 Zorg dat `DATABASE_URL` in Vercel is ingesteld:
 1. Ga naar Vercel Dashboard → Project → Settings → Environment Variables
-2. Voeg `DATABASE_URL` toe met de **pooler URL**:
+2. Voeg `DATABASE_URL` toe met de **pooler URL** en timeout parameters:
    ```
-   postgresql://user:password@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require
+   postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
    ```
-3. **Belangrijk**: Gebruik de **pooler URL** (met `-pooler` in de hostname) voor serverless
-4. Zorg dat `?sslmode=require` aan het einde staat
-5. Selecteer **alle environments** (Production, Preview, Development)
+3. **Belangrijk**: 
+   - Gebruik de **pooler URL** (met `-pooler` in de hostname) voor serverless
+   - `sslmode=require` - SSL vereist voor Neon
+   - `connect_timeout=15` - 15 seconden om verbinding te maken (database kan in slaapstand zijn)
+   - `pool_timeout=15` - 15 seconden om op beschikbare connection in pool te wachten
+4. Selecteer **alle environments** (Production, Preview, Development)
+5. **Redeploy** na het updaten van environment variables
 
 ### 2. Lokale Setup
 
