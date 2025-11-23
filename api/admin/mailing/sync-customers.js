@@ -146,14 +146,17 @@ async function syncOrders(options = {}) {
   }
   
   const currentPage = checkpoint ? checkpoint.lastPage + 1 : startPage;
-  const totalCreated = checkpoint ? checkpoint.totalCreated : 0;
-  const totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
-  const totalErrors = checkpoint ? checkpoint.totalErrors : 0;
   const lastEntityId = checkpoint ? checkpoint.lastEntityId : 0;
   
   syncStatus.isRunning = true;
   syncStatus.shouldStop = false;
   syncStatus.startedAt = new Date();
+  
+  // Initialize totals from checkpoint or zero
+  let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
+  let totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
+  let totalErrors = checkpoint ? checkpoint.totalErrors : 0;
+  
   syncStatus.progress = {
     totalProcessed: 0,
     totalCreated: totalCreated,
@@ -170,6 +173,9 @@ async function syncOrders(options = {}) {
   let sessionSkipped = 0;
   let sessionErrors = 0;
   let highestEntityId = lastEntityId;
+  let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
+  let totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
+  let totalErrors = checkpoint ? checkpoint.totalErrors : 0;
   
   try {
     while (hasMore && (!maxPages || page <= startPage + maxPages - 1)) {
@@ -286,14 +292,130 @@ async function syncOrders(options = {}) {
         
       } catch (pageError) {
         console.error(`[Sync] Error processing page ${page}:`, pageError.message);
-        sessionErrors++;
-        syncStatus.progress.totalErrors++;
         
-        if (pageError.message.includes('timeout') || pageError.message.includes('ECONNRESET')) {
-          console.log('[Sync] Network error, retrying...');
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue;
+        // Check if it's a network/timeout error that we should retry
+        const isNetworkError = pageError.message.includes('timeout') || 
+                              pageError.message.includes('ECONNRESET') ||
+                              pageError.message.includes('ETIMEDOUT') ||
+                              pageError.message.includes('ENOTFOUND') ||
+                              pageError.message.includes('Proxy request timeout');
+        
+        if (isNetworkError) {
+          // Retry with exponential backoff (max 3 retries per page)
+          const maxRetries = 3;
+          let retryCount = 0;
+          let retrySuccess = false;
+          
+          while (retryCount < maxRetries && !retrySuccess && !syncStatus.shouldStop) {
+            retryCount++;
+            const backoffDelay = Math.min(5000 * Math.pow(2, retryCount - 1), 30000); // 5s, 10s, 20s, max 30s
+            console.log(`[Sync] Network error on page ${page}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
+            
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            
+            try {
+              // Retry fetching the same page
+              const retryOrdersData = await makeMagentoRequest('/orders', {
+                'searchCriteria[pageSize]': pageSize,
+                'searchCriteria[currentPage]': page
+              });
+              
+              const retryOrders = retryOrdersData?.items || [];
+              console.log(`[Sync] Retry successful! Received ${retryOrders.length} orders`);
+              
+              // Process retried orders
+              for (const order of retryOrders) {
+                if (syncStatus.shouldStop) break;
+                
+                try {
+                  const entityId = order.entity_id || order.id;
+                  if (entityId && entityId > highestEntityId) {
+                    highestEntityId = entityId;
+                  }
+                  
+                  const consumerData = convertOrderToConsumer(order, storeMapping);
+                  if (!consumerData || !consumerData.email) {
+                    sessionSkipped++;
+                    continue;
+                  }
+                  
+                  const existingConsumer = await prisma.consumer.findFirst({
+                    where: { email: consumerData.email }
+                  });
+                  
+                  if (!existingConsumer) {
+                    await prisma.consumer.create({ data: consumerData });
+                    sessionCreated++;
+                    syncStatus.progress.totalProcessed++;
+                  } else {
+                    sessionSkipped++;
+                  }
+                } catch (orderError) {
+                  console.error(`[Sync] Error processing order in retry:`, orderError.message);
+                  sessionErrors++;
+                }
+              }
+              
+              // Update totals after successful retry
+              const newTotalCreated = totalCreated + sessionCreated;
+              const newTotalSkipped = totalSkipped + sessionSkipped;
+              const newTotalErrors = totalErrors + sessionErrors;
+              
+              totalCreated = newTotalCreated;
+              totalSkipped = newTotalSkipped;
+              totalErrors = newTotalErrors;
+              
+              syncStatus.progress.totalCreated = newTotalCreated;
+              syncStatus.progress.totalSkipped = newTotalSkipped;
+              syncStatus.progress.totalErrors = newTotalErrors;
+              syncStatus.progress.lastEntityId = highestEntityId;
+              
+              // Save checkpoint after successful retry
+              const checkpoint = {
+                lastPage: page,
+                lastEntityId: highestEntityId,
+                totalCreated: newTotalCreated,
+                totalSkipped: newTotalSkipped,
+                totalErrors: newTotalErrors,
+                lastUpdated: new Date().toISOString()
+              };
+              saveCheckpoint(checkpoint);
+              
+              console.log(`[Sync] Page ${page} completed after retry: ${sessionCreated} created, ${sessionSkipped} skipped, ${sessionErrors} errors`);
+              
+              // Reset session counters
+              sessionCreated = 0;
+              sessionSkipped = 0;
+              sessionErrors = 0;
+              
+              retrySuccess = true;
+              // Continue to next page after successful retry
+              if (retryOrders.length < pageSize) {
+                hasMore = false;
+              }
+              page++;
+              break;
+              
+            } catch (retryError) {
+              console.error(`[Sync] Retry ${retryCount} failed:`, retryError.message);
+              if (retryCount >= maxRetries) {
+                console.error(`[Sync] Max retries reached for page ${page}, skipping...`);
+                sessionErrors++;
+                syncStatus.progress.totalErrors++;
+                page++; // Skip to next page after max retries
+              }
+            }
+          }
+          
+          if (!retrySuccess) {
+            // All retries failed, but we already incremented page
+            continue;
+          }
         } else {
+          // Non-network error, skip this page
+          console.error(`[Sync] Non-network error on page ${page}, skipping...`);
+          sessionErrors++;
+          syncStatus.progress.totalErrors++;
           page++;
         }
       }

@@ -116,7 +116,9 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   console.log(`[Magento API] Proxy headers:`, Object.keys(forwardHeaders).join(', '));
   
   const startTime = Date.now();
-  const timeoutMs = 30000; // 30 second timeout
+  // Increase timeout for production (Vercel allows up to 60s for serverless functions)
+  // Use 55s to leave buffer for processing
+  const timeoutMs = process.env.NODE_ENV === 'production' ? 55000 : 30000;
   
   console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
   
