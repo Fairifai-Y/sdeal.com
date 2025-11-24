@@ -213,7 +213,7 @@ async function syncOrders(options = {}) {
         
         console.log(`[Sync] Processing ${orders.length} orders from page ${page}...`);
         
-        // Process each order
+        // Process each order with retry logic for connection pool errors
         for (let i = 0; i < orders.length; i++) {
           // Check stop flag
           if (syncStatus.shouldStop) {
@@ -222,6 +222,11 @@ async function syncOrders(options = {}) {
           }
           
           const order = orders[i];
+          
+          // Add small delay between orders to prevent connection pool exhaustion
+          if (i > 0 && i % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay every 10 orders
+          }
           
           try {
             const entityId = order.entity_id || order.id;
@@ -236,21 +241,46 @@ async function syncOrders(options = {}) {
               continue;
             }
             
-            const existingConsumer = await prisma.consumer.findFirst({
-              where: { email: consumerData.email }
-            });
+            // Retry logic for connection pool errors
+            let retryCount = 0;
+            const maxRetries = 3;
+            let success = false;
             
-            if (!existingConsumer) {
-              await prisma.consumer.create({ data: consumerData });
-              sessionCreated++;
-            } else {
-              sessionSkipped++;
+            while (retryCount < maxRetries && !success) {
+              try {
+                const existingConsumer = await prisma.consumer.findFirst({
+                  where: { email: consumerData.email }
+                });
+                
+                if (!existingConsumer) {
+                  await prisma.consumer.create({ data: consumerData });
+                  sessionCreated++;
+                } else {
+                  sessionSkipped++;
+                }
+                
+                syncStatus.progress.totalProcessed++;
+                success = true;
+                
+              } catch (dbError) {
+                const isConnectionPoolError = dbError.message.includes('connection pool') || 
+                                            dbError.message.includes('Timed out fetching');
+                
+                if (isConnectionPoolError && retryCount < maxRetries - 1) {
+                  retryCount++;
+                  const backoffDelay = Math.min(2000 * retryCount, 10000); // 2s, 4s, max 10s
+                  console.warn(`[Sync] Connection pool error for order ${entityId}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                  // Continue to retry (don't disconnect - we reuse the same client)
+                } else {
+                  // Not a connection pool error, or max retries reached
+                  throw dbError;
+                }
+              }
             }
             
-            syncStatus.progress.totalProcessed++;
-            
           } catch (error) {
-            console.error(`[Sync] Error processing order:`, error.message);
+            console.error(`[Sync] Error processing order ${order.entity_id || order.id || 'unknown'}:`, error.message);
             sessionErrors++;
             syncStatus.errors.push({
               orderId: order.entity_id || order.id || 'unknown',
