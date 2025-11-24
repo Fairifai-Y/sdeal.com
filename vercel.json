@@ -36,10 +36,14 @@
       "src": "/api/package/generate-agreement-pdf",
       "dest": "/api/package/generate-agreement-pdf.js"
     },
-    {
-      "src": "/api/admin/auth",
-      "dest": "/api/admin/auth.js"
-    },
+          {
+            "src": "/api/admin/auth",
+            "dest": "/api/admin/auth.js"
+          },
+          {
+            "src": "/api/unsubscribe",
+            "dest": "/api/unsubscribe.js"
+          },
     {
       "src": "/api/admin/overview",
       "dest": "/api/admin/overview.js"
@@ -87,6 +91,10 @@
     {
       "src": "/api/admin/mailing/sync-customers",
       "dest": "/api/admin/mailing/sync-customers.js"
+    },
+    {
+      "src": "/api/admin/mailing/webhook",
+      "dest": "/api/admin/mailing/webhook.js"
     },
     {
       "src": "/api/magento/customers",
@@ -147,6 +155,10 @@
     {
       "src": "/manifest.json",
       "dest": "/manifest.json"
+    },
+    {
+      "src": "/unsubscribe",
+      "dest": "/api/unsubscribe.js"
     },
     {
       "src": "/(.*)",

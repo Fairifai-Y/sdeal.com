@@ -1947,6 +1947,9 @@ const Admin = () => {
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
                   Klik op een variabele om deze in te voegen in de HTML content
                 </div>
+                <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#e8f5e9', borderRadius: '4px', fontSize: '12px' }}>
+                  <strong>💡 Links toevoegen:</strong> Gebruik <code style="background: #fff; padding: 2px 4px; border-radius: 2px;">&lt;a href="https://www.sdeal.com" style="color: #0066cc; text-decoration: none;"&gt;Link tekst&lt;/a&gt;</code> voor klikbare links in je email.
+                </div>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
@@ -2016,6 +2019,9 @@ const Admin = () => {
 <p style="color: #666666; font-size: 16px; margin: 0 0 15px 0; line-height: 1.6;">
   Je kunt nu gebruik maken van alle voordelen die SDeal te bieden heeft.
 </p>
+<p style="color: #666666; font-size: 16px; margin: 0 0 20px 0; line-height: 1.6;">
+  <a href="https://www.sdeal.com" style="display: inline-block; padding: 12px 24px; background-color: #2196F3; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600;">Bezoek onze website</a>
+</p>
 <p style="color: #666666; font-size: 16px; margin: 0; line-height: 1.6;">
   Met vriendelijke groet,<br>
   <strong>Het SDeal Team</strong>
@@ -2036,8 +2042,14 @@ const Admin = () => {
                     Laad Basis Template
                   </button>
                 </div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-                  <strong>Tip:</strong> Je hoeft alleen de content te schrijven. De email wordt automatisch gewrapped in een mooie template met header en footer. Gebruik inline styles voor opmaak (bijv. style="color: #333; font-size: 16px;").
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', padding: '10px', backgroundColor: '#f0f7ff', borderRadius: '4px' }}>
+                  <strong>Tips:</strong>
+                  <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                    <li>Je hoeft alleen de content te schrijven. De email wordt automatisch gewrapped in een mooie template.</li>
+                    <li>Gebruik inline styles voor opmaak (bijv. <code style="background: #e0e0e0; padding: 2px 4px; border-radius: 2px;">style="color: #333; font-size: 16px;"</code>).</li>
+                    <li>Maak klikbare links met: <code style="background: #e0e0e0; padding: 2px 4px; border-radius: 2px;">&lt;a href="https://www.sdeal.com" style="color: #0066cc; text-decoration: none;"&gt;Link tekst&lt;/a&gt;</code></li>
+                    <li>Voor buttons: <code style="background: #e0e0e0; padding: 2px 4px; border-radius: 2px;">&lt;a href="URL" style="display: inline-block; padding: 12px 24px; background-color: #2196F3; color: #ffffff; text-decoration: none; border-radius: 4px;"&gt;Button tekst&lt;/a&gt;</code></li>
+                  </ul>
                 </div>
                 <textarea
                   id="htmlContent"
