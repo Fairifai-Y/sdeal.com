@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 
 module.exports = async (req, res) => {
+  // Set headers first
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -157,10 +158,29 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Error in lists API:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
+    // Ensure we always return a JSON response
+    try {
+      if (res.status) {
+        return res.status(500).json({
+          success: false,
+          error: error.message || 'Internal server error'
+        });
+      } else {
+        return res.json({
+          success: false,
+          error: error.message || 'Internal server error'
+        });
+      }
+    } catch (responseError) {
+      console.error('Error sending error response:', responseError);
+      // Last resort - try to send plain response
+      if (res.end) {
+        res.end(JSON.stringify({
+          success: false,
+          error: error.message || 'Internal server error'
+        }));
+      }
+    }
   }
 };
 

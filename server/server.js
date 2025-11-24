@@ -92,35 +92,85 @@ if (process.env.NODE_ENV !== 'production') {
     { path: '/api/admin/mailing/templates', handler: require('../api/admin/mailing/templates') },
     { path: '/api/admin/mailing/workflows', handler: require('../api/admin/mailing/workflows') },
     { path: '/api/admin/mailing/lists', handler: require('../api/admin/mailing/lists') },
-    { path: '/api/admin/mailing/campaigns', handler: require('../api/admin/mailing/campaigns') }
+    { path: '/api/admin/mailing/campaigns', handler: require('../api/admin/mailing/campaigns') },
+    { path: '/api/admin/mailing/list-members', handler: require('../api/admin/mailing/list-members') }
   ];
   
   mailingEndpoints.forEach(({ path, handler }) => {
     app.all(path, async (req, res) => {
+      // Set headers first
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Content-Type', 'application/json');
+      
+      // Handle OPTIONS
+      if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+      }
+      
       const vercelReq = {
         method: req.method,
         body: req.body,
         query: req.query
       };
       
+      let responseSent = false;
+      
       const vercelRes = {
         status: (code) => ({
-          json: (data) => res.status(code).json(data),
-          end: () => res.status(code).end()
+          json: (data) => {
+            if (!responseSent && !res.headersSent) {
+              responseSent = true;
+              res.status(code).json(data);
+            }
+          },
+          end: () => {
+            if (!responseSent && !res.headersSent) {
+              responseSent = true;
+              res.status(code).end();
+            }
+          }
         }),
-        json: (data) => res.json(data),
-        setHeader: (name, value) => res.setHeader(name, value),
-        end: () => res.end()
+        json: (data) => {
+          if (!responseSent && !res.headersSent) {
+            responseSent = true;
+            res.json(data);
+          }
+        },
+        setHeader: (name, value) => {
+          if (!res.headersSent) {
+            res.setHeader(name, value);
+          }
+        },
+        end: () => {
+          if (!responseSent && !res.headersSent) {
+            responseSent = true;
+            res.end();
+          }
+        }
       };
       
       try {
         await handler(vercelReq, vercelRes);
+        
+        // If handler didn't send a response, send a default error
+        if (!responseSent && !res.headersSent) {
+          console.warn(`[Local API] Handler for ${path} did not send a response for ${req.method}`);
+          res.status(500).json({
+            success: false,
+            error: 'Handler did not send a response'
+          });
+        }
       } catch (error) {
-        console.error(`[Local API] Error in ${path}:`, error);
-        res.status(500).json({
-          success: false,
-          error: error.message
-        });
+        console.error(`[Local API] Error in ${path} (${req.method}):`, error);
+        if (!responseSent && !res.headersSent) {
+          res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error',
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+          });
+        }
       }
     });
     console.log(`✅ Local endpoint enabled: ${path}`);

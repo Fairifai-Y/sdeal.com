@@ -53,6 +53,13 @@ const Admin = () => {
   });
   const [listLoading, setListLoading] = useState(false);
   
+  // List members management state
+  const [viewingListMembers, setViewingListMembers] = useState(null);
+  const [listMembers, setListMembers] = useState(null);
+  const [listMembersLoading, setListMembersLoading] = useState(false);
+  const [selectedConsumers, setSelectedConsumers] = useState(new Set());
+  const [bulkAddToListId, setBulkAddToListId] = useState(null);
+  
   // Campaign editor state
   const [editingCampaign, setEditingCampaign] = useState(null);
   const [campaignForm, setCampaignForm] = useState({
@@ -319,6 +326,10 @@ const Admin = () => {
         // Also fetch sync status if on consumers subsection
         if (mailingSubsection === 'consumers') {
           fetchSyncStatus();
+        }
+        // Fetch lists if needed for bulk add
+        if (bulkAddToListId && !mailingData.lists) {
+          fetchMailingData('lists');
         }
       } else {
         fetchSectionData(activeSection);
@@ -863,7 +874,11 @@ const Admin = () => {
           </button>
           <button
             className={`admin-submenu-button ${mailingSubsection === 'lists' ? 'active' : ''}`}
-            onClick={() => setMailingSubsection('lists')}
+            onClick={() => {
+              setMailingSubsection('lists');
+              setBulkAddToListId(null);
+              setSelectedConsumers(new Set());
+            }}
           >
             Maillijsten
           </button>
@@ -1043,11 +1058,101 @@ const Admin = () => {
           </div>
         )}
 
+        {/* Bulk actions toolbar */}
+        {selectedConsumers.size > 0 && (
+          <div style={{
+            marginBottom: '15px',
+            padding: '15px',
+            backgroundColor: '#e3f2fd',
+            borderRadius: '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <strong>{selectedConsumers.size}</strong> consument(en) geselecteerd
+              {bulkAddToListId && (() => {
+                const selectedList = (mailingData.lists || []).find(l => l.id === bulkAddToListId);
+                return selectedList ? (
+                  <span style={{ marginLeft: '10px', color: '#2196f3', fontWeight: 'bold' }}>
+                    → Toevoegen aan: {selectedList.name}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {!bulkAddToListId && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setBulkAddToListId(e.target.value);
+                    }
+                  }}
+                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="">Selecteer lijst...</option>
+                  {(mailingData.lists || []).map(list => (
+                    <option key={list.id} value={list.id}>
+                      {list.name} ({list.totalConsumers || 0} leden)
+                    </option>
+                  ))}
+                </select>
+              )}
+              {bulkAddToListId && (
+                <>
+                  <button
+                    className="admin-button-primary"
+                    onClick={() => {
+                      addMembersToList(bulkAddToListId, selectedConsumers);
+                    }}
+                  >
+                    ✅ Toevoegen aan Lijst
+                  </button>
+                  <button
+                    className="admin-button-secondary"
+                    onClick={() => setBulkAddToListId(null)}
+                  >
+                    Lijst Wijzigen
+                  </button>
+                </>
+              )}
+              {mailingData.lists && mailingData.lists.length === 0 && !bulkAddToListId && (
+                <span style={{ color: '#666', fontSize: '12px' }}>
+                  Geen lijsten beschikbaar. Maak eerst een lijst aan.
+                </span>
+              )}
+              <button
+                className="admin-button-secondary"
+                onClick={() => {
+                  setSelectedConsumers(new Set());
+                  setBulkAddToListId(null);
+                }}
+              >
+                Deselecteren
+              </button>
+            </div>
+          </div>
+        )}
+
         {consumers.length > 0 ? (
           <div className="admin-table-container">
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedConsumers.size === consumers.length && consumers.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedConsumers(new Set(consumers.map(c => c.id)));
+                        } else {
+                          setSelectedConsumers(new Set());
+                        }
+                      }}
+                    />
+                  </th>
                   <th>Naam</th>
                   <th>Email</th>
                   <th>Store</th>
@@ -1063,6 +1168,21 @@ const Admin = () => {
               <tbody>
                 {consumers.map((consumer) => (
                   <tr key={consumer.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedConsumers.has(consumer.id)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedConsumers);
+                          if (e.target.checked) {
+                            newSelected.add(consumer.id);
+                          } else {
+                            newSelected.delete(consumer.id);
+                          }
+                          setSelectedConsumers(newSelected);
+                        }}
+                      />
+                    </td>
                     <td>{consumer.firstName} {consumer.lastName}</td>
                     <td>{consumer.email}</td>
                     <td>{consumer.store}</td>
@@ -2141,6 +2261,122 @@ const Admin = () => {
     }
   };
 
+  const fetchListMembers = async (listId) => {
+    setListMembersLoading(true);
+    try {
+      const response = await fetch(`/api/admin/mailing/list-members?listId=${listId}&pageSize=100`);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`Error fetching list members (${response.status}):`, text);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Error fetching list members: Response is not JSON:', text.substring(0, 200));
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setListMembers(result.data);
+      } else {
+        console.error('Error fetching list members:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching list members:', error);
+    } finally {
+      setListMembersLoading(false);
+    }
+  };
+
+  const addMembersToList = async (listId, consumerIds) => {
+    if (!consumerIds || consumerIds.length === 0) {
+      alert('Selecteer minimaal één consument');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/mailing/list-members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listId: listId,
+          consumerIds: Array.from(consumerIds),
+          status: 'subscribed',
+          source: 'manual'
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Response is not JSON: ${text.substring(0, 200)}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ ${result.data.added} consument(en) toegevoegd aan lijst!`);
+        setSelectedConsumers(new Set());
+        setBulkAddToListId(null);
+        if (viewingListMembers === listId) {
+          fetchListMembers(listId);
+        }
+        fetchMailingData('lists');
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding members to list:', error);
+      alert('Error adding members: ' + error.message);
+    }
+  };
+
+  const removeMemberFromList = async (listId, consumerId) => {
+    if (!window.confirm('Weet je zeker dat je deze consument uit de lijst wilt verwijderen?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/mailing/list-members?listId=${listId}&consumerId=${consumerId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Response is not JSON: ${text.substring(0, 200)}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('✅ Consument verwijderd uit lijst!');
+        fetchListMembers(listId);
+        fetchMailingData('lists');
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error removing member from list:', error);
+      alert('Error removing member: ' + error.message);
+    }
+  };
+
   const deleteList = async (listId) => {
     if (!window.confirm('Weet je zeker dat je deze maillijst wilt verwijderen? Alle leden worden ook verwijderd.')) {
       return;
@@ -2251,6 +2487,116 @@ const Admin = () => {
       );
     }
 
+    // Show list members view
+    if (viewingListMembers) {
+      const currentList = lists.find(l => l.id === viewingListMembers);
+      
+      if (!currentList) {
+        setViewingListMembers(null);
+        return null;
+      }
+
+      // Load members if not loaded
+      if (!listMembers && !listMembersLoading) {
+        fetchListMembers(viewingListMembers);
+      }
+
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <button 
+                className="admin-button-secondary"
+                onClick={() => {
+                  setViewingListMembers(null);
+                  setListMembers(null);
+                }}
+                style={{ marginRight: '10px' }}
+              >
+                ← Terug
+              </button>
+              <h3 style={{ display: 'inline', marginLeft: '10px' }}>
+                Leden van: {currentList.name}
+              </h3>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                className="admin-button-primary"
+                onClick={() => {
+                  setMailingSubsection('consumers');
+                  setBulkAddToListId(viewingListMembers);
+                  if (!mailingData.lists) {
+                    fetchMailingData('lists');
+                  }
+                }}
+              >
+                + Consumenten Toevoegen
+              </button>
+            </div>
+          </div>
+
+          {listMembersLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center' }}>Laden...</div>
+          ) : listMembers && listMembers.members && listMembers.members.length > 0 ? (
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Naam</th>
+                    <th>Email</th>
+                    <th>Store</th>
+                    <th>Status</th>
+                    <th>Toegevoegd</th>
+                    <th>Acties</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listMembers.members.map((member) => (
+                    <tr key={member.id}>
+                      <td>{member.consumer.firstName} {member.consumer.lastName}</td>
+                      <td>{member.consumer.email}</td>
+                      <td>{member.consumer.store}</td>
+                      <td>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          backgroundColor: member.status === 'subscribed' ? '#4caf50' : '#ff9800',
+                          color: 'white'
+                        }}>
+                          {member.status}
+                        </span>
+                      </td>
+                      <td>{new Date(member.subscribedAt).toLocaleDateString('nl-NL')}</td>
+                      <td>
+                        <button 
+                          className="admin-button-small"
+                          onClick={() => removeMemberFromList(viewingListMembers, member.consumerId)}
+                          style={{ backgroundColor: '#f44336', color: 'white' }}
+                        >
+                          Verwijderen
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {listMembers.pagination && listMembers.pagination.totalPages > 1 && (
+                <div style={{ marginTop: '15px', textAlign: 'center', color: '#666' }}>
+                  Pagina {listMembers.pagination.page} van {listMembers.pagination.totalPages} 
+                  ({listMembers.pagination.total} totaal)
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+              Geen leden in deze lijst. Klik op "Consumenten Toevoegen" om leden toe te voegen.
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // Show lists
     return (
       <div>
@@ -2289,6 +2635,16 @@ const Admin = () => {
                     <td>{new Date(list.createdAt).toLocaleDateString('nl-NL')}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '5px' }}>
+                        <button 
+                          className="admin-button-small"
+                          onClick={() => {
+                            setViewingListMembers(list.id);
+                            fetchListMembers(list.id);
+                          }}
+                          style={{ backgroundColor: '#2196f3', color: 'white' }}
+                        >
+                          👥 Leden
+                        </button>
                         <button 
                           className="admin-button-small"
                           onClick={() => openListEditor(list)}

@@ -173,9 +173,6 @@ async function syncOrders(options = {}) {
   let sessionSkipped = 0;
   let sessionErrors = 0;
   let highestEntityId = lastEntityId;
-  let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
-  let totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
-  let totalErrors = checkpoint ? checkpoint.totalErrors : 0;
   
   try {
     while (hasMore && (!maxPages || page <= startPage + maxPages - 1)) {
