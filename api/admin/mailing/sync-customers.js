@@ -152,31 +152,7 @@ async function syncOrders(options = {}) {
   syncStatus.shouldStop = false;
   syncStatus.startedAt = new Date();
   
-  // Wake up database if it's sleeping (Neon serverless databases sleep after inactivity)
-  console.log('[Sync] Testing database connection...');
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('[Sync] ✅ Database connection OK');
-  } catch (wakeError) {
-    console.warn('[Sync] ⚠️ Database might be sleeping, attempting to wake up...');
-    // Retry a few times with increasing delays
-    let wakeRetries = 0;
-    let wokeUp = false;
-    while (wakeRetries < 5 && !wokeUp) {
-      await new Promise(resolve => setTimeout(resolve, 2000 * (wakeRetries + 1))); // 2s, 4s, 6s, 8s, 10s
-      try {
-        await prisma.$queryRaw`SELECT 1`;
-        console.log(`[Sync] ✅ Database woke up after ${wakeRetries + 1} attempt(s)`);
-        wokeUp = true;
-      } catch (retryError) {
-        wakeRetries++;
-        if (wakeRetries >= 5) {
-          console.error('[Sync] ❌ Could not wake up database after 5 attempts. Please check your DATABASE_URL and Neon dashboard.');
-          throw new Error('Database unreachable. Please check your connection and try again.');
-        }
-      }
-    }
-  }
+  console.log('[Sync] Starting sync...');
   
   // Initialize totals from checkpoint or zero
   let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
@@ -239,7 +215,7 @@ async function syncOrders(options = {}) {
         
         console.log(`[Sync] Processing ${orders.length} orders from page ${page}...`);
         
-        // Process each order with retry logic for connection pool errors
+        // Process each order (simple pattern like offline script)
         for (let i = 0; i < orders.length; i++) {
           // Check stop flag
           if (syncStatus.shouldStop) {
@@ -248,86 +224,49 @@ async function syncOrders(options = {}) {
           }
           
           const order = orders[i];
-          
-          // Add small delay between orders to prevent connection pool exhaustion
-          if (i > 0 && i % 10 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay every 10 orders
-          }
+          const orderId = order.entity_id || order.id || `page${page}-${i + 1}`;
           
           try {
+            // Track highest entity_id
             const entityId = order.entity_id || order.id;
             if (entityId && entityId > highestEntityId) {
               highestEntityId = entityId;
             }
             
+            // Convert order to consumer data
             const consumerData = convertOrderToConsumer(order, storeMapping);
             
+            // Skip orders without email
             if (!consumerData || !consumerData.email) {
               sessionSkipped++;
               continue;
             }
             
-            // Retry logic for connection pool errors
-            let retryCount = 0;
-            const maxRetries = 3;
-            let success = false;
-            
-            while (retryCount < maxRetries && !success) {
-              try {
-                const existingConsumer = await prisma.consumer.findFirst({
-                  where: { email: consumerData.email }
-                });
-                
-                if (!existingConsumer) {
-                  await prisma.consumer.create({ data: consumerData });
-                  sessionCreated++;
-                } else {
-                  sessionSkipped++;
-                }
-                
-                syncStatus.progress.totalProcessed++;
-                success = true;
-                
-              } catch (dbError) {
-                const isConnectionPoolError = dbError.message.includes('connection pool') || 
-                                            dbError.message.includes('Timed out fetching');
-                const isDatabaseUnreachable = dbError.message.includes("Can't reach database server") ||
-                                            dbError.message.includes('ENOTFOUND') ||
-                                            dbError.message.includes('ECONNREFUSED') ||
-                                            dbError.message.includes('ETIMEDOUT');
-                
-                if ((isConnectionPoolError || isDatabaseUnreachable) && retryCount < maxRetries - 1) {
-                  retryCount++;
-                  
-                  // Longer delay for database unreachable (Neon might be sleeping)
-                  let backoffDelay;
-                  if (isDatabaseUnreachable) {
-                    backoffDelay = Math.min(5000 * retryCount, 30000); // 5s, 10s, max 30s for sleeping database
-                    console.warn(`[Sync] Database unreachable for order ${entityId} (Neon might be sleeping), retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
-                    
-                    // Try to wake up the database with a simple query
-                    try {
-                      await prisma.$queryRaw`SELECT 1`;
-                      console.log(`[Sync] Database connection test successful, continuing...`);
-                    } catch (wakeError) {
-                      console.warn(`[Sync] Database still unreachable, waiting ${backoffDelay}ms...`);
-                    }
-                  } else {
-                    backoffDelay = Math.min(2000 * retryCount, 10000); // 2s, 4s, max 10s for pool errors
-                    console.warn(`[Sync] Connection pool error for order ${entityId}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
-                  }
-                  
-                  await new Promise(resolve => setTimeout(resolve, backoffDelay));
-                  // Continue to retry (don't disconnect - we reuse the same client)
-                } else {
-                  // Not a retryable error, or max retries reached
-                  throw dbError;
-                }
+            // Check if consumer already exists (email only - no duplicates)
+            const existingConsumer = await prisma.consumer.findFirst({
+              where: {
+                email: consumerData.email
               }
+            });
+            
+            // If not exists, create
+            if (!existingConsumer) {
+              await prisma.consumer.create({
+                data: consumerData
+              });
+              sessionCreated++;
+              
+              if ((sessionCreated + totalCreated) % 50 === 0) {
+                console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);
+              }
+            } else {
+              sessionSkipped++;
             }
             
+            syncStatus.progress.totalProcessed++;
+            
           } catch (error) {
-            console.error(`[Sync] Error processing order ${order.entity_id || order.id || 'unknown'}:`, error.message);
+            console.error(`[Sync] ❌ Order ${orderId}: Error -`, error.message);
             sessionErrors++;
             syncStatus.errors.push({
               orderId: order.entity_id || order.id || 'unknown',
@@ -377,131 +316,21 @@ async function syncOrders(options = {}) {
         }
         
       } catch (pageError) {
-        console.error(`[Sync] Error processing page ${page}:`, pageError.message);
+        console.error(`[Sync] ❌ Error processing page ${page}:`, pageError.message);
+        console.error('[Sync] 💾 Checkpoint saved. You can resume later.\n');
         
-        // Check if it's a network/timeout error that we should retry
-        const isNetworkError = pageError.message.includes('timeout') || 
-                              pageError.message.includes('ECONNRESET') ||
-                              pageError.message.includes('ETIMEDOUT') ||
-                              pageError.message.includes('ENOTFOUND') ||
-                              pageError.message.includes('Proxy request timeout');
-        
-        if (isNetworkError) {
-          // Retry with exponential backoff (max 3 retries per page)
-          const maxRetries = 3;
-          let retryCount = 0;
-          let retrySuccess = false;
-          
-          while (retryCount < maxRetries && !retrySuccess && !syncStatus.shouldStop) {
-            retryCount++;
-            const backoffDelay = Math.min(5000 * Math.pow(2, retryCount - 1), 30000); // 5s, 10s, 20s, max 30s
-            console.log(`[Sync] Network error on page ${page}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
-            
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
-            
-            try {
-              // Retry fetching the same page
-              const retryOrdersData = await makeMagentoRequest('/orders', {
-                'searchCriteria[pageSize]': pageSize,
-                'searchCriteria[currentPage]': page
-              });
-              
-              const retryOrders = retryOrdersData?.items || [];
-              console.log(`[Sync] Retry successful! Received ${retryOrders.length} orders`);
-              
-              // Process retried orders
-              for (const order of retryOrders) {
-                if (syncStatus.shouldStop) break;
-                
-                try {
-                  const entityId = order.entity_id || order.id;
-                  if (entityId && entityId > highestEntityId) {
-                    highestEntityId = entityId;
-                  }
-                  
-                  const consumerData = convertOrderToConsumer(order, storeMapping);
-                  if (!consumerData || !consumerData.email) {
-                    sessionSkipped++;
-                    continue;
-                  }
-                  
-                  const existingConsumer = await prisma.consumer.findFirst({
-                    where: { email: consumerData.email }
-                  });
-                  
-                  if (!existingConsumer) {
-                    await prisma.consumer.create({ data: consumerData });
-                    sessionCreated++;
-                    syncStatus.progress.totalProcessed++;
-                  } else {
-                    sessionSkipped++;
-                  }
-                } catch (orderError) {
-                  console.error(`[Sync] Error processing order in retry:`, orderError.message);
-                  sessionErrors++;
-                }
-              }
-              
-              // Update totals after successful retry
-              const newTotalCreated = totalCreated + sessionCreated;
-              const newTotalSkipped = totalSkipped + sessionSkipped;
-              const newTotalErrors = totalErrors + sessionErrors;
-              
-              totalCreated = newTotalCreated;
-              totalSkipped = newTotalSkipped;
-              totalErrors = newTotalErrors;
-              
-              syncStatus.progress.totalCreated = newTotalCreated;
-              syncStatus.progress.totalSkipped = newTotalSkipped;
-              syncStatus.progress.totalErrors = newTotalErrors;
-              syncStatus.progress.lastEntityId = highestEntityId;
-              
-              // Save checkpoint after successful retry
-              const checkpoint = {
-                lastPage: page,
-                lastEntityId: highestEntityId,
-                totalCreated: newTotalCreated,
-                totalSkipped: newTotalSkipped,
-                totalErrors: newTotalErrors,
-                lastUpdated: new Date().toISOString()
-              };
-              saveCheckpoint(checkpoint);
-              
-              console.log(`[Sync] Page ${page} completed after retry: ${sessionCreated} created, ${sessionSkipped} skipped, ${sessionErrors} errors`);
-              
-              // Reset session counters
-              sessionCreated = 0;
-              sessionSkipped = 0;
-              sessionErrors = 0;
-              
-              retrySuccess = true;
-              // Continue to next page after successful retry
-              if (retryOrders.length < pageSize) {
-                hasMore = false;
-              }
-              page++;
-              break;
-              
-            } catch (retryError) {
-              console.error(`[Sync] Retry ${retryCount} failed:`, retryError.message);
-              if (retryCount >= maxRetries) {
-                console.error(`[Sync] Max retries reached for page ${page}, skipping...`);
-                sessionErrors++;
-                syncStatus.progress.totalErrors++;
-                page++; // Skip to next page after max retries
-              }
-            }
-          }
-          
-          if (!retrySuccess) {
-            // All retries failed, but we already incremented page
-            continue;
-          }
+        // Simple retry for network errors (like offline script)
+        if (pageError.message.includes('timeout') || pageError.message.includes('ECONNRESET')) {
+          console.log('[Sync] ⏸️  Network error detected. Pausing for 5 seconds before retry...\n');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Retry same page
+          continue;
         } else {
-          // Non-network error, skip this page
-          console.error(`[Sync] Non-network error on page ${page}, skipping...`);
+          // For other errors, continue to next page
           sessionErrors++;
-          syncStatus.progress.totalErrors++;
+          totalErrors += sessionErrors;
+          syncStatus.progress.errors = totalErrors;
+          syncStatus.errors.push({ page: page, error: pageError.message });
           page++;
         }
       }

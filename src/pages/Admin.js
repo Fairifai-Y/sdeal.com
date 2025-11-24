@@ -60,6 +60,22 @@ const Admin = () => {
   const [selectedConsumers, setSelectedConsumers] = useState(new Set());
   const [bulkAddToListId, setBulkAddToListId] = useState(null);
   
+  // Consumer editor state
+  const [editingConsumer, setEditingConsumer] = useState(null);
+  const [consumerForm, setConsumerForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    store: 'NL',
+    country: '',
+    phone: '',
+    source: 'manual',
+    sourceUrl: ''
+  });
+  const [consumerLoading, setConsumerLoading] = useState(false);
+  const [consumerSearchQuery, setConsumerSearchQuery] = useState('');
+  const [consumerSearchTimeout, setConsumerSearchTimeout] = useState(null);
+  
   // Campaign editor state
   const [editingCampaign, setEditingCampaign] = useState(null);
   const [campaignForm, setCampaignForm] = useState({
@@ -136,10 +152,16 @@ const Admin = () => {
     }
   };
 
-  const fetchMailingData = async (subsection) => {
+  const fetchMailingData = async (subsection, searchQuery = '') => {
     setMailingLoading(true);
     try {
-      const endpoint = `/api/admin/mailing/${subsection}`;
+      let endpoint = `/api/admin/mailing/${subsection}`;
+      
+      // Add search parameter for consumers
+      if (subsection === 'consumers' && searchQuery) {
+        endpoint += `?search=${encodeURIComponent(searchQuery)}`;
+      }
+      
       const response = await fetch(endpoint);
       
       if (!response.ok) {
@@ -322,7 +344,11 @@ const Admin = () => {
       }
       if (activeSection === 'mailing') {
         // Always fetch mailing data for current subsection when section is active
-        fetchMailingData(mailingSubsection);
+        if (mailingSubsection === 'consumers') {
+          fetchMailingData('consumers', consumerSearchQuery);
+        } else {
+          fetchMailingData(mailingSubsection);
+        }
         // Also fetch sync status if on consumers subsection
         if (mailingSubsection === 'consumers') {
           fetchSyncStatus();
@@ -944,7 +970,12 @@ const Admin = () => {
                 </button>
               </>
             )}
-            <button className="admin-button-primary">Nieuwe Consument</button>
+            <button 
+              className="admin-button-primary"
+              onClick={() => openConsumerEditor()}
+            >
+              + Nieuwe Consument
+            </button>
           </div>
         </div>
 
@@ -1052,9 +1083,47 @@ const Admin = () => {
           </div>
         )}
 
+        {/* Search bar */}
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="text"
+            value={consumerSearchQuery}
+            onChange={(e) => handleConsumerSearch(e.target.value)}
+            placeholder="Zoeken op naam of email..."
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+          {consumerSearchQuery && (
+            <button
+              onClick={() => {
+                setConsumerSearchQuery('');
+                fetchMailingData('consumers');
+              }}
+              style={{
+                marginLeft: '10px',
+                padding: '10px 15px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Wissen
+            </button>
+          )}
+        </div>
+
         {pagination && (
           <div style={{ marginBottom: '15px', color: '#666' }}>
             Totaal: {pagination.total} consumenten
+            {consumerSearchQuery && <span> (gefilterd)</span>}
           </div>
         )}
 
