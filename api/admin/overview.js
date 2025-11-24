@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { makeRequest } = require('../seller-admin/helpers');
+const { requireAuth } = require('./auth');
 
 // Use a singleton pattern for Prisma Client in serverless functions
 const globalForPrisma = global;
@@ -12,6 +13,11 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = async (req, res) => {
+  // Require authentication for all admin endpoints
+  if (!requireAuth(req, res)) {
+    return; // Error response already sent
+  }
+  
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({

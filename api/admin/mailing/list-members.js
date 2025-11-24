@@ -11,12 +11,20 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { listId } = req.query;
+    // Parse body for POST requests (Vercel automatically parses JSON if Content-Type is application/json)
+    let body = {};
+    if (req.method === 'POST' && req.body) {
+      // req.body is already parsed by Vercel if Content-Type is application/json
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    }
+
+    // Get listId from query (for GET/DELETE) or body (for POST)
+    const listId = req.query.listId || body.listId;
 
     if (!listId) {
       return res.status(400).json({
         success: false,
-        error: 'listId is required'
+        error: 'listId is required (in query for GET/DELETE, in body for POST)'
       });
     }
 
@@ -76,7 +84,9 @@ module.exports = async (req, res) => {
 
     // POST - Add members to list (single or bulk)
     if (req.method === 'POST') {
-      const { consumerId, consumerIds, status = 'subscribed', source = 'manual' } = req.body;
+      // listId is already extracted above (from query or body)
+      // Use parsed body from above
+      const { consumerId, consumerIds, status = 'subscribed', source = 'manual' } = body;
 
       // Support both single consumerId and array of consumerIds
       const idsToAdd = consumerIds || (consumerId ? [consumerId] : []);

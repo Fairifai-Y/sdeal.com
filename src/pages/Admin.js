@@ -75,6 +75,8 @@ const Admin = () => {
   const [consumerLoading, setConsumerLoading] = useState(false);
   const [consumerSearchQuery, setConsumerSearchQuery] = useState('');
   const [consumerSearchTimeout, setConsumerSearchTimeout] = useState(null);
+  const [consumerStoreFilter, setConsumerStoreFilter] = useState('');
+  const [consumerCountryFilter, setConsumerCountryFilter] = useState('');
   
   // Campaign editor state
   const [editingCampaign, setEditingCampaign] = useState(null);
@@ -120,18 +122,67 @@ const Admin = () => {
     { name: 'unsubscribeToken', label: 'Uitschrijftoken', description: 'Unieke token voor uitschrijven', example: 'abc123...' }
   ];
 
+  // Helper function to get auth token
+  const getAuthToken = () => {
+    return localStorage.getItem('adminToken');
+  };
+
+  // Helper function to make authenticated requests
+  const authenticatedFetch = async (url, options = {}) => {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+    
+    // If token is invalid/expired, logout user
+    if (response.status === 401) {
+      handleLogout();
+      throw new Error('Authentication required');
+    }
+    
+    return response;
+  };
+
   // Check if user is already authenticated
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('adminAuthenticated');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      // Verify token is still valid
+      authenticatedFetch('/api/admin/auth', {
+        method: 'GET'
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && result.valid) {
+            setIsAuthenticated(true);
+          } else {
+            // Token invalid, remove it
+            localStorage.removeItem('adminToken');
+            setIsAuthenticated(false);
+          }
+        })
+        .catch(() => {
+          // Error checking token, assume invalid
+          localStorage.removeItem('adminToken');
+          setIsAuthenticated(false);
+        });
     }
   }, []);
 
   const fetchSectionData = async (section) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/${section}`);
+      const response = await authenticatedFetch(`/api/admin/${section}`);
       const result = await response.json();
       
       if (result.success) {
@@ -152,17 +203,25 @@ const Admin = () => {
     }
   };
 
-  const fetchMailingData = async (subsection, searchQuery = '') => {
+  const fetchMailingData = async (subsection, searchQuery = '', storeFilter = '', countryFilter = '') => {
     setMailingLoading(true);
     try {
       let endpoint = `/api/admin/mailing/${subsection}`;
       
-      // Add search parameter for consumers
-      if (subsection === 'consumers' && searchQuery) {
-        endpoint += `?search=${encodeURIComponent(searchQuery)}`;
+      // Add search and filter parameters for consumers
+      if (subsection === 'consumers') {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (storeFilter) params.append('store', storeFilter);
+        if (countryFilter) params.append('country', countryFilter);
+        
+        const queryString = params.toString();
+        if (queryString) {
+          endpoint += `?${queryString}`;
+        }
       }
       
-      const response = await fetch(endpoint);
+      const response = await authenticatedFetch(endpoint);
       
       if (!response.ok) {
         const text = await response.text();
@@ -196,7 +255,7 @@ const Admin = () => {
 
   const fetchSyncStatus = async () => {
     try {
-      const response = await fetch('/api/admin/mailing/sync-customers');
+      const response = await authenticatedFetch('/api/admin/mailing/sync-customers');
       
       if (!response.ok) {
         const text = await response.text();
@@ -227,7 +286,7 @@ const Admin = () => {
           setSyncPolling(false);
           // Refresh consumers data when sync completes
           if (mailingSubsection === 'consumers') {
-            fetchMailingData('consumers');
+            fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
           }
         }
       }
@@ -240,11 +299,8 @@ const Admin = () => {
   const startSync = async (testMode = false) => {
     setSyncLoading(true);
     try {
-      const response = await fetch('/api/admin/mailing/sync-customers', {
+      const response = await authenticatedFetch('/api/admin/mailing/sync-customers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           pageSize: 500,
           startPage: 1,
@@ -282,11 +338,8 @@ const Admin = () => {
     }
     
     try {
-      const response = await fetch('/api/admin/mailing/sync-customers', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      const response = await authenticatedFetch('/api/admin/mailing/sync-customers', {
+        method: 'DELETE'
       });
       
       const result = await response.json();
@@ -318,7 +371,7 @@ const Admin = () => {
   const searchCustomers = async (query) => {
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/admin/search-customers?q=${encodeURIComponent(query)}`);
+      const response = await authenticatedFetch(`/api/admin/search-customers?q=${encodeURIComponent(query)}`);
       const result = await response.json();
       
       if (result.success) {
@@ -345,7 +398,7 @@ const Admin = () => {
       if (activeSection === 'mailing') {
         // Always fetch mailing data for current subsection when section is active
         if (mailingSubsection === 'consumers') {
-          fetchMailingData('consumers', consumerSearchQuery);
+          fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
         } else {
           fetchMailingData(mailingSubsection);
         }
@@ -437,24 +490,41 @@ const Admin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignForm.templateId, campaignForm.listId, mailingData.templates, mailingData.lists]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simple password check - you can change this password
-    const adminPassword = 'SDeal2024!'; // Change this to your desired password
+    setError('');
     
-    if (password === adminPassword) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('adminAuthenticated', 'true');
-      setError('');
-    } else {
-      setError('Incorrect password. Please try again.');
+    try {
+      const response = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data.token) {
+        // Store token in localStorage (more persistent than sessionStorage)
+        localStorage.setItem('adminToken', result.data.token);
+        setIsAuthenticated(true);
+        setError('');
+        setPassword('');
+      } else {
+        setError(result.error || 'Incorrect password. Please try again.');
+        setPassword('');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Login failed. Please try again.');
       setPassword('');
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    sessionStorage.removeItem('adminAuthenticated');
+    localStorage.removeItem('adminToken');
     setPassword('');
     setSearchQuery('');
     setSearchResults(null);
@@ -1006,7 +1076,7 @@ const Admin = () => {
       if (result.success) {
         alert(editingConsumer === 'new' ? 'Consument aangemaakt!' : 'Consument bijgewerkt!');
         closeConsumerEditor();
-        fetchMailingData('consumers', consumerSearchQuery);
+        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
       } else {
         alert('Error: ' + (result.error || 'Unknown error'));
       }
@@ -1029,7 +1099,7 @@ const Admin = () => {
     
     // Set new timeout for debounced search
     const timeout = setTimeout(() => {
-      fetchMailingData('consumers', query);
+      fetchMailingData('consumers', query, consumerStoreFilter, consumerCountryFilter);
     }, 500); // 500ms debounce
     
     setConsumerSearchTimeout(timeout);
@@ -1334,42 +1404,89 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Search bar */}
-        <div style={{ marginBottom: '20px' }}>
+        {/* Search and filters */}
+        <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
           <input
             type="text"
             value={consumerSearchQuery}
             onChange={(e) => handleConsumerSearch(e.target.value)}
             placeholder="Zoeken op naam of email..."
             style={{
-              width: '100%',
-              maxWidth: '500px',
+              flex: '1',
+              minWidth: '200px',
+              maxWidth: '400px',
               padding: '10px',
               border: '1px solid #ddd',
               borderRadius: '4px',
               fontSize: '14px'
             }}
           />
-          {consumerSearchQuery && (
+          
+          <select
+            value={consumerStoreFilter}
+            onChange={(e) => handleStoreFilterChange(e.target.value)}
+            style={{
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">Alle Stores</option>
+            <option value="NL">NL</option>
+            <option value="DE">DE</option>
+            <option value="BE">BE</option>
+            <option value="FR">FR</option>
+          </select>
+          
+          <select
+            value={consumerCountryFilter}
+            onChange={(e) => handleCountryFilterChange(e.target.value)}
+            style={{
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">Alle Landen</option>
+            <option value="NL">Nederland</option>
+            <option value="DE">Duitsland</option>
+            <option value="BE">België</option>
+            <option value="FR">Frankrijk</option>
+          </select>
+          
+          {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter) && (
             <button
-              onClick={() => {
-                setConsumerSearchQuery('');
-                fetchMailingData('consumers');
-              }}
+              onClick={clearConsumerFilters}
               style={{
-                marginLeft: '10px',
                 padding: '10px 15px',
                 backgroundColor: '#f44336',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontSize: '14px'
               }}
             >
-              Wissen
+              Filters Wissen
             </button>
           )}
         </div>
+
+        {/* Show active filters */}
+        {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter) && (
+          <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+            Actieve filters:
+            {consumerSearchQuery && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Zoek: "{consumerSearchQuery}"</span>}
+            {consumerStoreFilter && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Store: {consumerStoreFilter}</span>}
+            {consumerCountryFilter && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Land: {consumerCountryFilter}</span>}
+          </div>
+        )}
 
         {pagination && (
           <div style={{ marginBottom: '15px', color: '#666' }}>
@@ -1659,7 +1776,7 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/mailing/templates?id=${templateId}`, {
+      const response = await authenticatedFetch(`/api/admin/mailing/templates?id=${templateId}`, {
         method: 'DELETE'
       });
 
@@ -2144,7 +2261,7 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/mailing/workflows?id=${workflowId}`, {
+      const response = await authenticatedFetch(`/api/admin/mailing/workflows?id=${workflowId}`, {
         method: 'DELETE'
       });
 
@@ -2584,7 +2701,7 @@ const Admin = () => {
   const fetchListMembers = async (listId) => {
     setListMembersLoading(true);
     try {
-      const response = await fetch(`/api/admin/mailing/list-members?listId=${listId}&pageSize=100`);
+      const response = await authenticatedFetch(`/api/admin/mailing/list-members?listId=${listId}&pageSize=100`);
       
       if (!response.ok) {
         const text = await response.text();
@@ -2620,9 +2737,8 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch('/api/admin/mailing/list-members', {
+      const response = await authenticatedFetch('/api/admin/mailing/list-members', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listId: listId,
           consumerIds: Array.from(consumerIds),
@@ -2667,7 +2783,7 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/mailing/list-members?listId=${listId}&consumerId=${consumerId}`, {
+      const response = await authenticatedFetch(`/api/admin/mailing/list-members?listId=${listId}&consumerId=${consumerId}`, {
         method: 'DELETE'
       });
 
@@ -2703,7 +2819,7 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/mailing/lists?id=${listId}`, {
+      const response = await authenticatedFetch(`/api/admin/mailing/lists?id=${listId}`, {
         method: 'DELETE'
       });
 
@@ -3124,9 +3240,8 @@ const Admin = () => {
 
     setCampaignLoading(true);
     try {
-      const response = await fetch('/api/admin/mailing/campaigns', {
+      const response = await authenticatedFetch('/api/admin/mailing/campaigns', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'send',
           id: campaignId
@@ -3155,7 +3270,7 @@ const Admin = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/mailing/campaigns?id=${campaignId}`, {
+      const response = await authenticatedFetch(`/api/admin/mailing/campaigns?id=${campaignId}`, {
         method: 'DELETE'
       });
 

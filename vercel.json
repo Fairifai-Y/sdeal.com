@@ -37,6 +37,10 @@
       "dest": "/api/package/generate-agreement-pdf.js"
     },
     {
+      "src": "/api/admin/auth",
+      "dest": "/api/admin/auth.js"
+    },
+    {
       "src": "/api/admin/overview",
       "dest": "/api/admin/overview.js"
     },
