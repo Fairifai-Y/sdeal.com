@@ -152,6 +152,32 @@ async function syncOrders(options = {}) {
   syncStatus.shouldStop = false;
   syncStatus.startedAt = new Date();
   
+  // Wake up database if it's sleeping (Neon serverless databases sleep after inactivity)
+  console.log('[Sync] Testing database connection...');
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('[Sync] ✅ Database connection OK');
+  } catch (wakeError) {
+    console.warn('[Sync] ⚠️ Database might be sleeping, attempting to wake up...');
+    // Retry a few times with increasing delays
+    let wakeRetries = 0;
+    let wokeUp = false;
+    while (wakeRetries < 5 && !wokeUp) {
+      await new Promise(resolve => setTimeout(resolve, 2000 * (wakeRetries + 1))); // 2s, 4s, 6s, 8s, 10s
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log(`[Sync] ✅ Database woke up after ${wakeRetries + 1} attempt(s)`);
+        wokeUp = true;
+      } catch (retryError) {
+        wakeRetries++;
+        if (wakeRetries >= 5) {
+          console.error('[Sync] ❌ Could not wake up database after 5 attempts. Please check your DATABASE_URL and Neon dashboard.');
+          throw new Error('Database unreachable. Please check your connection and try again.');
+        }
+      }
+    }
+  }
+  
   // Initialize totals from checkpoint or zero
   let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
   let totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
@@ -265,15 +291,36 @@ async function syncOrders(options = {}) {
               } catch (dbError) {
                 const isConnectionPoolError = dbError.message.includes('connection pool') || 
                                             dbError.message.includes('Timed out fetching');
+                const isDatabaseUnreachable = dbError.message.includes("Can't reach database server") ||
+                                            dbError.message.includes('ENOTFOUND') ||
+                                            dbError.message.includes('ECONNREFUSED') ||
+                                            dbError.message.includes('ETIMEDOUT');
                 
-                if (isConnectionPoolError && retryCount < maxRetries - 1) {
+                if ((isConnectionPoolError || isDatabaseUnreachable) && retryCount < maxRetries - 1) {
                   retryCount++;
-                  const backoffDelay = Math.min(2000 * retryCount, 10000); // 2s, 4s, max 10s
-                  console.warn(`[Sync] Connection pool error for order ${entityId}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
+                  
+                  // Longer delay for database unreachable (Neon might be sleeping)
+                  let backoffDelay;
+                  if (isDatabaseUnreachable) {
+                    backoffDelay = Math.min(5000 * retryCount, 30000); // 5s, 10s, max 30s for sleeping database
+                    console.warn(`[Sync] Database unreachable for order ${entityId} (Neon might be sleeping), retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
+                    
+                    // Try to wake up the database with a simple query
+                    try {
+                      await prisma.$queryRaw`SELECT 1`;
+                      console.log(`[Sync] Database connection test successful, continuing...`);
+                    } catch (wakeError) {
+                      console.warn(`[Sync] Database still unreachable, waiting ${backoffDelay}ms...`);
+                    }
+                  } else {
+                    backoffDelay = Math.min(2000 * retryCount, 10000); // 2s, 4s, max 10s for pool errors
+                    console.warn(`[Sync] Connection pool error for order ${entityId}, retry ${retryCount}/${maxRetries} after ${backoffDelay}ms...`);
+                  }
+                  
                   await new Promise(resolve => setTimeout(resolve, backoffDelay));
                   // Continue to retry (don't disconnect - we reuse the same client)
                 } else {
-                  // Not a connection pool error, or max retries reached
+                  // Not a retryable error, or max retries reached
                   throw dbError;
                 }
               }
