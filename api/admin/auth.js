@@ -95,12 +95,28 @@ module.exports = async (req, res) => {
   // POST - Login
   if (req.method === 'POST') {
     try {
-      const { password } = req.body;
+      // Parse body if it's a string (Vercel sometimes sends string)
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (e) {
+          console.error('[Admin Auth] Failed to parse body:', e);
+        }
+      }
+      
+      const { password } = body;
 
+      // Debug logging (remove sensitive info in production)
+      console.log('[Admin Auth] Login attempt received');
+      console.log('[Admin Auth] ADMIN_PASSWORD is set:', !!ADMIN_PASSWORD);
+      console.log('[Admin Auth] Password provided:', password ? 'Yes (length: ' + password.length + ')' : 'No');
+      
       if (!ADMIN_PASSWORD) {
         // If ADMIN_PASSWORD is not set, reject all login attempts for security
         // Do NOT fall back to old hardcoded password
         await new Promise(resolve => setTimeout(resolve, 100)); // Prevent timing attacks
+        console.error('[Admin Auth] ADMIN_PASSWORD not configured in environment variables');
         return res.status(503).json({
           success: false,
           error: 'Admin authentication is not configured. Please set ADMIN_PASSWORD environment variable.'
@@ -108,6 +124,7 @@ module.exports = async (req, res) => {
       }
 
       if (!password) {
+        console.log('[Admin Auth] No password provided');
         return res.status(400).json({
           success: false,
           error: 'Password is required'
@@ -120,22 +137,30 @@ module.exports = async (req, res) => {
       if (password === OLD_PASSWORD) {
         // Add small delay to prevent timing attacks
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+        console.log('[Admin Auth] Old password rejected');
         return res.status(401).json({
           success: false,
           error: 'Old password is no longer valid. Please use the new password configured in ADMIN_PASSWORD environment variable.'
         });
       }
       
-      if (password !== ADMIN_PASSWORD) {
+      // Compare passwords (trim whitespace to avoid issues)
+      const providedPassword = String(password).trim();
+      const configuredPassword = String(ADMIN_PASSWORD).trim();
+      
+      console.log('[Admin Auth] Comparing passwords (lengths match):', providedPassword.length === configuredPassword.length);
+      
+      if (providedPassword !== configuredPassword) {
         // Add small delay to prevent timing attacks
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+        console.log('[Admin Auth] Password mismatch');
         return res.status(401).json({
           success: false,
           error: 'Incorrect password'
         });
       }
+      
+      console.log('[Admin Auth] Password verified successfully');
 
       // Generate token
       const token = generateToken();
