@@ -83,14 +83,17 @@ function requireAuth(req, res) {
 }
 
 module.exports = async (req, res) => {
+  // Set headers first to ensure JSON response
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Content-Type', 'application/json');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  // Wrap everything in try-catch to ensure JSON error responses
+  try {
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
 
   // POST - Login
   if (req.method === 'POST') {
@@ -182,35 +185,44 @@ module.exports = async (req, res) => {
     }
   }
 
-  // GET - Verify token (optional endpoint to check if token is still valid)
-  if (req.method === 'GET') {
-    const authHeader = req.headers.authorization;
-    let token = null;
+    // GET - Verify token (optional endpoint to check if token is still valid)
+    if (req.method === 'GET') {
+      const authHeader = req.headers.authorization;
+      let token = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        valid: false,
-        error: 'No token provided'
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          valid: false,
+          error: 'No token provided'
+        });
+      }
+
+      const verification = verifyToken(token);
+      return res.json({
+        success: true,
+        valid: verification.valid,
+        error: verification.valid ? null : verification.error
       });
     }
 
-    const verification = verifyToken(token);
-    return res.json({
-      success: true,
-      valid: verification.valid,
-      error: verification.valid ? null : verification.error
+    return res.status(405).json({
+      success: false,
+      error: 'Method not allowed'
+    });
+  } catch (error) {
+    // Catch any unexpected errors and return JSON response
+    console.error('[Admin Auth] Unexpected error:', error);
+    console.error('[Admin Auth] Error stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error: ' + error.message
     });
   }
-
-  return res.status(405).json({
-    success: false,
-    error: 'Method not allowed'
-  });
 };
 
 // Export middleware for use in other files

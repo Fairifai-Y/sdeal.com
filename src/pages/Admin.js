@@ -504,9 +504,19 @@ const Admin = () => {
         body: JSON.stringify({ password })
       });
       
+      // Check if response is OK and is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        setError(`Server error: ${response.status} ${response.statusText}. Please check the logs.`);
+        setPassword('');
+        return;
+      }
+      
       const result = await response.json();
       
-      if (result.success && result.data.token) {
+      if (result.success && result.data && result.data.token) {
         // Store token in localStorage (more persistent than sessionStorage)
         localStorage.setItem('adminToken', result.data.token);
         setIsAuthenticated(true);
@@ -518,7 +528,7 @@ const Admin = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Login failed. Please try again.');
+      setError(`Login failed: ${error.message}. Please try again.`);
       setPassword('');
     }
   };
