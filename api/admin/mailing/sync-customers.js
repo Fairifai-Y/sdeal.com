@@ -451,6 +451,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -459,18 +460,26 @@ module.exports = async (req, res) => {
   try {
     // GET - Get sync status
     if (req.method === 'GET') {
-      // Load checkpoint for additional info
-      const checkpoint = loadCheckpoint();
-      
-      return res.json({
-        success: true,
-        data: {
-          ...syncStatus,
-          checkpoint: checkpoint,
-          duration: syncStatus.startedAt ? 
-            (syncStatus.completedAt || new Date()) - syncStatus.startedAt : null
-        }
-      });
+      try {
+        // Load checkpoint for additional info
+        const checkpoint = loadCheckpoint();
+        
+        return res.json({
+          success: true,
+          data: {
+            ...syncStatus,
+            checkpoint: checkpoint,
+            duration: syncStatus.startedAt ? 
+              (syncStatus.completedAt || new Date()) - syncStatus.startedAt : null
+          }
+        });
+      } catch (error) {
+        console.error('[Sync API] Error in GET handler:', error);
+        return res.status(500).json({
+          success: false,
+          error: error.message || 'Internal server error'
+        });
+      }
     }
 
     // POST - Start sync

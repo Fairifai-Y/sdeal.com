@@ -134,6 +134,20 @@ const Admin = () => {
     try {
       const endpoint = `/api/admin/mailing/${subsection}`;
       const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`Error fetching mailing data (${response.status}):`, text);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Error fetching mailing data: Response is not JSON:', text.substring(0, 200));
+        return;
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -154,6 +168,22 @@ const Admin = () => {
   const fetchSyncStatus = async () => {
     try {
       const response = await fetch('/api/admin/mailing/sync-customers');
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`Error fetching sync status (${response.status}):`, text);
+        setSyncPolling(false);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Error fetching sync status: Response is not JSON:', text.substring(0, 200));
+        setSyncPolling(false);
+        return;
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -2082,6 +2112,17 @@ const Admin = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Response is not JSON: ${text.substring(0, 200)}`);
+      }
 
       const result = await response.json();
 
