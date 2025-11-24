@@ -177,6 +177,7 @@ const Admin = () => {
           setIsAuthenticated(false);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSectionData = async (section) => {
@@ -1103,6 +1104,26 @@ const Admin = () => {
     }, 500); // 500ms debounce
     
     setConsumerSearchTimeout(timeout);
+  };
+
+  // Handle store filter change
+  const handleStoreFilterChange = (store) => {
+    setConsumerStoreFilter(store);
+    fetchMailingData('consumers', consumerSearchQuery, store, consumerCountryFilter);
+  };
+
+  // Handle country filter change
+  const handleCountryFilterChange = (country) => {
+    setConsumerCountryFilter(country);
+    fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, country);
+  };
+
+  // Clear all filters
+  const clearConsumerFilters = () => {
+    setConsumerSearchQuery('');
+    setConsumerStoreFilter('');
+    setConsumerCountryFilter('');
+    fetchMailingData('consumers');
   };
 
   const renderConsumersContent = () => {
