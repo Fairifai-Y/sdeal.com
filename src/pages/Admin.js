@@ -933,9 +933,260 @@ const Admin = () => {
     );
   };
 
+  // Consumer management functions
+  const openConsumerEditor = (consumer = null) => {
+    if (consumer) {
+      setConsumerForm({
+        firstName: consumer.firstName || '',
+        lastName: consumer.lastName || '',
+        email: consumer.email || '',
+        store: consumer.store || 'NL',
+        country: consumer.country || '',
+        phone: consumer.phone || '',
+        source: consumer.source || 'manual',
+        sourceUrl: consumer.sourceUrl || ''
+      });
+      setEditingConsumer(consumer.id);
+    } else {
+      setConsumerForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        store: 'NL',
+        country: '',
+        phone: '',
+        source: 'manual',
+        sourceUrl: ''
+      });
+      setEditingConsumer('new');
+    }
+  };
+
+  const closeConsumerEditor = () => {
+    setEditingConsumer(null);
+    setConsumerForm({
+      firstName: '',
+      lastName: '',
+      email: '',
+      store: 'NL',
+      country: '',
+      phone: '',
+      source: 'manual',
+      sourceUrl: ''
+    });
+  };
+
+  const saveConsumer = async () => {
+    if (!consumerForm.firstName || !consumerForm.lastName || !consumerForm.email || !consumerForm.store) {
+      alert('Voornaam, achternaam, email en store zijn verplicht');
+      return;
+    }
+
+    setConsumerLoading(true);
+    try {
+      const url = '/api/admin/mailing/consumers';
+      const method = editingConsumer === 'new' ? 'POST' : 'PUT';
+      const body = editingConsumer === 'new' 
+        ? consumerForm 
+        : { ...consumerForm, id: editingConsumer };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(editingConsumer === 'new' ? 'Consument aangemaakt!' : 'Consument bijgewerkt!');
+        closeConsumerEditor();
+        fetchMailingData('consumers', consumerSearchQuery);
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving consumer:', error);
+      alert('Error saving consumer: ' + error.message);
+    } finally {
+      setConsumerLoading(false);
+    }
+  };
+
+  // Handle search with debounce
+  const handleConsumerSearch = (query) => {
+    setConsumerSearchQuery(query);
+    
+    // Clear existing timeout
+    if (consumerSearchTimeout) {
+      clearTimeout(consumerSearchTimeout);
+    }
+    
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      fetchMailingData('consumers', query);
+    }, 500); // 500ms debounce
+    
+    setConsumerSearchTimeout(timeout);
+  };
+
   const renderConsumersContent = () => {
     const consumers = mailingData.consumers?.consumers || [];
     const pagination = mailingData.consumers?.pagination;
+
+    // If editing, show editor
+    if (editingConsumer) {
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3>{editingConsumer === 'new' ? 'Nieuwe Consument' : 'Consument Bewerken'}</h3>
+            <button 
+              className="admin-button-secondary"
+              onClick={closeConsumerEditor}
+            >
+              Annuleren
+            </button>
+          </div>
+
+          <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Voornaam *
+                </label>
+                <input
+                  type="text"
+                  value={consumerForm.firstName}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, firstName: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  placeholder="Jan"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Achternaam *
+                </label>
+                <input
+                  type="text"
+                  value={consumerForm.lastName}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, lastName: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  placeholder="Jansen"
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                Email *
+              </label>
+              <input
+                type="email"
+                value={consumerForm.email}
+                onChange={(e) => setConsumerForm({ ...consumerForm, email: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                placeholder="jan.jansen@example.com"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Store *
+                </label>
+                <select
+                  value={consumerForm.store}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, store: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="NL">NL</option>
+                  <option value="DE">DE</option>
+                  <option value="BE">BE</option>
+                  <option value="FR">FR</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Land
+                </label>
+                <input
+                  type="text"
+                  value={consumerForm.country}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, country: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  placeholder="Nederland"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Telefoon
+                </label>
+                <input
+                  type="tel"
+                  value={consumerForm.phone}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, phone: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  placeholder="+31 6 12345678"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Bron
+                </label>
+                <select
+                  value={consumerForm.source}
+                  onChange={(e) => setConsumerForm({ ...consumerForm, source: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="manual">Handmatig</option>
+                  <option value="magento_sync">Magento Sync</option>
+                  <option value="import">Import</option>
+                  <option value="api">API</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                Bron URL
+              </label>
+              <input
+                type="text"
+                value={consumerForm.sourceUrl}
+                onChange={(e) => setConsumerForm({ ...consumerForm, sourceUrl: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                className="admin-button-primary"
+                onClick={saveConsumer}
+                disabled={consumerLoading}
+              >
+                {consumerLoading ? 'Opslaan...' : editingConsumer === 'new' ? 'Consument Aanmaken' : 'Consument Opslaan'}
+              </button>
+              <button
+                className="admin-button-secondary"
+                onClick={closeConsumerEditor}
+                disabled={consumerLoading}
+              >
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div>
