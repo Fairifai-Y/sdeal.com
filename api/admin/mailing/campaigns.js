@@ -31,6 +31,72 @@ function replaceTemplateVariables(content, consumer) {
   return result;
 }
 
+// Helper function to wrap content in a complete HTML email template
+function wrapEmailTemplate(content) {
+  // Check if content already has full HTML structure
+  if (content && content.trim().toLowerCase().startsWith('<!doctype') || 
+      (content && content.includes('<html') && content.includes('</html>'))) {
+    return content; // Already a complete HTML document
+  }
+
+  // Wrap in a responsive email template with inline styles (for email client compatibility)
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Email Template</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; line-height: 1.6; color: #333333;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #ffffff; border-bottom: 1px solid #eeeeee;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #333333;">SDeal</h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              ${content}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9f9f9; border-top: 1px solid #eeeeee; text-align: center; font-size: 12px; color: #666666;">
+              <p style="margin: 0 0 10px 0;">
+                <strong>SDeal B.V.</strong><br>
+                Osloweg 110, 9723 BX Groningen, The Netherlands<br>
+                KVK: 76103080 | VAT: NL 860508468B01
+              </p>
+              <p style="margin: 10px 0 0 0;">
+                <a href="https://www.sdeal.com" style="color: #0066cc; text-decoration: none;">www.sdeal.com</a> | 
+                <a href="mailto:info@sdeal.com" style="color: #0066cc; text-decoration: none;">info@sdeal.com</a>
+              </p>
+              <p style="margin: 20px 0 0 0; font-size: 11px; color: #999999;">
+                Deze email is verzonden naar {{email}}. 
+                <a href="{{unsubscribeUrl}}" style="color: #999999; text-decoration: underline;">Afmelden</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 module.exports = async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -366,7 +432,15 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
       try {
         // Replace template variables
         const subject = replaceTemplateVariables(campaign.subject || template.subject, consumer);
-        const htmlContent = replaceTemplateVariables(template.htmlContent, consumer);
+        let htmlContent = replaceTemplateVariables(template.htmlContent, consumer);
+        
+        // Wrap content in email template if not already wrapped
+        htmlContent = wrapEmailTemplate(htmlContent);
+        
+        // Replace unsubscribe URL in the wrapped template
+        const unsubscribeUrl = `${process.env.BASE_URL || 'https://www.sdeal.com'}/unsubscribe?email=${encodeURIComponent(consumer.email)}&token=${consumer.id}`;
+        htmlContent = htmlContent.replace(/\{\{unsubscribeUrl\}\}/g, unsubscribeUrl);
+        
         const textContent = template.textContent 
           ? replaceTemplateVariables(template.textContent, consumer)
           : null;

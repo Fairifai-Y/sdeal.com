@@ -1707,6 +1707,74 @@ const Admin = () => {
     }
   };
 
+  // Helper function to wrap content in email template (same as backend)
+  const wrapEmailTemplate = (content) => {
+    if (!content) return '';
+    
+    // Check if content already has full HTML structure
+    if (content.trim().toLowerCase().startsWith('<!doctype') || 
+        (content.includes('<html') && content.includes('</html>'))) {
+      return content; // Already a complete HTML document
+    }
+
+    // Wrap in a responsive email template with inline styles
+    return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Email Template</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; line-height: 1.6; color: #333333;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #ffffff; border-bottom: 1px solid #eeeeee;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #333333;">SDeal</h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              ${content}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9f9f9; border-top: 1px solid #eeeeee; text-align: center; font-size: 12px; color: #666666;">
+              <p style="margin: 0 0 10px 0;">
+                <strong>SDeal B.V.</strong><br>
+                Osloweg 110, 9723 BX Groningen, The Netherlands<br>
+                KVK: 76103080 | VAT: NL 860508468B01
+              </p>
+              <p style="margin: 10px 0 0 0;">
+                <a href="https://www.sdeal.com" style="color: #0066cc; text-decoration: none;">www.sdeal.com</a> | 
+                <a href="mailto:info@sdeal.com" style="color: #0066cc; text-decoration: none;">info@sdeal.com</a>
+              </p>
+              <p style="margin: 20px 0 0 0; font-size: 11px; color: #999999;">
+                Deze email is verzonden naar {{email}}. 
+                <a href="{{unsubscribeUrl}}" style="color: #999999; text-decoration: underline;">Afmelden</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  };
+
   const generatePreview = () => {
     let preview = templateForm.htmlContent || '';
     // Replace variables with example values
@@ -1714,6 +1782,14 @@ const Admin = () => {
       const regex = new RegExp(`\\{\\{${variable.name}\\}\\}`, 'g');
       preview = preview.replace(regex, variable.example);
     });
+    
+    // Wrap in email template
+    preview = wrapEmailTemplate(preview);
+    
+    // Replace unsubscribe URL and email in footer
+    preview = preview.replace(/\{\{unsubscribeUrl\}\}/g, '#');
+    preview = preview.replace(/\{\{email\}\}/g, 'voorbeeld@email.com');
+    
     // Replace subject variables too
     let subjectPreview = templateForm.subject || '';
     availableVariables.forEach(variable => {
@@ -1926,9 +2002,43 @@ const Admin = () => {
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  HTML Content *
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                  <label style={{ fontWeight: 'bold' }}>
+                    HTML Content *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const basicTemplate = `<h2 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Welkom {{firstName}}!</h2>
+<p style="color: #666666; font-size: 16px; margin: 0 0 15px 0; line-height: 1.6;">
+  Bedankt voor je aanmelding bij SDeal. We zijn blij je te verwelkomen!
+</p>
+<p style="color: #666666; font-size: 16px; margin: 0 0 15px 0; line-height: 1.6;">
+  Je kunt nu gebruik maken van alle voordelen die SDeal te bieden heeft.
+</p>
+<p style="color: #666666; font-size: 16px; margin: 0; line-height: 1.6;">
+  Met vriendelijke groet,<br>
+  <strong>Het SDeal Team</strong>
+</p>`;
+                      setTemplateForm({ ...templateForm, htmlContent: basicTemplate });
+                      generatePreview();
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#2196F3',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    Laad Basis Template
+                  </button>
+                </div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                  <strong>Tip:</strong> Je hoeft alleen de content te schrijven. De email wordt automatisch gewrapped in een mooie template met header en footer. Gebruik inline styles voor opmaak (bijv. style="color: #333; font-size: 16px;").
+                </div>
                 <textarea
                   id="htmlContent"
                   value={templateForm.htmlContent}
@@ -1945,7 +2055,7 @@ const Admin = () => {
                     fontFamily: 'monospace',
                     fontSize: '13px'
                   }}
-                  placeholder="<h1>Welkom {{firstName}}!</h1><p>Bedankt voor je aanmelding.</p>"
+                  placeholder='<h2 style="color: #333; font-size: 24px;">Welkom {{firstName}}!</h2>\n<p style="color: #666; font-size: 16px;">Je content hier...</p>'
                 />
               </div>
 
@@ -2033,10 +2143,16 @@ const Admin = () => {
                   <strong>Onderwerp:</strong> {templateForm.subject || '(geen onderwerp)'}
                 </div>
                 <div 
-                  dangerouslySetInnerHTML={{ __html: templatePreview || '<p style="color: #999;">Geen preview beschikbaar</p>' }}
+                  dangerouslySetInnerHTML={{ __html: templatePreview || '<p style="color: #999; padding: 20px;">Geen preview beschikbaar. Voeg HTML content toe om een preview te zien.</p>' }}
                   style={{ 
                     lineHeight: '1.6',
-                    color: '#333'
+                    color: '#333',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '0',
+                    backgroundColor: '#f4f4f4',
+                    minHeight: '400px',
+                    overflow: 'auto'
                   }}
                 />
               </div>
