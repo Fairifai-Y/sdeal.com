@@ -117,8 +117,8 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   
   const startTime = Date.now();
   // Increase timeout for production (Vercel allows up to 60s for serverless functions)
-  // Use 55s to leave buffer for processing
-  const timeoutMs = process.env.NODE_ENV === 'production' ? 55000 : 30000;
+  // Use 50s to leave buffer for processing (reduced from 55s for better reliability)
+  const timeoutMs = process.env.NODE_ENV === 'production' ? 50000 : 30000;
   
   console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
   console.log(`[Magento API] Start time: ${new Date().toISOString()}`);
@@ -126,11 +126,34 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   try {
     // Use AbortController to properly cancel fetch on timeout
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => {
-      const elapsed = Date.now() - startTime;
-      console.error(`[Magento API] ⏱️ Timeout triggered after ${elapsed}ms (limit: ${timeoutMs}ms) - aborting fetch`);
-      abortController.abort();
-    }, timeoutMs);
+    let timeoutId;
+    let fetchCompleted = false;
+    
+    // Create timeout promise that will reject if fetch takes too long
+    let heartbeatInterval;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+        }
+        if (!fetchCompleted) {
+          const elapsed = Date.now() - startTime;
+          console.error(`[Magento API] ⏱️ Timeout triggered after ${elapsed}ms (limit: ${timeoutMs}ms) - aborting fetch`);
+          abortController.abort();
+          reject(new Error(`Proxy request timeout after ${timeoutMs}ms`));
+        }
+      }, timeoutMs);
+      
+      // Add heartbeat logging every 10 seconds to track progress
+      heartbeatInterval = setInterval(() => {
+        if (!fetchCompleted) {
+          const elapsed = Date.now() - startTime;
+          console.log(`[Magento API] 💓 Heartbeat: Still waiting for response... (${elapsed}ms elapsed)`);
+        } else {
+          clearInterval(heartbeatInterval);
+        }
+      }, 10000);
+    });
     
     // Add abort signal to request options
     const fetchOptions = {
@@ -138,37 +161,53 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
       signal: abortController.signal
     };
     
-    // Create fetch promise
+    // Create fetch promise with detailed logging
     console.log(`[Magento API] 🔄 Calling fetch()...`);
     const fetchPromise = fetch(proxyUrlWithParams, fetchOptions)
       .then(response => {
-        // Clear timeout if fetch completed
+        fetchCompleted = true;
         if (timeoutId) {
           clearTimeout(timeoutId);
+        }
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
         }
         const duration = Date.now() - startTime;
         console.log(`[Magento API] ✅ Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
         return response;
       })
       .catch(error => {
-        // Clear timeout on error
+        fetchCompleted = true;
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+        }
         
         const duration = Date.now() - startTime;
-        if (error.name === 'AbortError') {
+        if (error.name === 'AbortError' || error.message.includes('timeout')) {
           console.error(`[Magento API] ❌ Fetch aborted after ${duration}ms (timeout)`);
           throw new Error(`Proxy request timeout after ${timeoutMs}ms`);
         } else {
           console.error(`[Magento API] ❌ Fetch error after ${duration}ms:`, error.message);
+          console.error(`[Magento API] Error type:`, error.constructor.name);
           throw error;
         }
       });
     
-    // Wait for fetch to complete
-    const response = await fetchPromise;
-    return response;
+    // Race between fetch and timeout - whichever completes first wins
+    // This ensures we never hang indefinitely
+    try {
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
+      return response;
+    } catch (raceError) {
+      // If timeout won the race, make sure fetch is aborted
+      if (!fetchCompleted && abortController) {
+        abortController.abort();
+      }
+      throw raceError;
+    }
     
   } catch (error) {
     const duration = Date.now() - startTime;

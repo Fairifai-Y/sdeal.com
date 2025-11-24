@@ -62,8 +62,49 @@ function convertOrderToConsumer(order, storeMapping = {}) {
   }
 
   // Determine store from order
-  const storeId = order.store_id || order.storeId || 1;
-  const store = storeMapping[storeId] || 'NL';
+  // First try store_name (most reliable, directly from Magento)
+  let store = null;
+  if (order.store_name) {
+    // Normalize store_name (remove newlines, take first line, trim)
+    const normalizedStoreName = order.store_name.split('\n')[0].trim().toUpperCase();
+    // Map common store names
+    if (normalizedStoreName === 'NL' || normalizedStoreName === 'NETHERLANDS') {
+      store = 'NL';
+    } else if (normalizedStoreName === 'DE' || normalizedStoreName === 'GERMANY') {
+      store = 'DE';
+    } else if (normalizedStoreName === 'BE' || normalizedStoreName === 'BELGIUM') {
+      store = 'BE';
+    } else if (normalizedStoreName === 'FR' || normalizedStoreName === 'FRANCE') {
+      store = 'FR';
+    } else if (normalizedStoreName === 'EN' || normalizedStoreName === 'ENGLISH' || normalizedStoreName === 'UK') {
+      // EN store might map to NL or UK - defaulting to NL for now
+      store = 'NL';
+    }
+  }
+  
+  // If no store from store_name, try store_id mapping
+  if (!store) {
+    const storeId = order.store_id || order.storeId;
+    store = storeId ? (storeMapping[storeId] || null) : null;
+  }
+  
+  // Final fallback: use country from billing/shipping address
+  if (!store) {
+    const countryId = order.billing_address?.country_id || 
+                      order.shipping_address?.country_id ||
+                      order.shipping_countryid || 
+                      order.country_id;
+    if (countryId) {
+      const countryUpper = String(countryId).toUpperCase();
+      if (['NL', 'NETHERLANDS'].includes(countryUpper)) store = 'NL';
+      else if (['DE', 'GERMANY'].includes(countryUpper)) store = 'DE';
+      else if (['BE', 'BELGIUM'].includes(countryUpper)) store = 'BE';
+      else if (['FR', 'FRANCE'].includes(countryUpper)) store = 'FR';
+    }
+  }
+  
+  // Ultimate fallback
+  store = store || 'NL';
 
   // Purchase date from order
   const purchaseDate = order.created_at ? new Date(order.created_at) : new Date();
@@ -73,7 +114,12 @@ function convertOrderToConsumer(order, storeMapping = {}) {
     lastName,
     email,
     store,
-    country: order.shipping_countryid || order.country_id || order.shipping_country || store,
+    country: order.billing_address?.country_id || 
+             order.shipping_address?.country_id ||
+             order.shipping_countryid || 
+             order.country_id || 
+             order.shipping_country || 
+             store,
     phone: order.customer_phone || order.telephone || order.phone || null,
     purchaseDate,
     source: 'magento_sync',
