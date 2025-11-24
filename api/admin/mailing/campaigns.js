@@ -1,4 +1,35 @@
 const prisma = require('../../lib/prisma');
+const sgMail = require('@sendgrid/mail');
+
+// Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('[Campaign] SendGrid initialized');
+} else {
+  console.warn('[Campaign] SENDGRID_API_KEY not found in environment variables');
+}
+
+// Helper function to replace template variables
+function replaceTemplateVariables(content, consumer) {
+  if (!content || !consumer) return content;
+  
+  let result = content;
+  // Replace common variables
+  result = result.replace(/\{\{firstName\}\}/g, consumer.firstName || '');
+  result = result.replace(/\{\{lastName\}\}/g, consumer.lastName || '');
+  result = result.replace(/\{\{email\}\}/g, consumer.email || '');
+  result = result.replace(/\{\{store\}\}/g, consumer.store || '');
+  result = result.replace(/\{\{country\}\}/g, consumer.country || '');
+  result = result.replace(/\{\{phone\}\}/g, consumer.phone || '');
+  
+  // Replace any other variables from consumer object
+  Object.keys(consumer).forEach(key => {
+    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+    result = result.replace(regex, consumer[key] || '');
+  });
+  
+  return result;
+}
 
 module.exports = async (req, res) => {
   // CORS headers
@@ -162,25 +193,23 @@ module.exports = async (req, res) => {
           }
         });
 
-        // Start sending emails in background (for now, just mark as sent)
-        // In production, you would queue these emails
+        // Start sending emails in background
         console.log(`[Campaign] Starting to send campaign ${id} to ${recipients.length} recipients`);
 
-        // For now, mark as sent (in production, implement actual email sending)
-        setTimeout(async () => {
-          try {
-            await prisma.emailCampaign.update({
-              where: { id },
-              data: {
-                status: 'sent',
-                totalSent: recipients.length
-              }
-            });
-            console.log(`[Campaign] Campaign ${id} marked as sent`);
-          } catch (error) {
-            console.error(`[Campaign] Error updating campaign status:`, error);
-          }
-        }, 1000);
+        // Send emails asynchronously (don't wait for completion)
+        sendCampaignEmails(id, campaign, recipients).catch(error => {
+          console.error(`[Campaign] Error sending campaign emails:`, error);
+          // Update campaign status to error
+          prisma.emailCampaign.update({
+            where: { id },
+            data: {
+              status: 'error',
+              errorMessage: error.message
+            }
+          }).catch(updateError => {
+            console.error(`[Campaign] Error updating campaign status:`, updateError);
+          });
+        });
 
         return res.json({
           success: true,
@@ -308,4 +337,127 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+// Function to send campaign emails
+async function sendCampaignEmails(campaignId, campaign, recipients) {
+  if (!process.env.SENDGRID_API_KEY) {
+    throw new Error('SENDGRID_API_KEY not configured');
+  }
+
+  if (!process.env.FROM_EMAIL) {
+    throw new Error('FROM_EMAIL not configured');
+  }
+
+  if (!campaign.template) {
+    throw new Error('Campaign template not found');
+  }
+
+  const template = campaign.template;
+  let totalSent = 0;
+  let totalFailed = 0;
+
+  // Send emails in batches to avoid overwhelming SendGrid and Vercel timeout
+  const BATCH_SIZE = 10; // Send 10 emails at a time
+  const DELAY_BETWEEN_BATCHES = 2000; // 2 seconds between batches
+
+  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+    const batch = recipients.slice(i, i + BATCH_SIZE);
+    const batchPromises = batch.map(async (consumer) => {
+      try {
+        // Replace template variables
+        const subject = replaceTemplateVariables(campaign.subject || template.subject, consumer);
+        const htmlContent = replaceTemplateVariables(template.htmlContent, consumer);
+        const textContent = template.textContent 
+          ? replaceTemplateVariables(template.textContent, consumer)
+          : null;
+
+        // Create email message
+        const msg = {
+          to: consumer.email,
+          from: process.env.FROM_EMAIL,
+          subject: subject,
+          html: htmlContent,
+          text: textContent || htmlContent.replace(/<[^>]*>/g, ''), // Strip HTML if no text version
+          // Add custom args for tracking
+          customArgs: {
+            campaignId: campaignId,
+            consumerId: consumer.id
+          }
+        };
+
+        // Send email via SendGrid
+        await sgMail.send(msg);
+
+        // Record email event
+        await prisma.emailEvent.create({
+          data: {
+            campaignId: campaignId,
+            consumerId: consumer.id,
+            eventType: 'sent',
+            occurredAt: new Date()
+          }
+        });
+
+        totalSent++;
+        console.log(`[Campaign] Email sent to ${consumer.email} (${totalSent}/${recipients.length})`);
+
+      } catch (error) {
+        totalFailed++;
+        console.error(`[Campaign] Failed to send email to ${consumer.email}:`, error.message);
+
+        // Record bounce event if it's a bounce error
+        try {
+          await prisma.emailEvent.create({
+            data: {
+              campaignId: campaignId,
+              consumerId: consumer.id,
+              eventType: 'bounced',
+              bounceType: 'hard',
+              bounceReason: error.message,
+              occurredAt: new Date()
+            }
+          });
+        } catch (eventError) {
+          console.error(`[Campaign] Error creating bounce event:`, eventError);
+        }
+      }
+    });
+
+    // Wait for batch to complete
+    await Promise.all(batchPromises);
+
+    // Update campaign progress
+    try {
+      await prisma.emailCampaign.update({
+        where: { id: campaignId },
+        data: {
+          totalSent: totalSent,
+          totalBounced: totalFailed
+        }
+      });
+    } catch (updateError) {
+      console.error(`[Campaign] Error updating campaign progress:`, updateError);
+    }
+
+    // Delay between batches (except for the last batch)
+    if (i + BATCH_SIZE < recipients.length) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+    }
+  }
+
+  // Mark campaign as sent
+  try {
+    await prisma.emailCampaign.update({
+      where: { id: campaignId },
+      data: {
+        status: 'sent',
+        totalSent: totalSent,
+        totalBounced: totalFailed
+      }
+    });
+    console.log(`[Campaign] Campaign ${campaignId} completed: ${totalSent} sent, ${totalFailed} failed`);
+  } catch (updateError) {
+    console.error(`[Campaign] Error marking campaign as sent:`, updateError);
+  }
+}
 
