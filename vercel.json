@@ -65,6 +65,14 @@
       "dest": "/api/admin/mailing/workflows.js"
     },
     {
+      "src": "/api/admin/mailing/lists",
+      "dest": "/api/admin/mailing/lists.js"
+    },
+    {
+      "src": "/api/admin/mailing/list-members",
+      "dest": "/api/admin/mailing/list-members.js"
+    },
+    {
       "src": "/api/admin/mailing/campaigns",
       "dest": "/api/admin/mailing/campaigns.js"
     },

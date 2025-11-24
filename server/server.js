@@ -152,6 +152,7 @@ if (process.env.NODE_ENV !== 'production') {
       };
       
       try {
+        console.log(`[Local API] Calling handler for ${path} with method ${req.method}`);
         await handler(vercelReq, vercelRes);
         
         // If handler didn't send a response, send a default error
@@ -161,9 +162,12 @@ if (process.env.NODE_ENV !== 'production') {
             success: false,
             error: 'Handler did not send a response'
           });
+        } else {
+          console.log(`[Local API] Handler for ${path} completed successfully for ${req.method}`);
         }
       } catch (error) {
         console.error(`[Local API] Error in ${path} (${req.method}):`, error);
+        console.error(`[Local API] Error stack:`, error.stack);
         if (!responseSent && !res.headersSent) {
           res.status(500).json({
             success: false,

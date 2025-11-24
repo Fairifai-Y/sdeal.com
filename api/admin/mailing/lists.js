@@ -11,6 +11,9 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
+  console.log(`[Lists API] ${req.method} request received`);
+  console.log(`[Lists API] Body:`, req.body ? JSON.stringify(req.body).substring(0, 200) : 'no body');
+
   try {
     // GET - List all lists or get single list
     if (req.method === 'GET') {
@@ -84,15 +87,19 @@ module.exports = async (req, res) => {
 
     // POST - Create new list
     if (req.method === 'POST') {
+      console.log('[Lists API] POST handler called');
       const { name, description, isPublic, doubleOptIn } = req.body;
+      console.log('[Lists API] Request data:', { name, description, isPublic, doubleOptIn });
 
       if (!name) {
+        console.log('[Lists API] Validation failed: name is required');
         return res.status(400).json({
           success: false,
           error: 'name is required'
         });
       }
 
+      console.log('[Lists API] Creating list in database...');
       const list = await prisma.emailList.create({
         data: {
           name,
@@ -101,6 +108,7 @@ module.exports = async (req, res) => {
           doubleOptIn: doubleOptIn !== undefined ? doubleOptIn : true
         }
       });
+      console.log('[Lists API] List created successfully:', list.id);
 
       return res.json({
         success: true,
