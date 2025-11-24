@@ -121,47 +121,55 @@ async function makeProxyRequest(targetUrl, method = 'GET', headers = {}, body = 
   const timeoutMs = process.env.NODE_ENV === 'production' ? 55000 : 30000;
   
   console.log(`[Magento API] Starting fetch with ${timeoutMs}ms timeout...`);
+  console.log(`[Magento API] Start time: ${new Date().toISOString()}`);
   
   try {
-    // Create timeout promise with cleanup
-    let timeoutId;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => {
-        console.error(`[Magento API] ⏱️ Timeout triggered after ${timeoutMs}ms`);
-        reject(new Error(`Proxy request timeout after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
+    // Use AbortController to properly cancel fetch on timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      const elapsed = Date.now() - startTime;
+      console.error(`[Magento API] ⏱️ Timeout triggered after ${elapsed}ms (limit: ${timeoutMs}ms) - aborting fetch`);
+      abortController.abort();
+    }, timeoutMs);
     
-    // Create fetch promise - simplified version
+    // Add abort signal to request options
+    const fetchOptions = {
+      ...requestOptions,
+      signal: abortController.signal
+    };
+    
+    // Create fetch promise
     console.log(`[Magento API] 🔄 Calling fetch()...`);
-    const fetchPromise = fetch(proxyUrlWithParams, requestOptions);
+    const fetchPromise = fetch(proxyUrlWithParams, fetchOptions)
+      .then(response => {
+        // Clear timeout if fetch completed
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        const duration = Date.now() - startTime;
+        console.log(`[Magento API] ✅ Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
+        return response;
+      })
+      .catch(error => {
+        // Clear timeout on error
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
+        const duration = Date.now() - startTime;
+        if (error.name === 'AbortError') {
+          console.error(`[Magento API] ❌ Fetch aborted after ${duration}ms (timeout)`);
+          throw new Error(`Proxy request timeout after ${timeoutMs}ms`);
+        } else {
+          console.error(`[Magento API] ❌ Fetch error after ${duration}ms:`, error.message);
+          throw error;
+        }
+      });
     
-    // Race between fetch and timeout
-    console.log(`[Magento API] Racing fetch vs timeout...`);
-    let response;
-    try {
-      response = await Promise.race([
-        fetchPromise,
-        timeoutPromise
-      ]);
-      
-      // Clear timeout if fetch completed
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      
-      const duration = Date.now() - startTime;
-      console.log(`[Magento API] ✅ Proxy response received in ${duration}ms: ${response.status} ${response.statusText}`);
-      return response;
-    } catch (raceError) {
-      // Clear timeout on error
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      const duration = Date.now() - startTime;
-      console.error(`[Magento API] ❌ Race error after ${duration}ms:`, raceError.message);
-      throw raceError;
-    }
+    // Wait for fetch to complete
+    const response = await fetchPromise;
+    return response;
+    
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Magento API] Proxy request failed after ${duration}ms:`, error.message);

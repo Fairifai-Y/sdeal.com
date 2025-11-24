@@ -14,7 +14,7 @@ Deze error kan optreden omdat:
 Update je `DATABASE_URL` in Vercel Environment Variables met deze parameters:
 
 ```
-postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
+postgresql://username:password@ep-xxx-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
 ```
 
 **Belangrijke parameters:**
@@ -28,7 +28,7 @@ postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-
 2. Zoek `DATABASE_URL`
 3. Update naar:
    ```
-   postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
+   postgresql://username:password@ep-xxx-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
    ```
 4. **Redeploy** je project (Vercel gebruikt environment variables tijdens build)
 
@@ -37,7 +37,7 @@ postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-
 Update `server/.env` en root `.env` (als die bestaat):
 
 ```env
-DATABASE_URL="postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15"
+DATABASE_URL="postgresql://username:password@ep-xxx-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15"
 ```
 
 ## Neon Database Status

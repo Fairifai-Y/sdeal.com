@@ -61,7 +61,7 @@ Dit runt de sync direct zonder HTTP server. Perfect voor snelle tests!
 Zorg dat je `.env` bestand in `server/` directory staat met:
 
 ```env
-DATABASE_URL="postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15"
+DATABASE_URL="postgresql://username:password@ep-xxx-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15"
 MAGENTO_BEARER_TOKEN="your-token"
 MAGENTO_API_BASE_URL="https://www.sdeal.nl/rest/V1"
 PROXY_BASE_URL="https://caityapps.com/proxy"

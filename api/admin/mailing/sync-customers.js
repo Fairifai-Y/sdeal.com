@@ -185,11 +185,23 @@ async function syncOrders(options = {}) {
       try {
         syncStatus.progress.currentPage = page;
         console.log(`[Sync] Fetching page ${page}...`);
+        const pageStartTime = Date.now();
         
-        const ordersData = await makeMagentoRequest('/orders', {
-          'searchCriteria[pageSize]': pageSize,
-          'searchCriteria[currentPage]': page
-        });
+        let ordersData;
+        try {
+          ordersData = await makeMagentoRequest('/orders', {
+            'searchCriteria[pageSize]': pageSize,
+            'searchCriteria[currentPage]': page
+          });
+        } catch (requestError) {
+          const requestDuration = Date.now() - pageStartTime;
+          console.error(`[Sync] ❌ Error fetching page ${page} after ${requestDuration}ms:`, requestError.message);
+          console.error(`[Sync] Error type:`, requestError.constructor.name);
+          throw requestError; // Re-throw to trigger retry logic
+        }
+        
+        const fetchDuration = Date.now() - pageStartTime;
+        console.log(`[Sync] ✅ Page ${page} fetched successfully in ${fetchDuration}ms`);
         
         const orders = ordersData?.items || [];
         

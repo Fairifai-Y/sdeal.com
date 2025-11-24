@@ -15,7 +15,7 @@ Zorg dat `DATABASE_URL` in Vercel is ingesteld:
 1. Ga naar Vercel Dashboard → Project → Settings → Environment Variables
 2. Voeg `DATABASE_URL` toe met de **pooler URL** en timeout parameters:
    ```
-   postgresql://neondb_owner:npg_dODNHU7js2SY@ep-cold-dawn-aba86905-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
+   postgresql://username:password@ep-xxx-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=15
    ```
 3. **Belangrijk**: 
    - Gebruik de **pooler URL** (met `-pooler` in de hostname) voor serverless
