@@ -290,25 +290,55 @@ async function syncOrders(options = {}) {
               continue;
             }
             
-            // Check if consumer already exists (email only - no duplicates)
-            const existingConsumer = await prisma.consumer.findFirst({
-              where: {
-                email: consumerData.email
-              }
-            });
+            // Try to create consumer directly (more efficient than findFirst + create)
+            // If it already exists, we'll catch the unique constraint error
+            let retries = 3;
+            let created = false;
             
-            // If not exists, create
-            if (!existingConsumer) {
-              await prisma.consumer.create({
-                data: consumerData
-              });
-              sessionCreated++;
-              
-              if ((sessionCreated + totalCreated) % 50 === 0) {
-                console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);
+            while (retries > 0) {
+              try {
+                await prisma.consumer.create({
+                  data: consumerData
+                });
+                sessionCreated++;
+                created = true;
+                
+                if ((sessionCreated + totalCreated) % 50 === 0) {
+                  console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);
+                }
+                break; // Success, exit retry loop
+                
+              } catch (error) {
+                // Check if it's a unique constraint error (consumer already exists)
+                if (error.code === 'P2002' || error.message.includes('Unique constraint') || error.message.includes('duplicate key')) {
+                  sessionSkipped++;
+                  break; // Consumer exists, skip and continue
+                }
+                
+                // Check if it's a connection pool error
+                const isConnectionError = error.message.includes('Timed out fetching a new connection') ||
+                                        error.message.includes("Can't reach database server") ||
+                                        error.message.includes('connection pool') ||
+                                        error.message.includes('ECONNRESET') ||
+                                        error.message.includes('ETIMEDOUT');
+                
+                if (isConnectionError && retries > 1) {
+                  // Exponential backoff: 1s, 2s, 4s
+                  const delay = Math.pow(2, 3 - retries) * 1000;
+                  console.log(`[Sync] ⚠️ Connection error for order ${orderId}, retrying in ${delay}ms... (${retries - 1} retries left)`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  retries--;
+                } else {
+                  // Not a connection error or no retries left, throw
+                  throw error;
+                }
               }
-            } else {
-              sessionSkipped++;
+            }
+            
+            // Small delay between queries to prevent connection pool exhaustion
+            // Delay every 5th query to balance speed and reliability
+            if ((i + 1) % 5 === 0) {
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
             
             syncStatus.progress.totalProcessed++;
