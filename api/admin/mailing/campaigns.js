@@ -9,6 +9,17 @@ if (process.env.SENDGRID_API_KEY) {
   console.warn('[Campaign] SENDGRID_API_KEY not found in environment variables');
 }
 
+// Helper function to format from email with display name
+function formatFromEmail(email) {
+  if (!email) return email;
+  // If email already contains a display name (format: "Name <email>"), return as is
+  if (email.includes('<') && email.includes('>')) {
+    return email;
+  }
+  // Add display name: "SDeal – Exclusieve Deals <email>"
+  return `SDeal – Exclusieve Deals <${email}>`;
+}
+
 // Helper function to replace template variables
 function replaceTemplateVariables(content, consumer) {
   if (!content || !consumer) return content;
@@ -495,7 +506,7 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
         // Create email message for SendGrid batch sending
         emailMessages.push({
           to: consumer.email,
-          from: process.env.FROM_EMAIL,
+          from: formatFromEmail(process.env.FROM_EMAIL),
           subject: subject,
           html: htmlContent,
           text: textContent || htmlContent.replace(/<[^>]*>/g, ''),
