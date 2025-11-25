@@ -82,19 +82,133 @@ module.exports = async (req, res) => {
       });
     }
 
-    // POST - Add members to list (single or bulk)
+    // POST - Add members to list (single, bulk by IDs, or bulk by filters)
     if (req.method === 'POST') {
       // listId is already extracted above (from query or body)
       // Use parsed body from above
-      const { consumerId, consumerIds, status = 'subscribed', source = 'manual' } = body;
+      const { 
+        consumerId, 
+        consumerIds, 
+        filters, // { store, country, isUnsubscribed, etc. }
+        status = 'subscribed', 
+        source = 'manual' 
+      } = body;
 
+      // Check if this is a filter-based bulk add
+      if (filters) {
+        // Build where clause from filters
+        const where = {
+          isUnsubscribed: filters.isUnsubscribed !== undefined ? filters.isUnsubscribed : false
+        };
+
+        if (filters.store) {
+          where.store = filters.store;
+        }
+
+        if (filters.country) {
+          where.country = filters.country;
+        }
+
+        if (filters.search) {
+          where.OR = [
+            { firstName: { contains: filters.search, mode: 'insensitive' } },
+            { lastName: { contains: filters.search, mode: 'insensitive' } },
+            { email: { contains: filters.search, mode: 'insensitive' } }
+          ];
+        }
+
+        // Get count first to show progress
+        const totalCount = await prisma.consumer.count({ where });
+        
+        if (totalCount === 0) {
+          return res.json({
+            success: true,
+            message: 'No consumers found matching the filters',
+            data: {
+              added: 0,
+              total: 0
+            }
+          });
+        }
+
+        // Process in batches to avoid memory issues
+        const BATCH_SIZE = 1000;
+        let totalAdded = 0;
+        let totalSkipped = 0;
+        let offset = 0;
+
+        while (offset < totalCount) {
+          const consumers = await prisma.consumer.findMany({
+            where,
+            skip: offset,
+            take: BATCH_SIZE,
+            select: { id: true }
+          });
+
+          // Add consumers to list in batch
+          for (const consumer of consumers) {
+            try {
+              await prisma.emailListMember.upsert({
+                where: {
+                  listId_consumerId: {
+                    listId: listId,
+                    consumerId: consumer.id
+                  }
+                },
+                update: {
+                  status: status,
+                  source: source,
+                  subscribedAt: status === 'subscribed' ? new Date() : undefined
+                },
+                create: {
+                  listId: listId,
+                  consumerId: consumer.id,
+                  status: status,
+                  source: source
+                }
+              });
+              totalAdded++;
+            } catch (error) {
+              console.error(`[List Members] Error adding consumer ${consumer.id}:`, error);
+              totalSkipped++;
+            }
+          }
+
+          offset += BATCH_SIZE;
+        }
+
+        // Update list totalConsumers count
+        const subscribedCount = await prisma.emailListMember.count({
+          where: {
+            listId: listId,
+            status: 'subscribed'
+          }
+        });
+
+        await prisma.emailList.update({
+          where: { id: listId },
+          data: { totalConsumers: subscribedCount }
+        });
+
+        return res.json({
+          success: true,
+          message: `Added ${totalAdded} consumer(s) to list based on filters`,
+          data: {
+            added: totalAdded,
+            skipped: totalSkipped,
+            total: totalCount
+          }
+        });
+      }
+
+      // Original logic for adding by IDs
       // Support both single consumerId and array of consumerIds
       const idsToAdd = consumerIds || (consumerId ? [consumerId] : []);
 
       if (idsToAdd.length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'consumerId or consumerIds is required'
+          error: 'consumerId, consumerIds, or filters is required'
         });
       }
 

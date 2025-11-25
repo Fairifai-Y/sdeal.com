@@ -1492,11 +1492,12 @@ const Admin = () => {
           </select>
           
           {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter) && (
-            <button
-              onClick={clearConsumerFilters}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: '#f44336',
+            <>
+              <button
+                onClick={clearConsumerFilters}
+                style={{
+                  padding: '10px 15px',
+                  backgroundColor: '#f44336',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
@@ -1506,6 +1507,47 @@ const Admin = () => {
             >
               Filters Wissen
             </button>
+              <button
+                onClick={() => {
+                  const hasFilters = consumerSearchQuery || consumerStoreFilter || consumerCountryFilter;
+                  if (!hasFilters) {
+                    alert('Selecteer eerst filters om bulk toevoegen te gebruiken');
+                    return;
+                  }
+                  // Show list selection
+                  const lists = mailingData.lists || [];
+                  if (lists.length === 0) {
+                    alert('Maak eerst een lijst aan voordat je consumenten kunt toevoegen');
+                    return;
+                  }
+                  const listOptions = lists.map((l, i) => `${i + 1}. ${l.name}`).join('\n');
+                  const selectedListId = prompt(
+                    `Voeg alle gefilterde consumenten toe aan een lijst.\n\nBeschikbare lijsten:\n${listOptions}\n\nVoer het nummer in:`
+                  );
+                  if (selectedListId) {
+                    const listIndex = parseInt(selectedListId) - 1;
+                    const selectedList = lists[listIndex];
+                    if (selectedList) {
+                      addFilteredConsumersToList(selectedList.id);
+                    } else {
+                      alert('Ongeldig lijst nummer');
+                    }
+                  }
+                }}
+                style={{
+                  padding: '10px 15px',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                📦 Voeg Alle Gefilterde Toe
+              </button>
+            </>
           )}
         </div>
 
@@ -2933,6 +2975,76 @@ const Admin = () => {
     } catch (error) {
       console.error('Error adding members to list:', error);
       alert('Error adding members: ' + error.message);
+    }
+  };
+
+  const addFilteredConsumersToList = async (listId) => {
+    // Build filters object from current filters
+    const filters = {};
+    if (consumerSearchQuery) filters.search = consumerSearchQuery;
+    if (consumerStoreFilter) filters.store = consumerStoreFilter;
+    if (consumerCountryFilter) filters.country = consumerCountryFilter;
+    filters.isUnsubscribed = false; // Only add non-unsubscribed consumers
+
+    if (Object.keys(filters).length === 0) {
+      alert('Selecteer eerst filters om bulk toevoegen te gebruiken');
+      return;
+    }
+
+    // Confirm action
+    const confirmed = window.confirm(
+      `Weet je zeker dat je alle consumenten die voldoen aan de huidige filters wilt toevoegen aan deze lijst?\n\n` +
+      `Actieve filters:\n` +
+      `${consumerSearchQuery ? `- Zoek: "${consumerSearchQuery}"\n` : ''}` +
+      `${consumerStoreFilter ? `- Store: ${consumerStoreFilter}\n` : ''}` +
+      `${consumerCountryFilter ? `- Land: ${consumerCountryFilter}\n` : ''}\n` +
+      `Dit kan duizenden consumenten zijn.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch('/api/admin/mailing/list-members', {
+        method: 'POST',
+        body: JSON.stringify({
+          listId: listId,
+          filters: filters,
+          status: 'subscribed',
+          source: 'bulk_filter'
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Response is not JSON: ${text.substring(0, 200)}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ ${result.data.added.toLocaleString('nl-NL')} consument(en) toegevoegd aan lijst!\n\n` +
+              `Totaal gevonden: ${result.data.total.toLocaleString('nl-NL')}\n` +
+              `Overgeslagen: ${result.data.skipped || 0}`);
+        if (viewingListMembers === listId) {
+          fetchListMembers(listId);
+        }
+        fetchMailingData('lists');
+        // Refresh consumer list to show updated counts
+        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding filtered consumers to list:', error);
+      alert('Error adding consumers: ' + error.message);
     }
   };
 
