@@ -10,6 +10,7 @@
     "test:sync": "node test-sync.js",
     "test:api": "node test-magento-api.js",
     "test:sync100": "node test-sync-100.js",
+    "fix:store-country": "node fix-consumer-store-country.js",
     "prisma:generate": "cd .. && prisma generate",
     "prisma:migrate": "cd .. && prisma migrate dev",
     "prisma:studio": "cd .. && prisma studio",

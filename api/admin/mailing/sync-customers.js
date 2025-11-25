@@ -202,6 +202,15 @@ async function syncOrders(options = {}) {
   
   console.log('[Sync] Starting sync...');
   
+  // Wake up database if it's sleeping (Neon auto-suspend)
+  console.log('[Sync] Waking up database connection...');
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('[Sync] ✅ Database connection active');
+  } catch (wakeError) {
+    console.log('[Sync] ⚠️ Database wake-up failed, will retry on first query:', wakeError.message);
+  }
+  
   // Initialize totals from checkpoint or zero
   let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
   let totalSkipped = checkpoint ? checkpoint.totalSkipped : 0;
@@ -320,12 +329,22 @@ async function syncOrders(options = {}) {
                                         error.message.includes("Can't reach database server") ||
                                         error.message.includes('connection pool') ||
                                         error.message.includes('ECONNRESET') ||
-                                        error.message.includes('ETIMEDOUT');
+                                        error.message.includes('ETIMEDOUT') ||
+                                        error.message.includes('ENOTFOUND');
                 
                 if (isConnectionError && retries > 1) {
-                  // Exponential backoff: 1s, 2s, 4s
-                  const delay = Math.pow(2, 3 - retries) * 1000;
+                  // Exponential backoff: 2s, 4s, 8s (longer delays for Neon wake-up)
+                  const delay = Math.pow(2, 4 - retries) * 1000;
                   console.log(`[Sync] ⚠️ Connection error for order ${orderId}, retrying in ${delay}ms... (${retries - 1} retries left)`);
+                  
+                  // Try to wake up database before retry
+                  try {
+                    await prisma.$queryRaw`SELECT 1`;
+                    console.log(`[Sync] ✅ Database woken up, retrying...`);
+                  } catch (wakeError) {
+                    console.log(`[Sync] ⚠️ Database wake-up failed, will retry anyway:`, wakeError.message);
+                  }
+                  
                   await new Promise(resolve => setTimeout(resolve, delay));
                   retries--;
                 } else {

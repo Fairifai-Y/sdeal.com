@@ -236,6 +236,13 @@ async function syncOrders(options = {}) {
           try {
             // Track highest entity_id
             const entityId = order.entity_id || order.id;
+            
+            // Skip orders with entity_id less than the starting entity_id
+            if (lastEntityId > 0 && entityId && entityId < lastEntityId) {
+              sessionSkipped++;
+              continue;
+            }
+            
             if (entityId && entityId > highestEntityId) {
               highestEntityId = entityId;
             }
