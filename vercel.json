@@ -97,6 +97,10 @@
       "dest": "/api/admin/mailing/webhook.js"
     },
     {
+      "src": "/api/admin/ldg",
+      "dest": "/api/admin/ldg.js"
+    },
+    {
       "src": "/api/lifetime-discount/create-payment",
       "dest": "/api/lifetime-discount/create-payment.js"
     },

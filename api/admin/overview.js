@@ -90,18 +90,19 @@ module.exports = async (req, res) => {
       }
     }
     
-    // 2. Get sellers with orders (unique suppliers from orders)
+    // 2. Get sellers with orders from last 1000 orders (unique suppliers from latest orders)
     let sellersWithOrders = 0;
-    let fetchedOrdersCount = 0; // Count of orders actually fetched and processed
-    const ordersCacheKey = 'api_sellers_with_orders';
-    const ordersCountCacheKey = 'api_fetched_orders_count';
+    let fetchedOrdersCount = 0; // Count of orders actually fetched and processed (should be 1000)
+    const ordersCacheKey = 'api_sellers_with_orders_last_1000';
+    const ordersCountCacheKey = 'api_fetched_orders_count_last_1000';
     
     if (cache[ordersCacheKey] && cache[ordersCountCacheKey] && (now - cache[ordersCacheKey].timestamp) < cacheTTL) {
       sellersWithOrders = cache[ordersCacheKey].value;
       fetchedOrdersCount = cache[ordersCountCacheKey].value;
-      console.log('[Overview] Using cached sellers with orders:', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
+      console.log('[Overview] Using cached sellers with orders (last 1000):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
     } else {
       try {
+        // Fetch the first page (newest orders) - page 1 has the latest orders
         const ordersData = await makeRequest('/supplier/orders/', {
           'searchCriteria[pageSize]': 1000,
           'searchCriteria[currentPage]': 1
@@ -109,43 +110,20 @@ module.exports = async (req, res) => {
         
         if (ordersData && ordersData.items && ordersData.items.length > 0) {
           const uniqueSupplierIds = new Set();
-          fetchedOrdersCount = ordersData.items.length; // Start with first page
+          const ordersToProcess = ordersData.items.slice(0, 1000); // Take first 1000 orders (newest)
+          fetchedOrdersCount = ordersToProcess.length;
           
-          ordersData.items.forEach(order => {
+          ordersToProcess.forEach(order => {
             if (order.supplier_id) {
               uniqueSupplierIds.add(String(order.supplier_id));
             }
           });
           
-          // Fetch additional pages if needed (max 5 pages = 5000 orders)
-          if (ordersData.items.length === 1000 && ordersData.total_count > 1000) {
-            const totalPages = Math.ceil(ordersData.total_count / 1000);
-            for (let page = 2; page <= Math.min(totalPages, 5); page++) {
-              try {
-                const pageData = await makeRequest('/supplier/orders/', {
-                  'searchCriteria[pageSize]': 1000,
-                  'searchCriteria[currentPage]': page
-                });
-                if (pageData && pageData.items) {
-                  fetchedOrdersCount += pageData.items.length; // Count actual fetched orders
-                  pageData.items.forEach(order => {
-                    if (order.supplier_id) {
-                      uniqueSupplierIds.add(String(order.supplier_id));
-                    }
-                  });
-                }
-              } catch (pageError) {
-                console.warn(`[Overview] Failed to fetch orders page ${page}:`, pageError.message);
-                break;
-              }
-            }
-          }
-          
           sellersWithOrders = uniqueSupplierIds.size;
           cache[ordersCacheKey] = { value: sellersWithOrders, timestamp: now };
           cache[ordersCountCacheKey] = { value: fetchedOrdersCount, timestamp: now };
           global.apiCache = cache;
-          console.log('[Overview] Fetched sellers with orders (cached):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
+          console.log('[Overview] Fetched sellers with orders from last 1000 orders (cached):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
         }
       } catch (ordersError) {
         console.error('Error fetching sellers with orders:', ordersError);
@@ -196,13 +174,30 @@ module.exports = async (req, res) => {
       new Date(s.createdAt) >= sevenDaysAgo
     ).length;
 
+    // Get LDG (Lifetime Discount Group) statistics
+    const ldgStats = await prisma.lifetimeDiscountRegistration.groupBy({
+      by: ['paymentStatus'],
+      _count: true
+    });
+
+    const ldgStatusCounts = {};
+    let totalLdgRegistrations = 0;
+    ldgStats.forEach(stat => {
+      ldgStatusCounts[stat.paymentStatus] = stat._count;
+      totalLdgRegistrations += stat._count;
+    });
+
+    const ldgPaid = ldgStatusCounts.paid || 0;
+    const ldgPending = ldgStatusCounts.pending || 0;
+    const ldgFailed = (ldgStatusCounts.failed || 0) + (ldgStatusCounts.cancelled || 0);
+
     res.json({
       success: true,
       data: {
         // Three main seller counts
         totalBalanceSellers, // Sellers with balance record (from balance endpoint)
-        sellersWithOrders, // Sellers that have had orders (from orders endpoint)
-        fetchedOrdersCount, // Number of orders actually fetched and processed to calculate sellersWithOrders
+        sellersWithOrders, // Sellers that have had orders (from last 1000 orders)
+        fetchedOrdersCount, // Number of orders actually fetched and processed to calculate sellersWithOrders (should be 1000)
         newModelCustomers, // Sellers from database (New Model)
         
         // Legacy fields (kept for backwards compatibility)
@@ -215,7 +210,13 @@ module.exports = async (req, res) => {
         withRecurring,
         statsByPackage,
         statsByBilling,
-        recentRegistrations
+        recentRegistrations,
+        
+        // LDG (Lifetime Discount Group) statistics
+        ldgTotal: totalLdgRegistrations,
+        ldgPaid,
+        ldgPending,
+        ldgFailed
       }
     });
 

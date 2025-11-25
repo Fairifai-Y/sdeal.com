@@ -97,6 +97,13 @@ const Admin = () => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncPolling, setSyncPolling] = useState(false);
   
+  // LDG (Lifetime Discount Group) state
+  const [ldgData, setLdgData] = useState(null);
+  const [ldgLoading, setLdgLoading] = useState(false);
+  const [ldgStatusFilter, setLdgStatusFilter] = useState('');
+  const [ldgSearchQuery, setLdgSearchQuery] = useState('');
+  const [ldgPage, setLdgPage] = useState(1);
+  
   // Template editor state
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [templateForm, setTemplateForm] = useState({
@@ -201,6 +208,47 @@ const Admin = () => {
       console.error('Error fetching section data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLdgData = async () => {
+    setLdgLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (ldgStatusFilter) params.append('status', ldgStatusFilter);
+      if (ldgSearchQuery) params.append('search', ldgSearchQuery);
+      params.append('page', ldgPage.toString());
+      params.append('pageSize', '50');
+      
+      const queryString = params.toString();
+      const endpoint = `/api/admin/ldg${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await authenticatedFetch(endpoint);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`Error fetching LDG data (${response.status}):`, text);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Error fetching LDG data: Response is not JSON:', text.substring(0, 200));
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setLdgData(result);
+      } else {
+        console.error('Error fetching LDG data:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching LDG data:', error);
+    } finally {
+      setLdgLoading(false);
     }
   };
 
@@ -396,7 +444,9 @@ const Admin = () => {
         // Don't fetch default data if searching
         return;
       }
-      if (activeSection === 'mailing') {
+      if (activeSection === 'ldg') {
+        fetchLdgData();
+      } else if (activeSection === 'mailing') {
         // Always fetch mailing data for current subsection when section is active
         if (mailingSubsection === 'consumers') {
           fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
@@ -417,6 +467,14 @@ const Admin = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, activeSection, mailingSubsection]);
+
+  // Fetch LDG data when filters or page changes
+  useEffect(() => {
+    if (isAuthenticated && activeSection === 'ldg') {
+      fetchLdgData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ldgStatusFilter, ldgSearchQuery, ldgPage, isAuthenticated, activeSection]);
 
   // Search customers
   useEffect(() => {
@@ -681,10 +739,10 @@ const Admin = () => {
                   <h3>Sellers met Orders</h3>
                   <p className="stat-number">{overviewData.sellersWithOrders || 0}</p>
                   <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>
-                    Sellers die een order hebben gehad
+                    Sellers uit laatste 1000 orders
                     {overviewData.fetchedOrdersCount && (
                       <span style={{ display: 'block', marginTop: '3px' }}>
-                        (uit {overviewData.fetchedOrdersCount.toLocaleString('nl-NL')} opgehaalde orders)
+                        (uit {overviewData.fetchedOrdersCount.toLocaleString('nl-NL')} laatste orders)
                       </span>
                     )}
                   </p>
@@ -721,6 +779,18 @@ const Admin = () => {
                 <div className="stat-card">
                   <h3>Pakket C</h3>
                   <p className="stat-number">{overviewData.statsByPackage?.C || 0}</p>
+                </div>
+                <div className="stat-card highlight">
+                  <h3>LDG Registraties</h3>
+                  <p className="stat-number">{overviewData.ldgTotal || 0}</p>
+                  <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>
+                    Lifetime Discount Group
+                    {overviewData.ldgPaid !== undefined && (
+                      <span style={{ display: 'block', marginTop: '3px' }}>
+                        Betaald: {overviewData.ldgPaid} | In behandeling: {overviewData.ldgPending || 0} | Mislukt: {overviewData.ldgFailed || 0}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             )}
@@ -945,9 +1015,221 @@ const Admin = () => {
       case 'mailing':
         return renderMailingContent();
 
+      case 'ldg':
+        return renderLdgContent();
+
       default:
         return <div>Selecteer een sectie</div>;
     }
+  };
+
+  const renderLdgContent = () => {
+    if (ldgLoading) {
+      return <div className="admin-loading">Loading...</div>;
+    }
+
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'paid':
+          return '#4caf50';
+        case 'pending':
+          return '#ff9800';
+        case 'failed':
+        case 'cancelled':
+          return '#f44336';
+        default:
+          return '#666';
+      }
+    };
+
+    const getStatusLabel = (status) => {
+      switch (status) {
+        case 'paid':
+          return 'Betaald';
+        case 'pending':
+          return 'In behandeling';
+        case 'failed':
+          return 'Mislukt';
+        case 'cancelled':
+          return 'Geannuleerd';
+        default:
+          return status || '-';
+      }
+    };
+
+    return (
+      <div className="admin-section-content">
+        <h2>Lifetime Discount Group (LDG)</h2>
+        
+        {/* Status Counts */}
+        {ldgData?.statusCounts && (
+          <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
+            {Object.entries(ldgData.statusCounts).map(([status, count]) => (
+              <div key={status} className="stat-card" style={{ borderLeft: `4px solid ${getStatusColor(status)}` }}>
+                <h3>{getStatusLabel(status)}</h3>
+                <p className="stat-number">{count}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div style={{ marginTop: '30px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div>
+            <label style={{ marginRight: '10px' }}>Status:</label>
+            <select
+              value={ldgStatusFilter}
+              onChange={(e) => {
+                setLdgStatusFilter(e.target.value);
+                setLdgPage(1);
+              }}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="">Alle statussen</option>
+              <option value="paid">Betaald</option>
+              <option value="pending">In behandeling</option>
+              <option value="failed">Mislukt</option>
+              <option value="cancelled">Geannuleerd</option>
+            </select>
+          </div>
+          
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <input
+              type="text"
+              placeholder="Zoek op email of payment ID..."
+              value={ldgSearchQuery}
+              onChange={(e) => setLdgSearchQuery(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  setLdgPage(1);
+                  fetchLdgData();
+                }
+              }}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #ddd' 
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={() => {
+              setLdgPage(1);
+              fetchLdgData();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Zoeken
+          </button>
+        </div>
+
+        {/* Table */}
+        {ldgData?.data && ldgData.data.length > 0 && (
+          <div style={{ marginTop: '30px' }}>
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Taal</th>
+                    <th>Status</th>
+                    <th>Mollie Payment ID</th>
+                    <th>Geactiveerd op</th>
+                    <th>Aangemaakt</th>
+                    <th>Bijgewerkt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ldgData.data.map((registration) => (
+                    <tr key={registration.id}>
+                      <td>{registration.email}</td>
+                      <td>{registration.language?.toUpperCase() || '-'}</td>
+                      <td>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: getStatusColor(registration.paymentStatus) + '20',
+                          color: getStatusColor(registration.paymentStatus),
+                          fontWeight: '600'
+                        }}>
+                          {getStatusLabel(registration.paymentStatus)}
+                        </span>
+                      </td>
+                      <td>{registration.molliePaymentId || '-'}</td>
+                      <td>
+                        {registration.activatedAt 
+                          ? new Date(registration.activatedAt).toLocaleString('nl-NL')
+                          : '-'
+                        }
+                      </td>
+                      <td>{new Date(registration.createdAt).toLocaleString('nl-NL')}</td>
+                      <td>{new Date(registration.updatedAt).toLocaleString('nl-NL')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {ldgData.pagination && ldgData.pagination.totalPages > 1 && (
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                <button
+                  onClick={() => {
+                    setLdgPage(prev => Math.max(1, prev - 1));
+                  }}
+                  disabled={ldgPage === 1}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: ldgPage === 1 ? '#ccc' : '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: ldgPage === 1 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Vorige
+                </button>
+                <span>
+                  Pagina {ldgData.pagination.page} van {ldgData.pagination.totalPages} 
+                  ({ldgData.pagination.total} totaal)
+                </span>
+                <button
+                  onClick={() => {
+                    setLdgPage(prev => Math.min(ldgData.pagination.totalPages, prev + 1));
+                  }}
+                  disabled={ldgPage === ldgData.pagination.totalPages}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: ldgPage === ldgData.pagination.totalPages ? '#ccc' : '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: ldgPage === ldgData.pagination.totalPages ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Volgende
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {ldgData?.data && ldgData.data.length === 0 && (
+          <div style={{ marginTop: '30px', padding: '20px', textAlign: 'center', color: '#666' }}>
+            Geen registraties gevonden
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderMailingContent = () => {
@@ -4005,6 +4287,12 @@ const Admin = () => {
             onClick={() => setActiveSection('mailing')}
           >
             Mailing
+          </button>
+          <button 
+            className={`admin-nav-button ${activeSection === 'ldg' ? 'active' : ''}`}
+            onClick={() => setActiveSection('ldg')}
+          >
+            LDG
           </button>
         </div>
         
