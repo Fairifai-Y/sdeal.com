@@ -97,6 +97,14 @@
       "dest": "/api/admin/mailing/webhook.js"
     },
     {
+      "src": "/api/lifetime-discount/create-payment",
+      "dest": "/api/lifetime-discount/create-payment.js"
+    },
+    {
+      "src": "/api/lifetime-discount/payment-webhook",
+      "dest": "/api/lifetime-discount/payment-webhook.js"
+    },
+    {
       "src": "/api/magento/customers",
       "dest": "/api/magento/customers.js"
     },

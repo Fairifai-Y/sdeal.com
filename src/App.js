@@ -18,6 +18,7 @@ import ProductDetail from './pages/ProductDetail';
 import Pricing from './pages/Pricing';
 import Admin from './pages/Admin';
 import Package from './pages/Package';
+import LifetimeDiscountGroup from './pages/LifetimeDiscountGroup';
 import './App.css';
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/terms-sellers" element={<TermsSellers />} />
                 <Route path="/package" element={<Package />} />
+                <Route path="/Lifetime-Discount-Group" element={<LifetimeDiscountGroup />} />
                 
                 {/* Dutch routes */}
                 <Route path="/nl" element={<Home />} />
@@ -65,6 +67,7 @@ function App() {
                 <Route path="/nl/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/nl/terms-sellers" element={<TermsSellers />} />
                 <Route path="/nl/package" element={<Package />} />
+                <Route path="/nl/Lifetime-Discount-Group" element={<LifetimeDiscountGroup />} />
                 
                 {/* German routes */}
                 <Route path="/de" element={<Home />} />
@@ -80,6 +83,7 @@ function App() {
                 <Route path="/de/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/de/terms-sellers" element={<TermsSellers />} />
                 <Route path="/de/package" element={<Package />} />
+                <Route path="/de/Lifetime-Discount-Group" element={<LifetimeDiscountGroup />} />
                 
                 {/* French routes */}
                 <Route path="/fr" element={<Home />} />
@@ -95,6 +99,7 @@ function App() {
                 <Route path="/fr/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route path="/fr/terms-sellers" element={<TermsSellers />} />
                 <Route path="/fr/package" element={<Package />} />
+                <Route path="/fr/Lifetime-Discount-Group" element={<LifetimeDiscountGroup />} />
                     </Routes>
                   </main>
                   <Footer />

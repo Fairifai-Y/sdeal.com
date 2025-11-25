@@ -363,3 +363,21 @@ model EmailWorkflowExecution {
   @@index([status])
   @@index([nextStepAt])
 }
+
+// Lifetime Discount Group registrations
+model LifetimeDiscountRegistration {
+  id            String   @id @default(cuid())
+  email         String
+  language      String   // en, nl, de, fr
+  paymentStatus String   @default("pending") // pending, paid, failed, cancelled
+  molliePaymentId String? @unique
+  activatedAt   DateTime? // When the discount was activated (24 hours after payment)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email])
+  @@index([email])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
