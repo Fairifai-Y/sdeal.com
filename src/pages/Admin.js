@@ -2079,6 +2079,13 @@ const Admin = () => {
           <!-- Footer -->
           <tr>
             <td style="padding: 30px 40px; background-color: #f9f9f9; border-top: 1px solid #eeeeee; text-align: center; font-size: 12px; color: #666666;">
+              <p style="margin: 0 0 15px 0; font-size: 14px; color: #333333;">
+                Met vriendelijke groet,<br>
+                <strong>Het SDeal Team</strong>
+              </p>
+              <p style="margin: 0 0 20px 0;">
+                <img src="/images/smiley_sdeal.png" alt="SDeal" style="height: 50px; width: auto; display: block; margin: 0 auto;" />
+              </p>
               <p style="margin: 0 0 10px 0;">
                 <strong>SDeal B.V.</strong><br>
                 Osloweg 110, 9723 BX Groningen, The Netherlands<br>

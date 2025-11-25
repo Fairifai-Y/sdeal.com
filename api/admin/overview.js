@@ -102,29 +102,51 @@ module.exports = async (req, res) => {
       console.log('[Overview] Using cached sellers with orders (last 1000):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
     } else {
       try {
-        // Fetch the first page (newest orders) - page 1 has the latest orders
-        const ordersData = await makeRequest('/supplier/orders/', {
-          'searchCriteria[pageSize]': 1000,
-          'searchCriteria[currentPage]': 1
-        });
+        // Fetch multiple pages until we have 1000 orders (newest orders first)
+        const uniqueSupplierIds = new Set();
+        const allOrders = [];
+        let page = 1;
+        const maxPages = 20; // Safety limit: max 20 pages (20 * 100 = 2000 orders max)
         
-        if (ordersData && ordersData.items && ordersData.items.length > 0) {
-          const uniqueSupplierIds = new Set();
-          const ordersToProcess = ordersData.items.slice(0, 1000); // Take first 1000 orders (newest)
-          fetchedOrdersCount = ordersToProcess.length;
+        while (allOrders.length < 1000 && page <= maxPages) {
+          const ordersData = await makeRequest('/supplier/orders/', {
+            'searchCriteria[pageSize]': 100, // Request 100 per page (API might return less)
+            'searchCriteria[currentPage]': page
+          });
           
-          ordersToProcess.forEach(order => {
+          if (!ordersData || !ordersData.items || ordersData.items.length === 0) {
+            console.log(`[Overview] No more orders at page ${page}`);
+            break;
+          }
+          
+          // Add orders to our collection
+          for (const order of ordersData.items) {
+            if (allOrders.length >= 1000) {
+              break; // We have enough orders
+            }
+            allOrders.push(order);
             if (order.supplier_id) {
               uniqueSupplierIds.add(String(order.supplier_id));
             }
-          });
+          }
           
-          sellersWithOrders = uniqueSupplierIds.size;
-          cache[ordersCacheKey] = { value: sellersWithOrders, timestamp: now };
-          cache[ordersCountCacheKey] = { value: fetchedOrdersCount, timestamp: now };
-          global.apiCache = cache;
-          console.log('[Overview] Fetched sellers with orders from last 1000 orders (cached):', sellersWithOrders, 'from', fetchedOrdersCount, 'fetched orders');
+          console.log(`[Overview] Fetched page ${page}: ${ordersData.items.length} orders, total so far: ${allOrders.length}`);
+          
+          // If we got less than requested, we've reached the end
+          if (ordersData.items.length < 100) {
+            break;
+          }
+          
+          page++;
         }
+        
+        fetchedOrdersCount = allOrders.length;
+        sellersWithOrders = uniqueSupplierIds.size;
+        
+        cache[ordersCacheKey] = { value: sellersWithOrders, timestamp: now };
+        cache[ordersCountCacheKey] = { value: fetchedOrdersCount, timestamp: now };
+        global.apiCache = cache;
+        console.log('[Overview] Fetched sellers with orders from last orders (cached):', sellersWithOrders, 'unique sellers from', fetchedOrdersCount, 'orders across', page - 1, 'pages');
       } catch (ordersError) {
         console.error('Error fetching sellers with orders:', ordersError);
         if (cache[ordersCacheKey]) {
