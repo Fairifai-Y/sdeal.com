@@ -1,4 +1,4 @@
-const prisma = require('../../lib/prisma');
+const prisma = require('../lib/prisma');
 const { createMollieClient } = require('@mollie/api-client');
 
 // Initialize Mollie client with MOLLIE_API_KEY_2

@@ -58,8 +58,11 @@ function wrapEmailTemplate(content) {
             <td style="padding: 30px 40px; background-color: #ffffff; border-bottom: 1px solid #eeeeee;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
-                  <td>
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #333333;">SDeal</h1>
+                  <td style="vertical-align: middle;">
+                    <img src="${process.env.BASE_URL || 'https://www.sdeal.com'}/images/logo_sdeal_navbar.svg" alt="SDeal Logo" style="height: 40px; width: auto; display: block;" />
+                  </td>
+                  <td style="text-align: right; vertical-align: middle;">
+                    <img src="${process.env.BASE_URL || 'https://www.sdeal.com'}/images/smiley_sdeal.png" alt="SDeal" style="height: 40px; width: auto; display: block; margin-left: auto;" />
                   </td>
                 </tr>
               </table>
@@ -84,7 +87,6 @@ function wrapEmailTemplate(content) {
                 <a href="mailto:info@sdeal.com" style="color: #0066cc; text-decoration: none;">info@sdeal.com</a>
               </p>
               <p style="margin: 20px 0 0 0; font-size: 11px; color: #999999;">
-                Deze email is verzonden naar {{email}}. 
                 <a href="{{unsubscribeUrl}}" style="color: #999999; text-decoration: underline;">Afmelden</a>
               </p>
             </td>
