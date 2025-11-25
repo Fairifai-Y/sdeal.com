@@ -237,11 +237,14 @@ module.exports = async (req, res) => {
         let recipients = [];
 
         if (filterCriteria.listId) {
-          // Get consumers from list
+          // Get consumers from list (only subscribed members who haven't unsubscribed globally)
           const listMembers = await prisma.emailListMember.findMany({
             where: {
               listId: filterCriteria.listId,
-              status: 'subscribed'
+              status: 'subscribed',
+              consumer: {
+                isUnsubscribed: false
+              }
             },
             include: {
               consumer: true
@@ -427,17 +430,21 @@ module.exports = async (req, res) => {
 // Function to send campaign emails
 // Note: Retry logic for database operations is now handled automatically by prisma-with-retry
 async function sendCampaignEmails(campaignId, campaign, recipients) {
-  if (!process.env.SENDGRID_API_KEY) {
-    throw new Error('SENDGRID_API_KEY not configured');
-  }
+  const startTime = Date.now();
+  console.log(`[Campaign] 🚀 Starting email sending for campaign ${campaignId} with ${recipients.length} recipients`);
+  
+  try {
+    if (!process.env.SENDGRID_API_KEY) {
+      throw new Error('SENDGRID_API_KEY not configured');
+    }
 
-  if (!process.env.FROM_EMAIL) {
-    throw new Error('FROM_EMAIL not configured');
-  }
+    if (!process.env.FROM_EMAIL) {
+      throw new Error('FROM_EMAIL not configured');
+    }
 
-  if (!campaign.template) {
-    throw new Error('Campaign template not found');
-  }
+    if (!campaign.template) {
+      throw new Error('Campaign template not found');
+    }
 
   const template = campaign.template;
   let totalSent = 0;
@@ -533,28 +540,44 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
     }
 
     // Send emails in SendGrid batches (up to 1000 per request, but we use 100 for safety)
+    const totalSendGridBatches = Math.ceil(emailMessages.length / SENDGRID_BATCH_SIZE);
+    console.log(`[Campaign] Processing batch ${Math.floor(i / PROCESSING_BATCH_SIZE) + 1}: Preparing to send ${emailMessages.length} emails in ${totalSendGridBatches} SendGrid batches`);
+    
     for (let j = 0; j < emailMessages.length; j += SENDGRID_BATCH_SIZE) {
       const sendGridBatch = emailMessages.slice(j, j + SENDGRID_BATCH_SIZE);
       const batchEvents = emailEventsToCreate.slice(j, j + SENDGRID_BATCH_SIZE);
       const batchConsumerIds = consumersToUpdate.slice(j, j + SENDGRID_BATCH_SIZE);
+      const batchNumber = Math.floor(j / SENDGRID_BATCH_SIZE) + 1;
       
+      console.log(`[Campaign] Sending SendGrid batch ${batchNumber}/${totalSendGridBatches} (${sendGridBatch.length} emails)...`);
+      
+      const batchStartTime = Date.now();
       try {
         // Send batch via SendGrid (can send multiple emails in one API call)
+        console.log(`[Campaign] [${new Date().toISOString()}] Sending SendGrid batch ${batchNumber}/${totalSendGridBatches}...`);
         const sendGridResponse = await sgMail.send(sendGridBatch);
+        const sendGridDuration = ((Date.now() - batchStartTime) / 1000).toFixed(2);
+        
         if (sendGridResponse && sendGridResponse[0]) {
-          console.log(`[Campaign] SendGrid batch response: ${sendGridResponse[0].statusCode} ${sendGridResponse[0].statusMessage || ''}`);
+          console.log(`[Campaign] [${new Date().toISOString()}] SendGrid batch ${batchNumber} response (${sendGridDuration}s): ${sendGridResponse[0].statusCode} ${sendGridResponse[0].statusMessage || ''}`);
+        } else {
+          console.log(`[Campaign] [${new Date().toISOString()}] SendGrid batch ${batchNumber} sent successfully in ${sendGridDuration}s (no response details)`);
         }
         
         // Bulk create email events
+        const dbStartTime = Date.now();
         if (batchEvents.length > 0) {
           await prisma.emailEvent.createMany({
             data: batchEvents,
             skipDuplicates: true
           });
+          const dbDuration = ((Date.now() - dbStartTime) / 1000).toFixed(2);
+          console.log(`[Campaign] [${new Date().toISOString()}] Created ${batchEvents.length} email events for batch ${batchNumber} in ${dbDuration}s`);
         }
 
         // Bulk update consumers (update lastContactAt)
         if (batchConsumerIds.length > 0) {
+          const updateStartTime = Date.now();
           await prisma.consumer.updateMany({
             where: {
               id: { in: batchConsumerIds }
@@ -563,19 +586,26 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
               lastContactAt: new Date()
             }
           });
+          const updateDuration = ((Date.now() - updateStartTime) / 1000).toFixed(2);
+          console.log(`[Campaign] [${new Date().toISOString()}] Updated lastContactAt for ${batchConsumerIds.length} consumers in batch ${batchNumber} in ${updateDuration}s`);
         }
 
         totalSent += sendGridBatch.length;
-        console.log(`[Campaign] Sent batch ${Math.floor(j / SENDGRID_BATCH_SIZE) + 1}/${Math.ceil(emailMessages.length / SENDGRID_BATCH_SIZE)}: ${totalSent}/${recipientsToSend.length} emails sent`);
+        const totalDuration = ((Date.now() - batchStartTime) / 1000).toFixed(2);
+        console.log(`[Campaign] [${new Date().toISOString()}] ✅ Batch ${batchNumber}/${totalSendGridBatches} completed in ${totalDuration}s: ${totalSent}/${recipientsToSend.length} total emails sent`);
 
         // Small delay between SendGrid batches to avoid rate limiting
         if (j + SENDGRID_BATCH_SIZE < emailMessages.length) {
+          console.log(`[Campaign] Waiting ${DELAY_BETWEEN_SENDGRID_BATCHES}ms before next SendGrid batch...`);
           await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_SENDGRID_BATCHES));
         }
 
       } catch (error) {
         // If batch send fails, try individual sends for this batch
-        console.error(`[Campaign] Batch send failed, trying individual sends:`, error.message);
+        const errorDuration = ((Date.now() - batchStartTime) / 1000).toFixed(2);
+        console.error(`[Campaign] [${new Date().toISOString()}] ❌ Batch ${batchNumber} send failed after ${errorDuration}s:`, error.message);
+        console.error(`[Campaign] Error stack:`, error.stack);
+        console.log(`[Campaign] [${new Date().toISOString()}] Trying individual sends for batch ${batchNumber}...`);
         
         for (let k = 0; k < sendGridBatch.length; k++) {
           try {
@@ -612,12 +642,7 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
       }
     }
 
-    // Delay between processing batches
-    if (i + PROCESSING_BATCH_SIZE < recipientsToSend.length) {
-      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_PROCESSING_BATCHES));
-    }
-
-    // Update campaign progress (retry logic handled automatically)
+    // Update campaign progress after each processing batch
     try {
       await prisma.emailCampaign.update({
         where: { id: campaignId },
@@ -626,8 +651,15 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
           totalBounced: totalFailed
         }
       });
+      console.log(`[Campaign] ✅ Processing batch ${Math.floor(i / PROCESSING_BATCH_SIZE) + 1} completed. Progress saved: ${totalSent} sent, ${totalFailed} failed`);
     } catch (updateError) {
       console.error(`[Campaign] Error updating campaign progress:`, updateError);
+    }
+
+    // Delay between processing batches
+    if (i + PROCESSING_BATCH_SIZE < recipientsToSend.length) {
+      console.log(`[Campaign] Waiting ${DELAY_BETWEEN_PROCESSING_BATCHES}ms before next processing batch...`);
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_PROCESSING_BATCHES));
     }
   }
 
@@ -641,9 +673,32 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
         totalBounced: totalFailed
       }
     });
-    console.log(`[Campaign] Campaign ${campaignId} completed: ${totalSent} sent, ${totalFailed} failed, ${totalSkipped} skipped (already received)`);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[Campaign] ✅ Campaign ${campaignId} completed in ${duration}s: ${totalSent} sent, ${totalFailed} failed, ${totalSkipped} skipped (already received)`);
   } catch (updateError) {
     console.error(`[Campaign] Error marking campaign as sent:`, updateError);
+  }
+  
+  } catch (error) {
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.error(`[Campaign] ❌ Fatal error in sendCampaignEmails after ${duration}s:`, error);
+    console.error(`[Campaign] Error stack:`, error.stack);
+    
+    // Update campaign status to error
+    try {
+      await prisma.emailCampaign.update({
+        where: { id: campaignId },
+        data: {
+          status: 'error',
+          errorMessage: error.message || 'Unknown error occurred during sending'
+        }
+      });
+      console.log(`[Campaign] Campaign ${campaignId} marked as error`);
+    } catch (updateError) {
+      console.error(`[Campaign] Failed to update campaign status to error:`, updateError);
+    }
+    
+    throw error; // Re-throw to be caught by caller
   }
 }
 

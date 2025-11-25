@@ -1,4 +1,4 @@
-const prisma = require('../../lib/prisma');
+const prisma = require('../../lib/prisma-with-retry');
 
 module.exports = async (req, res) => {
   // SendGrid webhook endpoint
@@ -24,16 +24,81 @@ module.exports = async (req, res) => {
             reason, // For bounce events
             status, // For bounce events
             category,
-            custom_args // Contains campaignId and consumerId
+            custom_args, // SendGrid format (with underscore)
+            customArgs // Alternative format (camelCase)
           } = event;
 
           // Extract campaign and consumer IDs from custom args
-          const campaignId = custom_args?.campaignId;
-          const consumerId = custom_args?.consumerId;
+          // SendGrid can send custom_args in different formats:
+          // 1. As an object: { campaignId: '...', consumerId: '...' }
+          // 2. As nested properties: custom_args.campaignId
+          // 3. As camelCase: customArgs
+          const customArgsObj = custom_args || customArgs || {};
+          
+          // Handle both object format and string format
+          let campaignId = customArgsObj.campaignId || customArgsObj.campaign_id;
+          let consumerId = customArgsObj.consumerId || customArgsObj.consumer_id;
+          
+          // If custom_args is a string (JSON), parse it
+          if (typeof customArgsObj === 'string') {
+            try {
+              const parsed = JSON.parse(customArgsObj);
+              campaignId = parsed.campaignId || parsed.campaign_id;
+              consumerId = parsed.consumerId || parsed.consumer_id;
+            } catch (e) {
+              // Not JSON, ignore
+            }
+          }
 
+          // Fallback: If customArgs are missing, try to find consumer by email
+          // This can happen with delayed bounces where SendGrid loses context
           if (!campaignId || !consumerId) {
-            console.log(`[Email Webhook] Skipping event ${eventType} - missing campaignId or consumerId`);
-            continue;
+            if (email) {
+              console.log(`[Email Webhook] Missing customArgs for ${eventType} event, attempting fallback lookup by email: ${email}`);
+              
+              try {
+                // Find consumer by email
+                const consumer = await prisma.consumer.findUnique({
+                  where: { email: email }
+                });
+                
+                if (consumer) {
+                  consumerId = consumer.id;
+                  
+                  // Try to find the most recent campaign this consumer received
+                  if (!campaignId) {
+                    const recentEvent = await prisma.emailEvent.findFirst({
+                      where: {
+                        consumerId: consumer.id,
+                        eventType: 'sent'
+                      },
+                      orderBy: {
+                        occurredAt: 'desc'
+                      },
+                      include: {
+                        campaign: true
+                      }
+                    });
+                    
+                    if (recentEvent && recentEvent.campaign) {
+                      campaignId = recentEvent.campaign.id;
+                      console.log(`[Email Webhook] Found campaign ${campaignId} from recent sent event for consumer ${consumerId}`);
+                    }
+                  }
+                }
+              } catch (fallbackError) {
+                console.error(`[Email Webhook] Fallback lookup failed:`, fallbackError);
+              }
+            }
+            
+            if (!campaignId || !consumerId) {
+              console.log(`[Email Webhook] Skipping event ${eventType} for ${email || 'unknown'} - missing campaignId or consumerId (even after fallback)`);
+              console.log(`[Email Webhook] Debug - custom_args:`, JSON.stringify(custom_args));
+              console.log(`[Email Webhook] Debug - customArgs:`, JSON.stringify(customArgs));
+              continue;
+            } else {
+              console.log(`[Email Webhook] ✅ Fallback successful: campaignId=${campaignId}, consumerId=${consumerId}`);
+            }
           }
 
           // Map SendGrid event types to our event types
