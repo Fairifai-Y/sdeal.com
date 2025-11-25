@@ -430,6 +430,7 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
   const template = campaign.template;
   let totalSent = 0;
   let totalFailed = 0;
+  let totalSkipped = 0; // Count of emails skipped because already sent
 
   // Send emails in batches to avoid overwhelming SendGrid and Vercel timeout
   const BATCH_SIZE = 10; // Send 10 emails at a time
@@ -439,6 +440,21 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
     const batch = recipients.slice(i, i + BATCH_SIZE);
     const batchPromises = batch.map(async (consumer) => {
       try {
+        // Check if this consumer has already received this campaign
+        const existingEvent = await prisma.emailEvent.findFirst({
+          where: {
+            campaignId: campaignId,
+            consumerId: consumer.id,
+            eventType: 'sent'
+          }
+        });
+
+        if (existingEvent) {
+          totalSkipped++;
+          console.log(`[Campaign] Skipping ${consumer.email} - already received this campaign (skipped: ${totalSkipped})`);
+          return; // Skip this consumer, they already received the email
+        }
+
         // Replace template variables
         const subject = replaceTemplateVariables(campaign.subject || template.subject, consumer);
         let htmlContent = replaceTemplateVariables(template.htmlContent, consumer);
@@ -538,7 +554,7 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
         totalBounced: totalFailed
       }
     });
-    console.log(`[Campaign] Campaign ${campaignId} completed: ${totalSent} sent, ${totalFailed} failed`);
+    console.log(`[Campaign] Campaign ${campaignId} completed: ${totalSent} sent, ${totalFailed} failed, ${totalSkipped} skipped (already received)`);
   } catch (updateError) {
     console.error(`[Campaign] Error marking campaign as sent:`, updateError);
   }
