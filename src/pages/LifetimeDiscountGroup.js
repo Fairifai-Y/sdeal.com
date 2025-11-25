@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { getTranslation } from '../translations/translations';
-import { getLocalizedUrl } from '../utils/languageUtils';
 import SEOHead from '../components/SEOHead';
 import './LifetimeDiscountGroup.css';
 
 const LifetimeDiscountGroup = () => {
   const { currentLanguage } = useLanguage();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
