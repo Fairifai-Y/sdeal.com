@@ -436,9 +436,10 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
   // Optimized batch configuration for large campaigns
   // SendGrid supports up to 1000 recipients per request, but we use smaller batches
   // to avoid overwhelming the database and to allow progress updates
+  // SendGrid rate limit: ~100 requests/second (Pro plan), so we use 100 emails per batch with 1s delay = 100 emails/second (safe)
   const SENDGRID_BATCH_SIZE = 100; // SendGrid batch size (emails per API call)
   const PROCESSING_BATCH_SIZE = 500; // Process 500 recipients at a time (check duplicates, prepare emails)
-  const DELAY_BETWEEN_SENDGRID_BATCHES = 500; // 500ms between SendGrid API calls
+  const DELAY_BETWEEN_SENDGRID_BATCHES = 1000; // 1 second between SendGrid API calls (prevents rate limiting)
   const DELAY_BETWEEN_PROCESSING_BATCHES = 1000; // 1 second between processing batches
 
   console.log(`[Campaign] Starting to send ${recipients.length} emails using optimized batch sending`);
@@ -528,7 +529,10 @@ async function sendCampaignEmails(campaignId, campaign, recipients) {
       
       try {
         // Send batch via SendGrid (can send multiple emails in one API call)
-        await sgMail.send(sendGridBatch);
+        const sendGridResponse = await sgMail.send(sendGridBatch);
+        if (sendGridResponse && sendGridResponse[0]) {
+          console.log(`[Campaign] SendGrid batch response: ${sendGridResponse[0].statusCode} ${sendGridResponse[0].statusMessage || ''}`);
+        }
         
         // Bulk create email events
         if (batchEvents.length > 0) {
