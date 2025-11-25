@@ -1,4 +1,4 @@
-const prisma = require('../../lib/prisma');
+const prisma = require('../../lib/prisma-with-retry');
 const { makeRequest: makeMagentoRequest } = require('../../magento/helpers');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -201,15 +201,7 @@ async function syncOrders(options = {}) {
   syncStatus.startedAt = new Date();
   
   console.log('[Sync] Starting sync...');
-  
-  // Wake up database if it's sleeping (Neon auto-suspend)
-  console.log('[Sync] Waking up database connection...');
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('[Sync] ✅ Database connection active');
-  } catch (wakeError) {
-    console.log('[Sync] ⚠️ Database wake-up failed, will retry on first query:', wakeError.message);
-  }
+  // Note: Database wake-up and retry logic is now handled automatically by prisma-with-retry
   
   // Initialize totals from checkpoint or zero
   let totalCreated = checkpoint ? checkpoint.totalCreated : 0;
@@ -301,56 +293,25 @@ async function syncOrders(options = {}) {
             
             // Try to create consumer directly (more efficient than findFirst + create)
             // If it already exists, we'll catch the unique constraint error
-            let retries = 3;
-            let created = false;
-            
-            while (retries > 0) {
-              try {
-                await prisma.consumer.create({
-                  data: consumerData
-                });
-                sessionCreated++;
-                created = true;
-                
-                if ((sessionCreated + totalCreated) % 50 === 0) {
-                  console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);
-                }
-                break; // Success, exit retry loop
-                
-              } catch (error) {
-                // Check if it's a unique constraint error (consumer already exists)
-                if (error.code === 'P2002' || error.message.includes('Unique constraint') || error.message.includes('duplicate key')) {
-                  sessionSkipped++;
-                  break; // Consumer exists, skip and continue
-                }
-                
-                // Check if it's a connection pool error
-                const isConnectionError = error.message.includes('Timed out fetching a new connection') ||
-                                        error.message.includes("Can't reach database server") ||
-                                        error.message.includes('connection pool') ||
-                                        error.message.includes('ECONNRESET') ||
-                                        error.message.includes('ETIMEDOUT') ||
-                                        error.message.includes('ENOTFOUND');
-                
-                if (isConnectionError && retries > 1) {
-                  // Exponential backoff: 2s, 4s, 8s (longer delays for Neon wake-up)
-                  const delay = Math.pow(2, 4 - retries) * 1000;
-                  console.log(`[Sync] ⚠️ Connection error for order ${orderId}, retrying in ${delay}ms... (${retries - 1} retries left)`);
-                  
-                  // Try to wake up database before retry
-                  try {
-                    await prisma.$queryRaw`SELECT 1`;
-                    console.log(`[Sync] ✅ Database woken up, retrying...`);
-                  } catch (wakeError) {
-                    console.log(`[Sync] ⚠️ Database wake-up failed, will retry anyway:`, wakeError.message);
-                  }
-                  
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                  retries--;
-                } else {
-                  // Not a connection error or no retries left, throw
-                  throw error;
-                }
+            // Retry logic is now handled automatically by prisma-with-retry
+            try {
+              await prisma.consumer.create({
+                data: consumerData
+              });
+              sessionCreated++;
+              
+              if ((sessionCreated + totalCreated) % 50 === 0) {
+                console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);
+              }
+              
+            } catch (error) {
+              // Check if it's a unique constraint error (consumer already exists)
+              if (error.code === 'P2002' || error.message.includes('Unique constraint') || error.message.includes('duplicate key')) {
+                sessionSkipped++;
+                // Consumer exists, skip and continue
+              } else {
+                // Other errors (connection errors are already retried by wrapper)
+                throw error;
               }
             }
             

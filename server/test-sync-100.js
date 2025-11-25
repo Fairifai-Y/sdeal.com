@@ -256,15 +256,9 @@ async function syncOrders(options = {}) {
               continue;
             }
             
-            // Check if consumer already exists (email only - no duplicates)
-            const existingConsumer = await prisma.consumer.findFirst({
-              where: {
-                email: consumerData.email
-              }
-            });
-            
-            // If not exists, create
-            if (!existingConsumer) {
+            // Try to create consumer directly (more efficient than findFirst + create)
+            // If it already exists, we'll catch the unique constraint error
+            try {
               await prisma.consumer.create({
                 data: consumerData
               });
@@ -273,8 +267,19 @@ async function syncOrders(options = {}) {
               if ((sessionCreated + totalCreated) % 50 === 0) {
                 console.log(`✅ Created ${sessionCreated + totalCreated} customers so far...`);
               }
-            } else {
-              sessionSkipped++;
+            } catch (error) {
+              // Check if it's a unique constraint error (consumer already exists)
+              // P2002 is Prisma's unique constraint violation code
+              if (error.code === 'P2002' || 
+                  error.message.includes('Unique constraint') || 
+                  error.message.includes('duplicate key') ||
+                  error.message.includes('Unique constraint failed on the fields: (`email`)')) {
+                sessionSkipped++;
+                // Consumer exists, skip and continue (this is expected, not an error)
+              } else {
+                // Other error, re-throw to be caught by outer catch
+                throw error;
+              }
             }
             
           } catch (error) {
