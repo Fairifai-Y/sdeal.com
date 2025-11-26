@@ -1,6 +1,12 @@
 {
   "version": 2,
   "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/admin/mailing/process-batches",
+      "schedule": "*/2 * * * *"
+    }
+  ],
   "builds": [
     {
       "src": "package.json",
@@ -95,6 +101,10 @@
     {
       "src": "/api/admin/mailing/webhook",
       "dest": "/api/admin/mailing/webhook.js"
+    },
+    {
+      "src": "/api/admin/mailing/process-batches",
+      "dest": "/api/admin/mailing/process-batches.js"
     },
     {
       "src": "/api/admin/ldg",

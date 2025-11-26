@@ -137,9 +137,10 @@ model EmailCampaign {
   subject String // Email subject line
 
   // Campaign status
-  status      String    @default("draft") // draft, scheduled, sending, sent, cancelled
+  status      String    @default("draft") // draft, scheduled, queued, sending, sent, cancelled, error
   scheduledAt DateTime? // When to send (for scheduled campaigns)
   sentAt      DateTime? // When it was actually sent
+  errorMessage String? // Error message if status is error
 
   // Recipients
   consumerId String? // If sent to specific consumer (for individual emails)
@@ -163,6 +164,7 @@ model EmailCampaign {
 
   // Relations
   emailEvents EmailEvent[]
+  emailBatches EmailBatch[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -201,6 +203,41 @@ model EmailEvent {
   @@index([eventType])
   @@index([bounceType])
   @@index([occurredAt])
+}
+
+// Email batches for queue-based sending (prevents Vercel timeouts)
+model EmailBatch {
+  id         String  @id @default(cuid())
+  campaignId String
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  // Batch data (stored as JSON to avoid large table)
+  // Array of email objects: [{ to, subject, html, text, consumerId, customArgs }]
+  emails     Json
+  
+  // Batch status
+  status     String  @default("pending") // pending, processing, sent, failed
+  priority   Int     @default(0) // Higher priority batches are processed first
+  
+  // Processing info
+  processedAt DateTime?
+  sentCount   Int     @default(0)
+  failedCount Int     @default(0)
+  errorMessage String?
+  
+  // Retry info
+  retryCount  Int     @default(0)
+  maxRetries  Int     @default(3)
+  nextRetryAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([priority])
+  @@index([nextRetryAt])
+  @@index([createdAt])
 }
 
 model EmailTemplate {
