@@ -88,7 +88,10 @@
     },
     {
       "src": "/api/admin/mailing/campaigns",
-      "dest": "/api/admin/mailing/campaigns.js"
+      "dest": "/api/admin/mailing/campaigns.js",
+      "config": {
+        "maxDuration": 300
+      }
     },
     {
       "src": "/api/admin/mailing/bounces",

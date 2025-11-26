@@ -310,14 +310,55 @@ module.exports = async (req, res) => {
         // Filter out consumers without email
         recipients = recipients.filter(c => c.email && c.email.includes('@'));
 
-        // Update campaign status and recipient count
-        const updatedCampaign = await prisma.emailCampaign.update({
-          where: { id },
-          data: {
-            status: 'queued',
-            totalRecipients: recipients.length
-          }
-        });
+        // CRITICAL: Use a transaction to atomically check and update status
+        // This prevents race conditions where multiple requests try to create batches simultaneously
+        let updatedCampaign;
+        try {
+          updatedCampaign = await prisma.$transaction(async (tx) => {
+            // Re-check campaign status within transaction to prevent race conditions
+            const currentCampaign = await tx.emailCampaign.findUnique({
+              where: { id },
+              select: { status: true }
+            });
+
+            if (!currentCampaign) {
+              throw new Error('Campaign not found');
+            }
+
+            // Check if there are already active batches (double-check within transaction)
+            const existingBatches = await tx.emailBatch.count({
+              where: {
+                campaignId: id,
+                status: { in: ['pending', 'processing'] }
+              }
+            });
+
+            if (existingBatches > 0) {
+              throw new Error('Campaign already has active batches. Please wait for them to be processed.');
+            }
+
+            // Only update to 'queued' if status is 'draft' or 'sent' (not already 'queued' or 'sending')
+            if (currentCampaign.status === 'queued' || currentCampaign.status === 'sending') {
+              throw new Error(`Campaign is already ${currentCampaign.status}. Cannot create new batches.`);
+            }
+
+            // Atomically update status to 'queued' - this acts as a lock
+            return await tx.emailCampaign.update({
+              where: { id },
+              data: {
+                status: 'queued',
+                totalRecipients: recipients.length
+              }
+            });
+          });
+        } catch (transactionError) {
+          // If transaction fails (e.g., due to race condition), return error
+          console.error(`[Campaign] ❌ Transaction failed for campaign ${id}:`, transactionError.message);
+          return res.status(400).json({
+            success: false,
+            error: transactionError.message || 'Failed to queue campaign. It may already be queued or sending.'
+          });
+        }
 
         // Create email batches instead of sending directly
         console.log(`[Campaign] Creating email batches for campaign ${id} with ${recipients.length} recipients`);
@@ -575,7 +616,8 @@ async function createEmailBatches(campaignId, campaign, recipients) {
     console.log(`[Campaign] Will create approximately ${expectedBatches} batches (${recipientsToSend.length} recipients / ${BATCH_SIZE} per batch)`);
     
     // Process in smaller chunks to avoid timeout
-    const CHUNK_SIZE = 200; // Process 200 recipients at a time before saving batches
+    // Increased from 200 to 500 to reduce database calls and improve throughput
+    const CHUNK_SIZE = 500; // Process 500 recipients at a time before saving batches
     
     for (let chunkStart = 0; chunkStart < recipientsToSend.length; chunkStart += CHUNK_SIZE) {
       const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, recipientsToSend.length);
@@ -650,8 +692,9 @@ async function createEmailBatches(campaignId, campaign, recipients) {
       }
       
       // Small delay between chunks to prevent overwhelming the database
+      // Reduced delay since we're processing in larger chunks now
       if (chunkEnd < recipientsToSend.length) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+        await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay (reduced from 100ms)
       }
     }
 
