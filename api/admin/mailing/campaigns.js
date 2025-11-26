@@ -117,6 +117,9 @@ function wrapEmailTemplate(content) {
 </html>`;
 }
 
+// Export maxDuration for Vercel (300 seconds = 5 minutes)
+module.exports.maxDuration = 300;
+
 module.exports = async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -218,49 +221,28 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Prevent duplicate batch creation
-        // Check if campaign is already queued or sending
-        if (campaign.status === 'sending' || campaign.status === 'queued') {
-          // Check if there are already pending batches for this campaign
-          const existingBatches = await prisma.emailBatch.findMany({
-            where: {
-              campaignId: id,
-              status: { in: ['pending', 'processing'] }
-            },
-            take: 1
-          });
+        // Check for existing batches first (before transaction)
+        const existingBatchesCheck = await prisma.emailBatch.findMany({
+          where: {
+            campaignId: id,
+            status: { in: ['pending', 'processing'] }
+          },
+          take: 1
+        });
 
-          if (existingBatches.length > 0) {
-            return res.status(400).json({
-              success: false,
-              error: 'Campaign is already queued and batches are being created. Please wait for batches to be processed.'
-            });
-          } else {
-            // No pending batches, but status is queued - might be stuck, allow resending
-            console.log(`[Campaign] Campaign ${id} has status ${campaign.status} but no pending batches - allowing resend`);
-          }
+        if (existingBatchesCheck.length > 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'Campaign already has active batches. Please wait for them to be processed.'
+          });
         }
-        
-        // If campaign was already sent, allow resending
-        // The duplicate check will ensure consumers who already received the template are skipped
+
+        // Allow resending if campaign is 'sent' or if status is 'queued'/'sending' but no batches exist
+        // This handles cases where a previous attempt failed or was interrupted
         if (campaign.status === 'sent') {
           console.log(`[Campaign] Resending campaign ${id} - will skip consumers who already received this template`);
-          
-          // Check if there are existing batches that haven't been processed
-          const existingBatches = await prisma.emailBatch.findMany({
-            where: {
-              campaignId: id,
-              status: { in: ['pending', 'processing'] }
-            },
-            take: 1
-          });
-
-          if (existingBatches.length > 0) {
-            return res.status(400).json({
-              success: false,
-              error: 'Campaign has pending batches. Please wait for them to be processed or delete them first.'
-            });
-          }
+        } else if (campaign.status === 'queued' || campaign.status === 'sending') {
+          console.log(`[Campaign] Campaign ${id} has status ${campaign.status} but no pending batches - allowing resend`);
         }
 
         if (!campaign.templateId) {
@@ -325,7 +307,7 @@ module.exports = async (req, res) => {
               throw new Error('Campaign not found');
             }
 
-            // Check if there are already active batches (double-check within transaction)
+            // Double-check for active batches within transaction (race condition protection)
             const existingBatches = await tx.emailBatch.count({
               where: {
                 campaignId: id,
@@ -337,11 +319,8 @@ module.exports = async (req, res) => {
               throw new Error('Campaign already has active batches. Please wait for them to be processed.');
             }
 
-            // Only update to 'queued' if status is 'draft' or 'sent' (not already 'queued' or 'sending')
-            if (currentCampaign.status === 'queued' || currentCampaign.status === 'sending') {
-              throw new Error(`Campaign is already ${currentCampaign.status}. Cannot create new batches.`);
-            }
-
+            // Allow updating to 'queued' from any status if no batches exist
+            // This handles cases where status is 'queued'/'sending' but no batches were created (failed attempt)
             // Atomically update status to 'queued' - this acts as a lock
             return await tx.emailCampaign.update({
               where: { id },

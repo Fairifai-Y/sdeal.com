@@ -1,11 +1,6 @@
 {
   "version": 2,
   "installCommand": "npm install",
-  "functions": {
-    "api/admin/mailing/campaigns.js": {
-      "maxDuration": 300
-    }
-  },
   "crons": [
     {
       "path": "/api/admin/mailing/process-batches",
