@@ -35,20 +35,27 @@ module.exports = async (req, res) => {
           // 3. As camelCase: customArgs
           const customArgsObj = custom_args || customArgs || {};
           
-          // Handle both object format and string format
-          let campaignId = customArgsObj.campaignId || customArgsObj.campaign_id;
-          let consumerId = customArgsObj.consumerId || customArgsObj.consumer_id;
-          
           // If custom_args is a string (JSON), parse it
           if (typeof customArgsObj === 'string') {
             try {
               const parsed = JSON.parse(customArgsObj);
-              campaignId = parsed.campaignId || parsed.campaign_id;
-              consumerId = parsed.consumerId || parsed.consumer_id;
+              Object.assign(customArgsObj, parsed);
             } catch (e) {
               // Not JSON, ignore
             }
           }
+          
+          // CRITICAL: Check if this event is from our mailing system
+          // This prevents processing events from Magento or other SendGrid integrations
+          const source = customArgsObj.source || customArgsObj.source_id;
+          if (source !== 'sdeal-mailing') {
+            console.log(`[Email Webhook] ⏭️  Skipping event ${eventType} for ${email || 'unknown'} - not from SDeal mailing system (source: ${source || 'none'})`);
+            continue; // Skip events from other sources (e.g., Magento)
+          }
+          
+          // Handle both object format and string format
+          let campaignId = customArgsObj.campaignId || customArgsObj.campaign_id;
+          let consumerId = customArgsObj.consumerId || customArgsObj.consumer_id;
 
           // Fallback: If customArgs are missing, try to find consumer by email
           // This can happen with delayed bounces where SendGrid loses context

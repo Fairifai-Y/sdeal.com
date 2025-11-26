@@ -636,6 +636,7 @@ async function createEmailBatches(campaignId, campaign, recipients) {
               text: textContent || htmlContent.replace(/<[^>]*>/g, ''),
               consumerId: consumer.id, // Store consumerId for tracking
               customArgs: {
+                source: 'sdeal-mailing', // Identifier to distinguish from Magento emails
                 campaignId: campaignId,
                 consumerId: consumer.id
               }

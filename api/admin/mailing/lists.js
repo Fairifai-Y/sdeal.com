@@ -49,11 +49,20 @@ module.exports = async (req, res) => {
           });
         }
 
+        // Get unsubscribed count
+        const unsubscribedCount = await prisma.emailListMember.count({
+          where: {
+            listId: id,
+            status: 'unsubscribed'
+          }
+        });
+
         return res.json({
           success: true,
           data: {
             ...list,
-            totalConsumers: list._count.listMembers
+            totalConsumers: list._count.listMembers,
+            unsubscribedCount: unsubscribedCount
           }
         });
       }
@@ -73,15 +82,25 @@ module.exports = async (req, res) => {
         orderBy: { createdAt: 'desc' }
       });
 
-      // Update totalConsumers from count (only subscribed members)
-      const listsWithCount = lists.map(list => ({
-        ...list,
-        totalConsumers: list._count.listMembers
+      // Get unsubscribed counts for each list
+      const listsWithCounts = await Promise.all(lists.map(async (list) => {
+        const unsubscribedCount = await prisma.emailListMember.count({
+          where: {
+            listId: list.id,
+            status: 'unsubscribed'
+          }
+        });
+
+        return {
+          ...list,
+          totalConsumers: list._count.listMembers,
+          unsubscribedCount: unsubscribedCount
+        };
       }));
 
       return res.json({
         success: true,
-        data: listsWithCount
+        data: listsWithCounts
       });
     }
 

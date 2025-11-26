@@ -3683,6 +3683,7 @@ const Admin = () => {
                   <th>Naam</th>
                   <th>Beschrijving</th>
                   <th>Leden</th>
+                  <th>Unsubscribed</th>
                   <th>Publiek</th>
                   <th>Double Opt-In</th>
                   <th>Datum</th>
@@ -3695,6 +3696,7 @@ const Admin = () => {
                     <td>{list.name}</td>
                     <td>{list.description || '-'}</td>
                     <td>{list.totalConsumers || list._count?.listMembers || 0}</td>
+                    <td>{list.unsubscribedCount || 0}</td>
                     <td>{list.isPublic ? '✓' : '✗'}</td>
                     <td>{list.doubleOptIn ? '✓' : '✗'}</td>
                     <td>{new Date(list.createdAt).toLocaleDateString('nl-NL')}</td>
