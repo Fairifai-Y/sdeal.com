@@ -51,18 +51,11 @@ module.exports = async (req, res) => {
             }
           }
           
-          // Check if this event is from our mailing system
-          const source = customArgsObj?.source || customArgsObj?.source_id;
-          if (source !== 'sdeal-mailing') {
-            // Skip events from other sources (e.g., Magento)
-            continue;
-          }
-          
           // Extract campaign and consumer IDs
           let campaignId = customArgsObj?.campaignId || customArgsObj?.campaign_id;
           let consumerId = customArgsObj?.consumerId || customArgsObj?.consumer_id;
-
-          // Skip if missing required IDs
+          
+          // Skip if missing required IDs (if both are present, it's from our system)
           if (!campaignId || !consumerId) {
             continue;
           }
