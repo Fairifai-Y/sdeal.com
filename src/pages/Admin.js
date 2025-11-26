@@ -329,18 +329,22 @@ const Admin = () => {
       if (result.success) {
         setSyncStatus(result.data);
         
-        // Continue polling if sync is running
-        if (result.data.isRunning) {
+        // Only poll if sync is actually running AND we're on the consumers page
+        if (result.data.isRunning && mailingSubsection === 'consumers') {
           if (!syncPolling) {
             setSyncPolling(true);
           }
         } else {
+          // Stop polling if sync is not running OR we're not on consumers page
           setSyncPolling(false);
           // Refresh consumers data when sync completes
-          if (mailingSubsection === 'consumers') {
+          if (mailingSubsection === 'consumers' && !result.data.isRunning) {
             fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
           }
         }
+      } else {
+        // Stop polling on error
+        setSyncPolling(false);
       }
     } catch (error) {
       console.error('Error fetching sync status:', error);
@@ -408,17 +412,24 @@ const Admin = () => {
     }
   };
 
-  // Poll sync status when sync is running
+  // Poll sync status when sync is running AND we're on consumers page
   useEffect(() => {
-    if (syncPolling) {
+    // Only poll if:
+    // 1. syncPolling is true (set by fetchSyncStatus when sync is running)
+    // 2. We're on the consumers subsection
+    // 3. We're authenticated
+    if (syncPolling && mailingSubsection === 'consumers' && isAuthenticated) {
       const interval = setInterval(() => {
         fetchSyncStatus();
       }, 2000); // Poll every 2 seconds
       
       return () => clearInterval(interval);
+    } else {
+      // Stop polling if conditions are not met
+      setSyncPolling(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncPolling]);
+  }, [syncPolling, mailingSubsection, isAuthenticated]);
 
   const searchCustomers = async (query) => {
     setIsSearching(true);
@@ -456,9 +467,12 @@ const Admin = () => {
         } else {
           fetchMailingData(mailingSubsection);
         }
-        // Also fetch sync status if on consumers subsection
+        // Also fetch sync status if on consumers subsection (one-time check, no polling unless sync is running)
         if (mailingSubsection === 'consumers') {
           fetchSyncStatus();
+        } else {
+          // Stop polling if we leave the consumers page
+          setSyncPolling(false);
         }
         // Fetch lists if needed for bulk add
         if (bulkAddToListId && !mailingData.lists) {

@@ -218,19 +218,49 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Allow resending campaigns - duplicate check will filter out consumers who already received the template
-        // Only prevent sending if campaign is currently being sent
-        if (campaign.status === 'sending') {
-          return res.status(400).json({
-            success: false,
-            error: 'Campaign is currently being sent. Please wait for it to complete.'
+        // Prevent duplicate batch creation
+        // Check if campaign is already queued or sending
+        if (campaign.status === 'sending' || campaign.status === 'queued') {
+          // Check if there are already pending batches for this campaign
+          const existingBatches = await prisma.emailBatch.findMany({
+            where: {
+              campaignId: id,
+              status: { in: ['pending', 'processing'] }
+            },
+            take: 1
           });
+
+          if (existingBatches.length > 0) {
+            return res.status(400).json({
+              success: false,
+              error: 'Campaign is already queued and batches are being created. Please wait for batches to be processed.'
+            });
+          } else {
+            // No pending batches, but status is queued - might be stuck, allow resending
+            console.log(`[Campaign] Campaign ${id} has status ${campaign.status} but no pending batches - allowing resend`);
+          }
         }
         
-        // If campaign was already sent, reset status to allow resending
+        // If campaign was already sent, allow resending
         // The duplicate check will ensure consumers who already received the template are skipped
         if (campaign.status === 'sent') {
           console.log(`[Campaign] Resending campaign ${id} - will skip consumers who already received this template`);
+          
+          // Check if there are existing batches that haven't been processed
+          const existingBatches = await prisma.emailBatch.findMany({
+            where: {
+              campaignId: id,
+              status: { in: ['pending', 'processing'] }
+            },
+            take: 1
+          });
+
+          if (existingBatches.length > 0) {
+            return res.status(400).json({
+              success: false,
+              error: 'Campaign has pending batches. Please wait for them to be processed or delete them first.'
+            });
+          }
         }
 
         if (!campaign.templateId) {
@@ -447,6 +477,27 @@ async function createEmailBatches(campaignId, campaign, recipients) {
   console.log(`[Campaign] 🚀 Creating email batches for campaign ${campaignId} with ${recipients.length} recipients`);
   
   try {
+    // Double-check: prevent duplicate batch creation
+    // Check if there are already pending/processing batches for this campaign
+    const existingBatches = await prisma.emailBatch.findMany({
+      where: {
+        campaignId: campaignId,
+        status: { in: ['pending', 'processing'] }
+      },
+      take: 1
+    });
+
+    if (existingBatches.length > 0) {
+      console.log(`[Campaign] ⚠️ Campaign ${campaignId} already has pending/processing batches. Skipping batch creation to prevent duplicates.`);
+      return {
+        success: false,
+        error: 'Batches already exist for this campaign',
+        totalBatches: 0,
+        totalRecipients: 0,
+        duration: 0
+      };
+    }
+
     if (!campaign.template) {
       throw new Error('Campaign template not found');
     }
