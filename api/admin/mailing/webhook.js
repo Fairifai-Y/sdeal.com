@@ -25,27 +25,13 @@ module.exports = async (req, res) => {
             status, // For bounce events
             category,
             custom_args, // SendGrid format (with underscore)
-            customArgs, // Alternative format (camelCase)
-            // SendGrid might also nest customArgs in other fields
-            unique_arg: uniqueArg,
-            unique_args: uniqueArgs
+            customArgs // Alternative format (camelCase)
           } = event;
 
-          // Extract campaign and consumer IDs from custom args
-          // SendGrid can send custom_args in different formats:
-          // 1. As an object: { campaignId: '...', consumerId: '...' }
-          // 2. As nested properties: custom_args.campaignId
-          // 3. As camelCase: customArgs
-          // 4. As an array of objects: [{ key: 'source', value: '...' }, { key: 'campaignId', value: '...' }]
-          // 5. As unique_args or unique_arg
-          let customArgsObj = custom_args || customArgs || uniqueArgs || uniqueArg || {};
+          // Extract custom args - SendGrid can send them in different formats
+          let customArgsObj = custom_args || customArgs || {};
           
-          // If we still don't have customArgs, check the entire event object for nested customArgs
-          if ((!customArgsObj || Object.keys(customArgsObj).length === 0) && event.custom_args) {
-            customArgsObj = event.custom_args;
-          }
-          
-          // SendGrid sometimes sends custom_args as an array of {key, value} objects
+          // Handle array format: [{ key: 'source', value: '...' }]
           if (Array.isArray(customArgsObj)) {
             const converted = {};
             customArgsObj.forEach(item => {
@@ -56,97 +42,29 @@ module.exports = async (req, res) => {
             customArgsObj = converted;
           }
           
-          // If custom_args is a string (JSON), parse it
+          // Handle string format (JSON)
           if (typeof customArgsObj === 'string') {
             try {
-              const parsed = JSON.parse(customArgsObj);
-              customArgsObj = parsed;
+              customArgsObj = JSON.parse(customArgsObj);
             } catch (e) {
-              // Not JSON, ignore
+              customArgsObj = {};
             }
           }
           
-          // Debug logging for troubleshooting (only log first few events to avoid spam)
-          if (!customArgsObj.source && !customArgsObj.source_id) {
-            // Only log detailed debug for first 3 events per batch to avoid log spam
-            const debugKey = `webhook_debug_${eventType}_${email}`;
-            if (!global[debugKey]) {
-              global[debugKey] = 0;
-            }
-            if (global[debugKey] < 3) {
-              global[debugKey]++;
-              console.log(`[Email Webhook] 🔍 Debug event ${eventType} for ${email}:`);
-              console.log(`   custom_args type: ${typeof custom_args}, isArray: ${Array.isArray(custom_args)}`);
-              console.log(`   custom_args value:`, JSON.stringify(custom_args).substring(0, 300));
-              console.log(`   customArgs value:`, JSON.stringify(customArgs).substring(0, 300));
-              console.log(`   parsed customArgsObj:`, JSON.stringify(customArgsObj).substring(0, 300));
-              console.log(`   source found: ${customArgsObj.source || customArgsObj.source_id || 'none'}`);
-            }
-          }
-          
-          // CRITICAL: Check if this event is from our mailing system
-          // This prevents processing events from Magento or other SendGrid integrations
-          const source = customArgsObj.source || customArgsObj.source_id;
+          // Check if this event is from our mailing system
+          const source = customArgsObj?.source || customArgsObj?.source_id;
           if (source !== 'sdeal-mailing') {
-            console.log(`[Email Webhook] ⏭️  Skipping event ${eventType} for ${email || 'unknown'} - not from SDeal mailing system (source: ${source || 'none'})`);
-            continue; // Skip events from other sources (e.g., Magento)
+            // Skip events from other sources (e.g., Magento)
+            continue;
           }
           
-          console.log(`[Email Webhook] ✅ Processing event ${eventType} for ${email || 'unknown'} - source: ${source}`);
-          
-          // Handle both object format and string format
-          let campaignId = customArgsObj.campaignId || customArgsObj.campaign_id;
-          let consumerId = customArgsObj.consumerId || customArgsObj.consumer_id;
+          // Extract campaign and consumer IDs
+          let campaignId = customArgsObj?.campaignId || customArgsObj?.campaign_id;
+          let consumerId = customArgsObj?.consumerId || customArgsObj?.consumer_id;
 
-          // Fallback: If customArgs are missing, try to find consumer by email
-          // This can happen with delayed bounces where SendGrid loses context
+          // Skip if missing required IDs
           if (!campaignId || !consumerId) {
-            if (email) {
-              console.log(`[Email Webhook] Missing customArgs for ${eventType} event, attempting fallback lookup by email: ${email}`);
-              
-              try {
-                // Find consumer by email
-                const consumer = await prisma.consumer.findUnique({
-                  where: { email: email }
-                });
-                
-                if (consumer) {
-                  consumerId = consumer.id;
-                  
-                  // Try to find the most recent campaign this consumer received
-                  if (!campaignId) {
-                    const recentEvent = await prisma.emailEvent.findFirst({
-                      where: {
-                        consumerId: consumer.id,
-                        eventType: 'sent'
-                      },
-                      orderBy: {
-                        occurredAt: 'desc'
-                      },
-                      include: {
-                        campaign: true
-                      }
-                    });
-                    
-                    if (recentEvent && recentEvent.campaign) {
-                      campaignId = recentEvent.campaign.id;
-                      console.log(`[Email Webhook] Found campaign ${campaignId} from recent sent event for consumer ${consumerId}`);
-                    }
-                  }
-                }
-              } catch (fallbackError) {
-                console.error(`[Email Webhook] Fallback lookup failed:`, fallbackError);
-              }
-            }
-            
-            if (!campaignId || !consumerId) {
-              console.log(`[Email Webhook] Skipping event ${eventType} for ${email || 'unknown'} - missing campaignId or consumerId (even after fallback)`);
-              console.log(`[Email Webhook] Debug - custom_args:`, JSON.stringify(custom_args));
-              console.log(`[Email Webhook] Debug - customArgs:`, JSON.stringify(customArgs));
-              continue;
-            } else {
-              console.log(`[Email Webhook] ✅ Fallback successful: campaignId=${campaignId}, consumerId=${consumerId}`);
-            }
+            continue;
           }
 
           // Map SendGrid event types to our event types
@@ -171,8 +89,7 @@ module.exports = async (req, res) => {
               mappedEventType = 'complained';
               break;
             default:
-              console.log(`[Email Webhook] Unknown event type: ${eventType}`);
-              continue;
+              continue; // Skip unknown event types
           }
 
           // Check if event already exists (prevent duplicates)
@@ -204,9 +121,8 @@ module.exports = async (req, res) => {
           // Skip if this exact event was already recorded recently (within 1 minute)
           if (existingEvent) {
             const timeDiff = Math.abs(new Date(timestamp * 1000).getTime() - existingEvent.occurredAt.getTime());
-            if (timeDiff < 60000) { // 1 minute
-              console.log(`[Email Webhook] Skipping duplicate ${mappedEventType} event for campaign ${campaignId}, consumer ${consumerId}`);
-              continue;
+            if (timeDiff < 60000) {
+              continue; // Skip duplicate
             }
           }
 
@@ -298,7 +214,7 @@ module.exports = async (req, res) => {
             });
           }
 
-          console.log(`[Email Webhook] Recorded ${mappedEventType} event for campaign ${campaignId}, consumer ${consumerId}`);
+          // Event recorded successfully
 
         } catch (eventError) {
           console.error(`[Email Webhook] Error processing event:`, eventError);
