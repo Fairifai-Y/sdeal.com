@@ -57,6 +57,7 @@ const Admin = () => {
   const [viewingListMembers, setViewingListMembers] = useState(null);
   const [listMembers, setListMembers] = useState(null);
   const [listMembersLoading, setListMembersLoading] = useState(false);
+  const [listMemberStatusFilter, setListMemberStatusFilter] = useState('');
   const [selectedConsumers, setSelectedConsumers] = useState(new Set());
   const [bulkAddToListId, setBulkAddToListId] = useState(null);
   
@@ -77,6 +78,7 @@ const Admin = () => {
   const [consumerSearchTimeout, setConsumerSearchTimeout] = useState(null);
   const [consumerStoreFilter, setConsumerStoreFilter] = useState('');
   const [consumerCountryFilter, setConsumerCountryFilter] = useState('');
+  const [consumerUnsubscribedFilter, setConsumerUnsubscribedFilter] = useState('');
   
   // Campaign editor state
   const [editingCampaign, setEditingCampaign] = useState(null);
@@ -252,7 +254,7 @@ const Admin = () => {
     }
   };
 
-  const fetchMailingData = async (subsection, searchQuery = '', storeFilter = '', countryFilter = '') => {
+  const fetchMailingData = async (subsection, searchQuery = '', storeFilter = '', countryFilter = '', unsubscribedFilter = '') => {
     setMailingLoading(true);
     try {
       let endpoint = `/api/admin/mailing/${subsection}`;
@@ -263,6 +265,7 @@ const Admin = () => {
         if (searchQuery) params.append('search', searchQuery);
         if (storeFilter) params.append('store', storeFilter);
         if (countryFilter) params.append('country', countryFilter);
+        if (unsubscribedFilter !== '') params.append('isUnsubscribed', unsubscribedFilter);
         
         const queryString = params.toString();
         if (queryString) {
@@ -335,7 +338,7 @@ const Admin = () => {
           setSyncPolling(false);
           // Refresh consumers data when sync completes
           if (mailingSubsection === 'consumers') {
-            fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
+            fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
           }
         }
       }
@@ -449,7 +452,7 @@ const Admin = () => {
       } else if (activeSection === 'mailing') {
         // Always fetch mailing data for current subsection when section is active
         if (mailingSubsection === 'consumers') {
-          fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
+          fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
         } else {
           fetchMailingData(mailingSubsection);
         }
@@ -1369,7 +1372,7 @@ const Admin = () => {
       if (result.success) {
         alert(editingConsumer === 'new' ? 'Consument aangemaakt!' : 'Consument bijgewerkt!');
         closeConsumerEditor();
-        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
+        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
       } else {
         alert('Error: ' + (result.error || 'Unknown error'));
       }
@@ -1392,7 +1395,7 @@ const Admin = () => {
     
     // Set new timeout for debounced search
     const timeout = setTimeout(() => {
-      fetchMailingData('consumers', query, consumerStoreFilter, consumerCountryFilter);
+      fetchMailingData('consumers', query, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
     }, 500); // 500ms debounce
     
     setConsumerSearchTimeout(timeout);
@@ -1401,13 +1404,19 @@ const Admin = () => {
   // Handle store filter change
   const handleStoreFilterChange = (store) => {
     setConsumerStoreFilter(store);
-    fetchMailingData('consumers', consumerSearchQuery, store, consumerCountryFilter);
+    fetchMailingData('consumers', consumerSearchQuery, store, consumerCountryFilter, consumerUnsubscribedFilter);
   };
 
   // Handle country filter change
   const handleCountryFilterChange = (country) => {
     setConsumerCountryFilter(country);
-    fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, country);
+    fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, country, consumerUnsubscribedFilter);
+  };
+
+  // Handle unsubscribed filter change
+  const handleUnsubscribedFilterChange = (unsubscribed) => {
+    setConsumerUnsubscribedFilter(unsubscribed);
+    fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, unsubscribed);
   };
 
   // Clear all filters
@@ -1415,6 +1424,7 @@ const Admin = () => {
     setConsumerSearchQuery('');
     setConsumerStoreFilter('');
     setConsumerCountryFilter('');
+    setConsumerUnsubscribedFilter('');
     fetchMailingData('consumers');
   };
 
@@ -1773,7 +1783,24 @@ const Admin = () => {
             <option value="FR">Frankrijk</option>
           </select>
           
-          {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter) && (
+          <select
+            value={consumerUnsubscribedFilter}
+            onChange={(e) => handleUnsubscribedFilterChange(e.target.value)}
+            style={{
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">Alle Status</option>
+            <option value="false">Niet Uitgeschreven</option>
+            <option value="true">Uitgeschreven</option>
+          </select>
+          
+          {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter || consumerUnsubscribedFilter) && (
             <>
               <button
                 onClick={clearConsumerFilters}
@@ -1791,7 +1818,7 @@ const Admin = () => {
             </button>
               <button
                 onClick={() => {
-                  const hasFilters = consumerSearchQuery || consumerStoreFilter || consumerCountryFilter;
+                  const hasFilters = consumerSearchQuery || consumerStoreFilter || consumerCountryFilter || consumerUnsubscribedFilter;
                   if (!hasFilters) {
                     alert('Selecteer eerst filters om bulk toevoegen te gebruiken');
                     return;
@@ -1834,12 +1861,13 @@ const Admin = () => {
         </div>
 
         {/* Show active filters */}
-        {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter) && (
+        {(consumerSearchQuery || consumerStoreFilter || consumerCountryFilter || consumerUnsubscribedFilter) && (
           <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
             Actieve filters:
             {consumerSearchQuery && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Zoek: "{consumerSearchQuery}"</span>}
             {consumerStoreFilter && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Store: {consumerStoreFilter}</span>}
             {consumerCountryFilter && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Land: {consumerCountryFilter}</span>}
+            {consumerUnsubscribedFilter && <span style={{ marginLeft: '5px', padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>Status: {consumerUnsubscribedFilter === 'true' ? 'Uitgeschreven' : 'Niet Uitgeschreven'}</span>}
           </div>
         )}
 
@@ -3190,10 +3218,14 @@ const Admin = () => {
     }
   };
 
-  const fetchListMembers = async (listId) => {
+  const fetchListMembers = async (listId, statusFilter = '') => {
     setListMembersLoading(true);
     try {
-      const response = await authenticatedFetch(`/api/admin/mailing/list-members?listId=${listId}&pageSize=100`);
+      let url = `/api/admin/mailing/list-members?listId=${listId}&pageSize=100`;
+      if (statusFilter) {
+        url += `&status=${statusFilter}`;
+      }
+      const response = await authenticatedFetch(url);
       
       if (!response.ok) {
         const text = await response.text();
@@ -3329,7 +3361,7 @@ const Admin = () => {
         }
         fetchMailingData('lists');
         // Refresh consumer list to show updated counts
-        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter);
+        fetchMailingData('consumers', consumerSearchQuery, consumerStoreFilter, consumerCountryFilter, consumerUnsubscribedFilter);
       } else {
         alert('Error: ' + (result.error || 'Unknown error'));
       }
@@ -3517,7 +3549,28 @@ const Admin = () => {
                 Leden van: {currentList.name}
               </h3>
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <select
+                value={listMemberStatusFilter}
+                onChange={(e) => {
+                  setListMemberStatusFilter(e.target.value);
+                  fetchListMembers(viewingListMembers, e.target.value);
+                }}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">Alle Status</option>
+                <option value="subscribed">Ingeschreven</option>
+                <option value="unsubscribed">Uitgeschreven</option>
+                <option value="pending">In Afwachting</option>
+              </select>
+              
               <button 
                 className="admin-button-primary"
                 onClick={() => {
