@@ -205,10 +205,11 @@ async function processPendingBatches(maxBatches = 5) {
     }
 
     // Check if all batches for campaigns are done
+    // Check both 'sending' and 'queued' campaigns (queued campaigns might have all batches sent)
     const campaignsWithBatches = await prisma.emailCampaign.findMany({
       where: {
         id: { in: [...new Set(batches.map(b => b.campaignId))] },
-        status: 'sending'
+        status: { in: ['sending', 'queued'] }
       },
       include: {
         emailBatches: {
