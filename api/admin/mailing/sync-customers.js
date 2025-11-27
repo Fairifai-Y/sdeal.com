@@ -295,10 +295,16 @@ async function syncOrders(options = {}) {
             // If it already exists, we'll catch the unique constraint error
             // Retry logic is now handled automatically by prisma-with-retry
             try {
-              await prisma.consumer.create({
+              const newConsumer = await prisma.consumer.create({
                 data: consumerData
               });
               sessionCreated++;
+              
+              // Execute workflows for newly created consumer (async, don't wait)
+              const { executeWorkflowsForConsumer } = require('./execute-workflows');
+              executeWorkflowsForConsumer(newConsumer.id).catch(err => {
+                console.error('[Sync] Error executing workflows for new consumer:', err);
+              });
               
               if ((sessionCreated + totalCreated) % 50 === 0) {
                 console.log(`[Sync] ✅ Created ${sessionCreated + totalCreated} customers so far...`);

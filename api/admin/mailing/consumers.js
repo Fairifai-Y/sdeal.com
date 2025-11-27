@@ -91,6 +91,12 @@ module.exports = async (req, res) => {
         }
       });
 
+      // Execute workflows for newly created consumer (async, don't wait)
+      const { executeWorkflowsForConsumer } = require('./execute-workflows');
+      executeWorkflowsForConsumer(consumer.id).catch(err => {
+        console.error('[Consumers API] Error executing workflows:', err);
+      });
+
       return res.json({
         success: true,
         data: consumer

@@ -2676,6 +2676,10 @@ const Admin = () => {
   };
 
   const openWorkflowEditor = (workflow = null) => {
+    // Ensure templates and lists are loaded
+    if (!mailingData.templates) fetchMailingData('templates');
+    if (!mailingData.lists) fetchMailingData('lists');
+    
     if (workflow) {
       setWorkflowForm({
         name: workflow.name || '',
