@@ -17,13 +17,25 @@ function isConnectionError(error) {
   
   const errorMessage = error.message || '';
   const errorCode = error.code || '';
+  const errorString = JSON.stringify(error);
+  
+  // Check for "Closed" connection errors (common in serverless databases like Neon)
+  const isClosedError = (
+    errorMessage.includes('Closed') ||
+    errorString.includes('"kind":"Closed"') ||
+    errorString.includes('kind: Closed') ||
+    errorMessage.includes('connection closed') ||
+    errorMessage.includes('Connection closed')
+  );
   
   return (
+    isClosedError ||
     errorMessage.includes('Timed out fetching a new connection') ||
     errorMessage.includes("Can't reach database server") ||
     errorMessage.includes('ECONNRESET') ||
     errorMessage.includes('ETIMEDOUT') ||
     errorMessage.includes('ENOTFOUND') ||
+    errorMessage.includes('connection pool') ||
     errorCode === 'P1001' || // Prisma connection error
     errorCode === 'P2024' || // Prisma timeout error
     errorCode === 'P1017'    // Prisma server closed connection
@@ -55,17 +67,41 @@ async function retryOperation(operation, context = '') {
       // Connection error - retry with exponential backoff
       const delay = RETRY_CONFIG.delays[attempt] || RETRY_CONFIG.delays[RETRY_CONFIG.delays.length - 1];
       
-      if (context && process.env.NODE_ENV === 'development') {
+      // Check if this is a "Closed" connection error (common in serverless, reduce log spam)
+      const isClosedError = error.message?.includes('Closed') || 
+                           JSON.stringify(error).includes('"kind":"Closed"') ||
+                           JSON.stringify(error).includes('kind: Closed');
+      
+      // Only log in development or if it's not a "Closed" error (to reduce log spam)
+      const shouldLog = process.env.NODE_ENV === 'development' || !isClosedError;
+      
+      if (context && shouldLog) {
         console.log(`[Prisma Retry] ${context} - Connection error, retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries})...`);
       }
       
       // Wait before retry
       await new Promise(resolve => setTimeout(resolve, delay));
       
+      // For "Closed" errors, try to disconnect and reconnect on first retry
+      if (isClosedError && attempt === 0) {
+        try {
+          // Force disconnect to clear the closed connection
+          await originalPrisma.$disconnect().catch(() => {
+            // Ignore disconnect errors
+          });
+          // Small delay to allow disconnect to complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (disconnectError) {
+          // Ignore disconnect errors
+        }
+      }
+      
       // Try to wake up the database before retry
       if (RETRY_CONFIG.wakeUpQuery) {
         try {
-          await originalPrisma.$queryRaw`SELECT 1`;
+          await originalPrisma.$queryRaw`SELECT 1`.catch(() => {
+            // Ignore wake-up errors, the retry will handle reconnection
+          });
         } catch (wakeError) {
           // Ignore wake-up errors, continue with retry
         }

@@ -339,36 +339,87 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Create email batches instead of sending directly
-        console.log(`[Campaign] Creating email batches for campaign ${id} with ${recipients.length} recipients`);
+        // Create batch creation job instead of creating batches directly
+        console.log(`[Campaign] Creating batch creation job for campaign ${id} with ${recipients.length} recipients`);
 
-        // Create batches in background (don't wait for completion)
-        // Note: This runs asynchronously to avoid Vercel timeout
-        createEmailBatches(id, campaign, recipients)
-          .then(result => {
-            console.log(`[Campaign] ✅ Successfully created all batches for campaign ${id}: ${result.totalBatches} batches`);
-          })
-          .catch(error => {
-            console.error(`[Campaign] ❌ Error creating email batches:`, error);
-            console.error(`[Campaign] Error stack:`, error.stack);
-            // Update campaign status to error
-            prisma.emailCampaign.update({
-              where: { id },
-              data: {
-                status: 'error',
-                errorMessage: error.message || 'Failed to create email batches'
-              }
-            }).catch(updateError => {
-              console.error(`[Campaign] Error updating campaign status:`, updateError);
-            });
+        // Check for duplicate check (template-based)
+        let alreadySentSet = new Set();
+        if (campaign.templateId) {
+          const campaignsWithSameTemplate = await prisma.emailCampaign.findMany({
+            where: {
+              templateId: campaign.templateId,
+              status: { in: ['sent', 'sending', 'queued'] }
+            },
+            select: { id: true }
           });
+          
+          const campaignIds = campaignsWithSameTemplate.map(c => c.id);
+          if (campaignIds.length > 0) {
+            const existingEvents = await prisma.emailEvent.findMany({
+              where: {
+                campaignId: { in: campaignIds },
+                eventType: 'sent'
+              },
+              select: { consumerId: true }
+            });
+            alreadySentSet = new Set(existingEvents.map(e => e.consumerId));
+          }
+        }
+
+        // Filter out recipients who already received this template
+        const recipientsToSend = recipients.filter(consumer => !alreadySentSet.has(consumer.id));
+        const totalSkipped = recipients.length - recipientsToSend.length;
+        
+        console.log(`[Campaign] Will create batches for ${recipientsToSend.length} recipients (${totalSkipped} skipped)`);
+
+        // Check if job already exists
+        const existingJob = await prisma.batchCreationJob.findFirst({
+          where: {
+            campaignId: id,
+            status: { in: ['pending', 'processing'] }
+          }
+        });
+
+        if (existingJob) {
+          return res.status(400).json({
+            success: false,
+            error: 'Batch creation job already exists for this campaign'
+          });
+        }
+
+        // Create batch creation job
+        const job = await prisma.batchCreationJob.create({
+          data: {
+            campaignId: id,
+            status: 'pending',
+            totalRecipients: recipientsToSend.length,
+            processedCount: 0,
+            batchesCreated: 0,
+            currentChunk: 0,
+            recipientIds: recipientsToSend.map(r => r.id), // Store only IDs to save space
+            templateData: {
+              subject: campaign.template?.subject || campaign.subject,
+              htmlContent: campaign.template?.htmlContent || '',
+              textContent: campaign.template?.textContent || null
+            },
+            campaignData: {
+              subject: campaign.subject
+            },
+            chunkSize: 500,
+            batchSize: 100,
+            nextProcessAt: new Date() // Process immediately
+          }
+        });
+
+        console.log(`[Campaign] ✅ Created batch creation job ${job.id} for campaign ${id}`);
 
         return res.json({
           success: true,
-          message: `Campaign queued for ${recipients.length} recipients. Batches will be processed by cron job.`,
+          message: `Campaign queued for ${recipientsToSend.length} recipients. Batch creation job created. Batches will be created by worker.`,
           data: {
             ...updatedCampaign,
-            recipientCount: recipients.length
+            recipientCount: recipientsToSend.length,
+            jobId: job.id
           }
         });
       }

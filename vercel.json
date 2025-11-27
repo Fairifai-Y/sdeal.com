@@ -7,6 +7,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/admin/mailing/process-batch-jobs",
+      "schedule": "*/2 * * * *"
+    },
+    {
       "path": "/api/admin/mailing/incremental-sync",
       "schedule": "0 */6 * * *"
     }
@@ -105,6 +109,10 @@
     {
       "src": "/api/admin/mailing/incremental-sync",
       "dest": "/api/admin/mailing/incremental-sync.js"
+    },
+    {
+      "src": "/api/admin/mailing/process-batch-jobs",
+      "dest": "/api/admin/mailing/process-batch-jobs.js"
     },
     {
       "src": "/api/admin/mailing/webhook",

@@ -137,9 +137,9 @@ model EmailCampaign {
   subject String // Email subject line
 
   // Campaign status
-  status      String    @default("draft") // draft, scheduled, queued, sending, sent, cancelled, error
-  scheduledAt DateTime? // When to send (for scheduled campaigns)
-  sentAt      DateTime? // When it was actually sent
+  status       String    @default("draft") // draft, scheduled, queued, sending, sent, cancelled, error
+  scheduledAt  DateTime? // When to send (for scheduled campaigns)
+  sentAt       DateTime? // When it was actually sent
   errorMessage String? // Error message if status is error
 
   // Recipients
@@ -163,8 +163,9 @@ model EmailCampaign {
   template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   // Relations
-  emailEvents EmailEvent[]
-  emailBatches EmailBatch[]
+  emailEvents       EmailEvent[]
+  emailBatches      EmailBatch[]
+  batchCreationJobs BatchCreationJob[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -207,27 +208,27 @@ model EmailEvent {
 
 // Email batches for queue-based sending (prevents Vercel timeouts)
 model EmailBatch {
-  id         String  @id @default(cuid())
+  id         String        @id @default(cuid())
   campaignId String
   campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   // Batch data (stored as JSON to avoid large table)
   // Array of email objects: [{ to, subject, html, text, consumerId, customArgs }]
-  emails     Json
-  
+  emails Json
+
   // Batch status
-  status     String  @default("pending") // pending, processing, sent, failed
-  priority   Int     @default(0) // Higher priority batches are processed first
-  
+  status   String @default("pending") // pending, processing, sent, failed
+  priority Int    @default(0) // Higher priority batches are processed first
+
   // Processing info
-  processedAt DateTime?
-  sentCount   Int     @default(0)
-  failedCount Int     @default(0)
+  processedAt  DateTime?
+  sentCount    Int       @default(0)
+  failedCount  Int       @default(0)
   errorMessage String?
-  
+
   // Retry info
-  retryCount  Int     @default(0)
-  maxRetries  Int     @default(3)
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
   nextRetryAt DateTime?
 
   createdAt DateTime @default(now())
@@ -237,6 +238,48 @@ model EmailBatch {
   @@index([status])
   @@index([priority])
   @@index([nextRetryAt])
+  @@index([createdAt])
+}
+
+// Batch creation jobs - for incremental batch creation to avoid timeouts
+model BatchCreationJob {
+  id         String        @id @default(cuid())
+  campaignId String
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  // Job status
+  status       String  @default("pending") // pending, processing, completed, failed
+  errorMessage String?
+
+  // Progress tracking
+  totalRecipients Int // Total number of recipients to process
+  processedCount  Int @default(0) // How many recipients have been processed
+  batchesCreated  Int @default(0) // How many batches have been created
+  currentChunk    Int @default(0) // Current chunk being processed
+
+  // Recipient data (stored as JSON to avoid large table)
+  // Array of consumer IDs that need batches created
+  recipientIds Json // Array of consumer IDs
+
+  // Template and campaign data needed for batch creation
+  templateData Json // Template content (subject, htmlContent, textContent)
+  campaignData Json // Campaign data (subject, etc.)
+
+  // Processing settings
+  chunkSize Int @default(500) // Recipients per chunk
+  batchSize Int @default(100) // Emails per batch
+
+  // Timestamps
+  startedAt     DateTime?
+  completedAt   DateTime?
+  nextProcessAt DateTime? // When to process next chunk (for retry/continuation)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([nextProcessAt])
   @@index([createdAt])
 }
 
@@ -403,13 +446,13 @@ model EmailWorkflowExecution {
 
 // Lifetime Discount Group registrations
 model LifetimeDiscountRegistration {
-  id            String   @id @default(cuid())
-  email         String
-  language      String   // en, nl, de, fr
-  paymentStatus String   @default("pending") // pending, paid, failed, cancelled
-  molliePaymentId String? @unique
-  activatedAt   DateTime? // When the discount was activated (24 hours after payment)
-  
+  id              String    @id @default(cuid())
+  email           String
+  language        String // en, nl, de, fr
+  paymentStatus   String    @default("pending") // pending, paid, failed, cancelled
+  molliePaymentId String?   @unique
+  activatedAt     DateTime? // When the discount was activated (24 hours after payment)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
