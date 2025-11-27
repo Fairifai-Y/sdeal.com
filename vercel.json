@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/admin/mailing/process-batches",
-      "schedule": "*/2 * * * *"
+      "schedule": "*/15 * * * *"
     }
   ],
   "builds": [
