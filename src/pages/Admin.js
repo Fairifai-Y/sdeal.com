@@ -98,6 +98,8 @@ const Admin = () => {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncPolling, setSyncPolling] = useState(false);
+  const [startEntityId, setStartEntityId] = useState('');
+  const [maxPages, setMaxPages] = useState('10'); // Default: 10 pages = 5000 orders
   
   // LDG (Lifetime Discount Group) state
   const [ldgData, setLdgData] = useState(null);
@@ -352,17 +354,21 @@ const Admin = () => {
     }
   };
 
-  const startSync = async (testMode = false) => {
+  const startSync = async (testMode = false, fromBeginning = false) => {
     setSyncLoading(true);
     try {
+      // Parse maxPages - if empty or invalid, use null (unlimited) for normal sync, 1 for test
+      const maxPagesValue = testMode ? 1 : (maxPages && maxPages.trim() ? parseInt(maxPages) : null);
+      
       const response = await authenticatedFetch('/api/admin/mailing/sync-customers', {
         method: 'POST',
         body: JSON.stringify({
           pageSize: 500,
           startPage: 1,
-          maxPages: testMode ? 1 : null, // Test mode: 1 page (500 orders)
-          fullSync: false, // Resume from checkpoint if available
-          resume: true
+          maxPages: maxPagesValue, // Use user-specified max pages or null for unlimited
+          fullSync: fromBeginning, // If fromBeginning is true, start from beginning
+          resume: !fromBeginning, // If fromBeginning is true, don't resume from checkpoint
+          startEntityId: startEntityId ? parseInt(startEntityId) : null // Start from specific entity ID
         })
       });
       
@@ -1599,7 +1605,7 @@ const Admin = () => {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3>Consumenten</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {syncStatus?.isRunning ? (
               <button 
                 className="admin-button-secondary"
@@ -1610,12 +1616,68 @@ const Admin = () => {
               </button>
             ) : (
               <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '12px', color: '#666' }}>Start vanaf Entity ID (optioneel):</label>
+                  <input
+                    type="number"
+                    value={startEntityId}
+                    onChange={(e) => setStartEntityId(e.target.value)}
+                    placeholder="Bijv. 50000"
+                    style={{ 
+                      padding: '6px 10px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px',
+                      width: '120px',
+                      fontSize: '14px'
+                    }}
+                    disabled={syncLoading}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '12px', color: '#666' }}>Max Pagina's (leeg = oneindig):</label>
+                  <input
+                    type="number"
+                    value={maxPages}
+                    onChange={(e) => setMaxPages(e.target.value)}
+                    placeholder="Bijv. 10"
+                    style={{ 
+                      padding: '6px 10px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px',
+                      width: '120px',
+                      fontSize: '14px'
+                    }}
+                    disabled={syncLoading}
+                    title="Aantal pagina's om te verwerken (500 orders per pagina). Laat leeg voor oneindig."
+                  />
+                </div>
                 <button 
                   className="admin-button-secondary"
-                  onClick={() => startSync(false)}
+                  onClick={() => startSync(false, false)}
                   disabled={syncLoading}
+                  title={
+                    syncStatus?.checkpoint 
+                      ? `Herstart vanaf pagina ${syncStatus.checkpoint.lastPage + 1}` 
+                      : startEntityId 
+                        ? `Start vanaf entity ID ${startEntityId}${maxPages ? ` (max ${maxPages} pagina's)` : ''}` 
+                        : maxPages 
+                          ? `Start sync (max ${maxPages} pagina's = ${maxPages * 500} orders)` 
+                          : 'Start sync vanaf het begin'
+                  }
                 >
-                  {syncLoading ? 'Starten...' : '🔄 Start Sync'}
+                  {syncLoading ? 'Starten...' : '🔄 Start Sync' + 
+                    (syncStatus?.checkpoint ? ' (Hervatten)' : 
+                     startEntityId ? ` (Vanaf ${startEntityId})` : 
+                     maxPages ? ` (${maxPages} p.)` : '')}
+                </button>
+                <button 
+                  className="admin-button-secondary"
+                  onClick={() => startSync(false, true)}
+                  disabled={syncLoading}
+                  style={{ backgroundColor: '#f44336', color: 'white' }}
+                  title="Start sync vanaf het begin (negeer checkpoint)"
+                >
+                  {syncLoading ? 'Starten...' : '🔄 Start Sync (Vanaf Begin)'}
                 </button>
                 <button 
                   className="admin-button-secondary"

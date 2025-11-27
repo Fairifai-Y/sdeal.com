@@ -181,12 +181,13 @@ async function syncOrders(options = {}) {
     startPage = 1,
     maxPages = null,
     resume = true,
-    fullSync = false
+    fullSync = false,
+    startEntityId = null
   } = options;
   
   // Load checkpoint if resuming
   let checkpoint = null;
-  if (resume && !fullSync) {
+  if (resume && !fullSync && !startEntityId) {
     checkpoint = loadCheckpoint();
     if (checkpoint) {
       console.log('[Sync] Resuming from checkpoint:', checkpoint.lastPage);
@@ -194,7 +195,12 @@ async function syncOrders(options = {}) {
   }
   
   const currentPage = checkpoint ? checkpoint.lastPage + 1 : startPage;
-  const lastEntityId = checkpoint ? checkpoint.lastEntityId : 0;
+  // If startEntityId is provided, use it; otherwise use checkpoint or 0
+  const lastEntityId = startEntityId ? startEntityId : (checkpoint ? checkpoint.lastEntityId : 0);
+  
+  if (startEntityId) {
+    console.log(`[Sync] Starting from entity ID: ${startEntityId}`);
+  }
   
   syncStatus.isRunning = true;
   syncStatus.shouldStop = false;
@@ -280,6 +286,12 @@ async function syncOrders(options = {}) {
             const entityId = order.entity_id || order.id;
             if (entityId && entityId > highestEntityId) {
               highestEntityId = entityId;
+            }
+            
+            // Skip orders with entity_id lower than startEntityId (if specified)
+            if (startEntityId && entityId && entityId < startEntityId) {
+              sessionSkipped++;
+              continue;
             }
             
             // Convert order to consumer data
@@ -402,6 +414,35 @@ async function syncOrders(options = {}) {
     
     syncStatus.completedAt = new Date();
     
+    // Update SyncStatus in database if this was a full sync
+    if (fullSync && highestEntityId > 0) {
+      try {
+        await prisma.syncStatus.upsert({
+          where: { syncType: 'full' },
+          create: {
+            syncType: 'full',
+            lastEntityId: highestEntityId,
+            lastSyncAt: new Date(),
+            status: syncStatus.shouldStop ? 'stopped' : 'stopped',
+            totalProcessed: totalCreated + totalSkipped + totalErrors,
+            totalCreated: totalCreated,
+            totalErrors: totalErrors
+          },
+          update: {
+            lastEntityId: highestEntityId,
+            lastSyncAt: new Date(),
+            status: syncStatus.shouldStop ? 'stopped' : 'stopped',
+            totalProcessed: { increment: totalCreated + totalSkipped + totalErrors },
+            totalCreated: { increment: totalCreated },
+            totalErrors: { increment: totalErrors }
+          }
+        });
+        console.log(`[Sync] ✅ Updated SyncStatus: lastEntityId = ${highestEntityId}`);
+      } catch (error) {
+        console.error('[Sync] Error updating SyncStatus:', error);
+      }
+    }
+    
     // Clear checkpoint if completed successfully
     if (!syncStatus.shouldStop && hasMore === false) {
       clearCheckpoint();
@@ -475,10 +516,11 @@ module.exports = async (req, res) => {
         startPage = 1,
         maxPages = null,
         fullSync = false,
-        resume = true
+        resume = true,
+        startEntityId = null
       } = req.body;
 
-      console.log(`[Sync] Starting sync (pageSize: ${pageSize}, startPage: ${startPage}, maxPages: ${maxPages || 'unlimited'}, fullSync: ${fullSync})`);
+      console.log(`[Sync] Starting sync (pageSize: ${pageSize}, startPage: ${startPage}, maxPages: ${maxPages || 'unlimited'}, fullSync: ${fullSync}, startEntityId: ${startEntityId || 'none'})`);
 
       // Start sync in background
       syncOrders({
@@ -486,7 +528,8 @@ module.exports = async (req, res) => {
         startPage: parseInt(startPage),
         maxPages: maxPages ? parseInt(maxPages) : null,
         fullSync: fullSync,
-        resume: resume
+        resume: resume,
+        startEntityId: startEntityId ? parseInt(startEntityId) : null
       }).catch(error => {
         console.error('[Sync] Background sync error:', error);
         syncStatus.isRunning = false;
