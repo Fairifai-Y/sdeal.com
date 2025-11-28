@@ -635,10 +635,11 @@ const Admin = () => {
       console.log(`[Admin] Fetching seller info for ID: ${sellerId}`);
       // Fetch all seller info in parallel
       // Note: These endpoints automatically use the proxy if PROXY_BASE_URL is configured
-      const [balanceRes, ordersRes, deliveryRes] = await Promise.allSettled([
+      const [balanceRes, ordersRes, deliveryRes, reviewsRes] = await Promise.allSettled([
         fetch(`/api/seller-admin/balance?supplierId=${sellerId}`),
         fetch(`/api/seller-admin/orders?supplierId=${sellerId}&page=1&pageSize=10`),
-        fetch(`/api/seller-admin/delivery-info?supplierId=${sellerId}`)
+        fetch(`/api/seller-admin/delivery-info?supplierId=${sellerId}`),
+        fetch(`/api/seller-admin/reviews?supplierId=${sellerId}`)
       ]);
 
       const sellerData = {
@@ -646,6 +647,7 @@ const Admin = () => {
         balance: null,
         orders: null,
         deliveryInfo: null,
+        reviews: null,
         errors: {}
       };
 
@@ -691,6 +693,18 @@ const Admin = () => {
         }
       } else {
         sellerData.errors.deliveryInfo = 'Failed to fetch delivery info';
+      }
+
+      // Process reviews
+      if (reviewsRes.status === 'fulfilled' && reviewsRes.value.ok) {
+        const reviewsData = await reviewsRes.value.json();
+        if (reviewsData.success) {
+          sellerData.reviews = reviewsData.data;
+        } else {
+          sellerData.errors.reviews = reviewsData.error || 'Failed to fetch reviews';
+        }
+      } else {
+        sellerData.errors.reviews = 'Failed to fetch reviews';
       }
 
       setSellerInfo(sellerData);
@@ -4568,6 +4582,62 @@ const Admin = () => {
                       </div>
                     ) : (
                       <div>Geen delivery data beschikbaar</div>
+                    )}
+                  </div>
+
+                  {/* Reviews */}
+                  <div className="seller-info-section">
+                    <h3>Reviews ({sellerInfo.reviews ? sellerInfo.reviews.length : 0})</h3>
+                    {sellerInfo.errors.reviews ? (
+                      <div style={{ color: 'red' }}>Error: {sellerInfo.errors.reviews}</div>
+                    ) : sellerInfo.reviews && sellerInfo.reviews.length > 0 ? (
+                      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#f5f5f5', position: 'sticky', top: 0 }}>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Datum</th>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Sterren</th>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Titel</th>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Beschrijving</th>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Klant</th>
+                              <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sellerInfo.reviews.map((review) => (
+                              <tr key={review.id} style={{ borderBottom: '1px solid #eee' }}>
+                                <td style={{ padding: '10px' }}>
+                                  {review.created_at ? new Date(review.created_at).toLocaleDateString('nl-NL') : '-'}
+                                </td>
+                                <td style={{ padding: '10px' }}>
+                                  <span style={{ color: review.review_stars >= 4 ? '#4CAF50' : review.review_stars >= 3 ? '#FF9800' : '#F44336' }}>
+                                    {'★'.repeat(review.review_stars || 0)}{'☆'.repeat(5 - (review.review_stars || 0))} ({review.review_stars || 0}/5)
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px' }}>
+                                  {review.review_title || '-'}
+                                </td>
+                                <td style={{ padding: '10px', maxWidth: '300px', wordWrap: 'break-word' }}>
+                                  {review.review_description || '-'}
+                                </td>
+                                <td style={{ padding: '10px' }}>
+                                  {review.customer_name || `Klant #${review.customer_id || '-'}`}
+                                </td>
+                                <td style={{ padding: '10px' }}>
+                                  <span style={{ 
+                                    color: review.review_is_approved === 1 ? '#4CAF50' : '#FF9800',
+                                    fontWeight: 'bold'
+                                  }}>
+                                    {review.review_is_approved === 1 ? '✓ Goedgekeurd' : '⏳ In afwachting'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div>Geen reviews gevonden</div>
                     )}
                   </div>
                 </div>

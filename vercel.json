@@ -159,6 +159,10 @@
       "dest": "/api/seller-admin/delivery-info.js"
     },
     {
+      "src": "/api/seller-admin/reviews",
+      "dest": "/api/seller-admin/reviews.js"
+    },
+    {
       "src": "/api/seller-admin/test",
       "dest": "/api/seller-admin/test.js"
     },
