@@ -388,7 +388,8 @@ async function processPendingBatchJobs(maxJobs = 1) {
   }
 }
 
-module.exports = async (req, res) => {
+// Export the handler function
+const handler = async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -473,4 +474,10 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+// Export handler and functions
+module.exports = Object.assign(handler, {
+  processBatchCreationJob,
+  processPendingBatchJobs
+});
 
