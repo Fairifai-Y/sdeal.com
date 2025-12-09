@@ -369,7 +369,16 @@ const Package = () => {
         requestBody.newCustomer = true;
         requestBody.customerData = newCustomerData;
         // Don't send sellerId for new customers - it will be generated in Magento
+        console.log('Sending new customer data:', JSON.stringify(newCustomerData, null, 2));
+        console.log('Customer data fields:', {
+          street: newCustomerData.street,
+          kvkNumber: newCustomerData.kvkNumber,
+          vatNumber: newCustomerData.vatNumber,
+          iban: newCustomerData.iban
+        });
       }
+      
+      console.log('Full request body:', JSON.stringify(requestBody, null, 2));
       
       const response = await fetch('/api/package/submit', {
         method: 'POST',

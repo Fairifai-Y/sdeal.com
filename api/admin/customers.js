@@ -22,6 +22,7 @@ module.exports = async (req, res) => {
   try {
     // Get all package selections
     const allCustomers = await prisma.packageSelection.findMany({
+      // Select all fields that the admin UI displays
       select: {
         id: true,
         sellerId: true,
@@ -29,6 +30,15 @@ module.exports = async (req, res) => {
         companyName: true,
         firstName: true,
         lastName: true,
+        street: true,
+        city: true,
+        postalCode: true,
+        country: true,
+        phone: true,
+        kvkNumber: true,
+        vatNumber: true,
+        iban: true,
+        bic: true,
         package: true,
         billingPeriod: true,
         isNewCustomer: true,

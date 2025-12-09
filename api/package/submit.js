@@ -479,6 +479,8 @@ module.exports = async (req, res) => {
     console.log('- commissionPercentage type:', typeof commissionValue);
     console.log('- billingPeriod:', billingValue);
     console.log('- billingPeriod type:', typeof billingValue);
+    console.log('- newCustomer:', newCustomer);
+    console.log('- customerData received:', JSON.stringify(customerData, null, 2));
     
     // Create package selection record
     const dataToSave = {
@@ -499,18 +501,32 @@ module.exports = async (req, res) => {
     
     // Add new customer data if it's a new customer
     if (newCustomer && customerData) {
-      dataToSave.companyName = customerData.companyName || null;
-      dataToSave.firstName = customerData.firstName || null;
-      dataToSave.lastName = customerData.lastName || null;
-      dataToSave.street = customerData.street || null;
-      dataToSave.city = customerData.city || null;
-      dataToSave.postalCode = customerData.postalCode || null;
-      dataToSave.country = customerData.country || null;
-      dataToSave.phone = customerData.phone || null;
-      dataToSave.kvkNumber = customerData.kvkNumber || null;
-      dataToSave.vatNumber = customerData.vatNumber || null;
-      dataToSave.iban = customerData.iban || null;
-      dataToSave.bic = customerData.bic || null;
+      console.log('Processing new customer data...');
+      console.log('customerData.street:', customerData.street);
+      console.log('customerData.kvkNumber:', customerData.kvkNumber);
+      console.log('customerData.vatNumber:', customerData.vatNumber);
+      console.log('customerData.iban:', customerData.iban);
+      
+      // Use trim() to handle whitespace, but preserve empty strings as null
+      // Only set to null if the value is actually empty or undefined
+      dataToSave.companyName = (customerData.companyName && customerData.companyName.trim() !== '') ? customerData.companyName.trim() : null;
+      dataToSave.firstName = (customerData.firstName && customerData.firstName.trim() !== '') ? customerData.firstName.trim() : null;
+      dataToSave.lastName = (customerData.lastName && customerData.lastName.trim() !== '') ? customerData.lastName.trim() : null;
+      dataToSave.street = (customerData.street && customerData.street.trim() !== '') ? customerData.street.trim() : null;
+      dataToSave.city = (customerData.city && customerData.city.trim() !== '') ? customerData.city.trim() : null;
+      dataToSave.postalCode = (customerData.postalCode && customerData.postalCode.trim() !== '') ? customerData.postalCode.trim() : null;
+      dataToSave.country = (customerData.country && customerData.country.trim() !== '') ? customerData.country.trim() : null;
+      dataToSave.phone = (customerData.phone && customerData.phone.trim() !== '') ? customerData.phone.trim() : null;
+      dataToSave.kvkNumber = (customerData.kvkNumber && customerData.kvkNumber.trim() !== '') ? customerData.kvkNumber.trim() : null;
+      dataToSave.vatNumber = (customerData.vatNumber && customerData.vatNumber.trim() !== '') ? customerData.vatNumber.trim() : null;
+      dataToSave.iban = (customerData.iban && customerData.iban.trim() !== '') ? customerData.iban.trim() : null;
+      dataToSave.bic = (customerData.bic && customerData.bic.trim() !== '') ? customerData.bic.trim() : null;
+      
+      console.log('Processed customer data to save:');
+      console.log('- street:', dataToSave.street);
+      console.log('- kvkNumber:', dataToSave.kvkNumber);
+      console.log('- vatNumber:', dataToSave.vatNumber);
+      console.log('- iban:', dataToSave.iban);
       
       // Generate a unique temporary seller ID for new customers
       // This ID is stored in the database but not communicated to customers
@@ -518,6 +534,8 @@ module.exports = async (req, res) => {
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8).toUpperCase();
       dataToSave.sellerId = `NEW-${timestamp}-${random}`;
+    } else {
+      console.log('Skipping new customer data - newCustomer:', newCustomer, 'customerData exists:', !!customerData);
     }
     
     console.log('Data to save:', JSON.stringify(dataToSave, null, 2));
