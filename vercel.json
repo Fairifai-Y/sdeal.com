@@ -3,14 +3,6 @@
   "installCommand": "npm install",
   "crons": [
     {
-      "path": "/api/admin/mailing/process-batches",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/admin/mailing/process-batch-jobs",
-      "schedule": "*/2 * * * *"
-    },
-    {
       "path": "/api/admin/mailing/incremental-sync",
       "schedule": "0 */6 * * *"
     }
