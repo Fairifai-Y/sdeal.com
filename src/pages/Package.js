@@ -9,16 +9,20 @@ const Package = () => {
   const { currentLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Get sellerId, newCustomer, and payment success from URL parameters
+  // Get sellerId, newCustomer, package, and payment success from URL parameters
   const urlSellerId = searchParams.get('sellerId');
   const urlNewCustomer = searchParams.get('newCustomer') === 'true';
+  const urlPackageParam = searchParams.get('package');
   const paymentSuccess = searchParams.get('payment') === 'success';
+  
+  // Pre-select package from URL when coming from pricing page (package=A|B|C)
+  const initialPackage = (urlPackageParam === 'A' || urlPackageParam === 'B' || urlPackageParam === 'C') ? urlPackageParam : '';
   
   // Customer type: null = not selected, 'new' = new customer, 'existing' = existing customer
   // If newCustomer=true in URL, automatically set to 'new'
   const [customerType, setCustomerType] = useState(urlNewCustomer ? 'new' : null);
   const [showSellerInfo, setShowSellerInfo] = useState(urlNewCustomer || !urlSellerId);
-  const [selectedPackage, setSelectedPackage] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState(initialPackage);
   const [selectedAddons, setSelectedAddons] = useState({
     dealCSS: false,
     caas: false
@@ -76,6 +80,14 @@ const Package = () => {
       setStartDate('immediate');
     }
   }, [urlNewCustomer, urlSellerId]);
+  
+  // Sync selected package when URL package param changes (e.g. coming from pricing page)
+  useEffect(() => {
+    const p = searchParams.get('package');
+    if (p === 'A' || p === 'B' || p === 'C') {
+      setSelectedPackage(p);
+    }
+  }, [searchParams]);
   
   // Handle customer type selection
   const handleCustomerTypeSelect = (type) => {
@@ -954,22 +966,6 @@ const Package = () => {
         <div className="package-content">
           <h1>{getTranslation(currentLanguage, 'packageHeroTitle')}</h1>
           <p className="package-subtitle">{getTranslation(currentLanguage, 'packageHeroSubtitle')}</p>
-        </div>
-      </section>
-
-      {/* Why Section */}
-      <section className="package-why-section">
-        <div className="package-content">
-          <div className="package-why-card">
-            <h2>{getTranslation(currentLanguage, 'packageWhyTitle')}</h2>
-            <div className="package-why-text">
-              {getTranslation(currentLanguage, 'packageWhyText')
-                .split('\n\n')
-                .map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-            </div>
-          </div>
         </div>
       </section>
 

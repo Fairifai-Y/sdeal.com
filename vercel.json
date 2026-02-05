@@ -1,24 +1,12 @@
 {
   "version": 2,
   "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "build",
   "crons": [
     {
       "path": "/api/admin/mailing/incremental-sync",
       "schedule": "0 */6 * * *"
-    }
-  ],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build",
-        "buildCommand": "npm run vercel-build"
-      }
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
