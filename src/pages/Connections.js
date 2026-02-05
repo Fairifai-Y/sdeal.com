@@ -149,6 +149,17 @@ const Connections = () => {
         de: 'Verwalten Sie all Ihre Produktinhalte, Bestand und Bestellabläufe von einem Ort aus mit ProductFlow + SDeal.',
         fr: 'Gérez tout votre contenu produit, stocks et flux de commandes depuis un seul endroit avec ProductFlow + SDeal.'
       }
+    },
+    {
+      name: 'Retail2Market',
+      url: 'https://www.retail2market.nl',
+      image: '/images/logo R2M.png',
+      description: {
+        en: 'With Retail2Market, you can quickly put your store inventory online on SDeal. The software connects with your POS system, your webshop, and online marketplaces like SDeal. Retail2Market ensures current inventory information and easy product management. In addition, you have one central order management system for all your online orders.',
+        nl: 'Met Retail2Market zet je je winkelvoorraad razendsnel online op SDeal. De software koppelt met je kassasysteem, je webshop én online marketplaces als SDeal. Retail2Market zorgt voor actuele voorraadinformatie en eenvoudig productbeheer. Daarnaast heb je één centraal order management systeem voor al je online orders.',
+        de: 'Mit Retail2Market können Sie Ihren Ladenbestand schnell online auf SDeal stellen. Die Software verbindet sich mit Ihrem Kassensystem, Ihrem Webshop und Online-Marktplätzen wie SDeal. Retail2Market sorgt für aktuelle Bestandsinformationen und einfaches Produktmanagement. Darüber hinaus haben Sie ein zentrales Bestellverwaltungssystem für alle Ihre Online-Bestellungen.',
+        fr: 'Avec Retail2Market, vous pouvez rapidement mettre votre stock de magasin en ligne sur SDeal. Le logiciel se connecte à votre système de caisse, votre boutique en ligne et aux places de marché en ligne comme SDeal. Retail2Market assure des informations de stock à jour et une gestion de produits simple. De plus, vous disposez d\'un système central de gestion des commandes pour toutes vos commandes en ligne.'
+      }
     }
   ];
 
