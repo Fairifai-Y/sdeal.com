@@ -114,7 +114,7 @@ const Home = () => {
           />
           <h1 className="hero-title">Real deals, without the noise</h1>
           <Link 
-            to={getLocalizedUrl('/package?newCustomer=true', currentLanguage)}
+            to={getLocalizedUrl('/pricing', currentLanguage)}
             className="hero-button" 
             style={{ textDecoration: 'none', display: 'inline-block' }}
           >

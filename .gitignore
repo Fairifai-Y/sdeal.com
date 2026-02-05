@@ -1,6 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+# Ignore ALL node_modules folders (root, server, and any subdirectories)
+**/node_modules/
 /node_modules
 /.pnp
 .pnp.js
@@ -26,9 +28,50 @@ server/.env
 server/.env.*
 server/*.env
 
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+logs/
+
+# Cache directories
+.cache/
+**/.cache/
+node_modules/.cache/
+server/node_modules/.cache/
 
 # Prisma
+# OLD location (no longer used after schema consolidation)
 server/prisma/migrations/
+# IMPORTANT: prisma/migrations/ is NOT ignored - migrations must be in git for deployment!
+# The migrations in prisma/migrations/ are needed for:
+# - Team collaboration (everyone has same schema)
+# - Production deployment (prisma migrate deploy)
+# - Version control of database changes
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
