@@ -37,6 +37,8 @@ const Package = () => {
   // For existing customers, default to 2026-01-01 if before 2026, otherwise immediate
   const [startDate, setStartDate] = useState('immediate');
   const [commissionPercentage, setCommissionPercentage] = useState('');
+  const [sellCountries, setSellCountries] = useState([]); // Country codes: NL, BE, DE, FR, GB, AT, IT, DK, SE
+  const [payoutFrequency, setPayoutFrequency] = useState('monthly'); // 'weekly' | 'monthly' for orders via our system
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -106,6 +108,15 @@ const Package = () => {
   const handlePackageChange = (packageType) => {
     setSelectedPackage(packageType);
     setErrors({ ...errors, package: '' });
+  };
+
+  // Sell country options: current markets + Sweden
+  const SELL_COUNTRY_OPTIONS = ['NL', 'BE', 'DE', 'FR', 'GB', 'AT', 'IT', 'DK', 'SE'];
+  const toggleSellCountry = (code) => {
+    setSellCountries(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+    if (errors.sellCountries) setErrors({ ...errors, sellCountries: '' });
   };
 
   // Handle addon selection
@@ -340,6 +351,24 @@ const Package = () => {
       }
     }
     
+    if (!Array.isArray(sellCountries) || sellCountries.length === 0) {
+      newErrors.sellCountries = currentLanguage === 'nl'
+        ? 'Selecteer minimaal één land waar je wilt verkopen'
+        : currentLanguage === 'de'
+        ? 'Wählen Sie mindestens ein Land aus, in dem Sie verkaufen möchten'
+        : currentLanguage === 'fr'
+        ? 'Sélectionnez au moins un pays dans lequel vous souhaitez vendre'
+        : 'Select at least one country you want to sell in';
+    }
+    if (!payoutFrequency || !['weekly', 'monthly'].includes(payoutFrequency)) {
+      newErrors.payoutFrequency = currentLanguage === 'nl'
+        ? 'Kies wekelijkse of maandelijkse uitbetaling'
+        : currentLanguage === 'de'
+        ? 'Wählen Sie wöchentliche oder monatliche Auszahlung'
+        : currentLanguage === 'fr'
+        ? 'Choisissez le paiement hebdomadaire ou mensuel'
+        : 'Please choose weekly or monthly payout';
+    }
     if (!agreementAccepted) {
       newErrors.agreement = 'You must accept the agreement to continue';
     }
@@ -368,7 +397,9 @@ const Package = () => {
           sellerEmail: sellerEmail.trim(),
           startDate: startDate,
           commissionPercentage: commissionPercentage ? parseFloat(commissionPercentage) : null,
-          billingPeriod: billingPeriod
+          billingPeriod: billingPeriod,
+          sellCountries: sellCountries,
+          payoutFrequency: payoutFrequency
       };
       
       // Add seller ID only for existing customers (not for new customers)
@@ -1244,6 +1275,55 @@ const Package = () => {
             </section>
           )}
 
+          {/* Sell countries & payout frequency - shown when package selected */}
+          {selectedPackage && (
+            <>
+              <section className="package-sell-countries">
+                <h2>{getTranslation(currentLanguage, 'sellCountriesTitle')}</h2>
+                <p className="form-hint">{getTranslation(currentLanguage, 'sellCountriesHint')}</p>
+                <div className="sell-countries-list">
+                  {SELL_COUNTRY_OPTIONS.map((code) => (
+                    <label key={code} className="sell-country-item">
+                      <input
+                        type="checkbox"
+                        checked={sellCountries.includes(code)}
+                        onChange={() => toggleSellCountry(code)}
+                      />
+                      <span>{getTranslation(currentLanguage, `country${code}`)}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.sellCountries && <div className="error-message">{errors.sellCountries}</div>}
+              </section>
+              <section className="package-payout-frequency">
+                <h2>{getTranslation(currentLanguage, 'payoutFrequencyTitle')}</h2>
+                <div className="payout-frequency-options">
+                  <label className={`payout-frequency-option ${payoutFrequency === 'monthly' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="payoutFrequency"
+                      value="monthly"
+                      checked={payoutFrequency === 'monthly'}
+                      onChange={() => { setPayoutFrequency('monthly'); setErrors({ ...errors, payoutFrequency: '' }); }}
+                    />
+                    <span>{getTranslation(currentLanguage, 'payoutFrequencyMonthly')}</span>
+                  </label>
+                  <label className={`payout-frequency-option ${payoutFrequency === 'weekly' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="payoutFrequency"
+                      value="weekly"
+                      checked={payoutFrequency === 'weekly'}
+                      onChange={() => { setPayoutFrequency('weekly'); setErrors({ ...errors, payoutFrequency: '' }); }}
+                    />
+                    <span>{getTranslation(currentLanguage, 'payoutFrequencyWeekly')}</span>
+                  </label>
+                </div>
+                {errors.payoutFrequency && <div className="error-message">{errors.payoutFrequency}</div>}
+              </section>
+            </>
+          )}
+
           {/* Payment Section */}
           <section className="package-payment">
             <h2>{getTranslation(currentLanguage, 'paymentTitle')}</h2>
@@ -1339,6 +1419,23 @@ const Package = () => {
                     </span>
                   </div>
                 )}
+                {sellCountries.length > 0 && (
+                  <div className="summary-item">
+                    <span className="summary-label">{getTranslation(currentLanguage, 'sellCountriesTitle')}:</span>
+                    <span className="summary-value">
+                      {sellCountries.map(code => getTranslation(currentLanguage, `country${code}`)).join(', ')}
+                    </span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">{getTranslation(currentLanguage, 'payoutFrequencyTitle')}:</span>
+                  <span className="summary-value">
+                    {payoutFrequency === 'monthly'
+                      ? getTranslation(currentLanguage, 'payoutFrequencyMonthly')
+                      : getTranslation(currentLanguage, 'payoutFrequencyWeekly')
+                    }
+                  </span>
+                </div>
                 <div className="summary-item">
                   <span className="summary-label">{getTranslation(currentLanguage, 'packageSummaryBilling')}:</span>
                   <span className="summary-value">

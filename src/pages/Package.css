@@ -305,6 +305,88 @@
   color: #333;
 }
 
+/* Sell countries & payout frequency */
+.package-sell-countries,
+.package-payout-frequency {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.package-sell-countries h2,
+.package-payout-frequency h2 {
+  font-size: 28px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.package-sell-countries .form-hint,
+.package-payout-frequency .form-hint {
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 15px;
+}
+
+.sell-countries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.sell-country-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sell-country-item:hover {
+  border-color: var(--sdeal-orange, #e2603f);
+  background: #fff9f7;
+}
+
+.sell-country-item input {
+  margin: 0;
+}
+
+.payout-frequency-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.payout-frequency-option {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payout-frequency-option:hover {
+  border-color: var(--sdeal-orange, #e2603f);
+  background: #fff9f7;
+}
+
+.payout-frequency-option.selected {
+  border-color: var(--sdeal-orange, #e2603f);
+  background: #fff9f7;
+}
+
+.payout-frequency-option input {
+  margin-right: 12px;
+}
+
 /* Seller Info Step Section */
 .package-seller-info-step {
   background: #f5f5f5;

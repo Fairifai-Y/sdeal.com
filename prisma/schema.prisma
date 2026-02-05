@@ -26,6 +26,8 @@ model PackageSelection {
   startDate            String // "immediate" or "2026-01-01"
   commissionPercentage Float? // Commission percentage (12% min for A, 4% min for B/C)
   billingPeriod        String? // "monthly" or "yearly"
+  sellCountries        Json?   // Array of country codes where seller wants to sell (e.g. ["NL","DE","SE"])
+  payoutFrequency      String? // "weekly" or "monthly" - when we pay out orders via our system
 
   // New customer registration fields (NAW + business details)
   isNewCustomer Boolean @default(false)

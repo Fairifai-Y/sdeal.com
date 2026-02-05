@@ -171,6 +171,20 @@ const sendConfirmationEmail = async (packageSelection, sellerEmail, sellerId, la
               <div class="value">${billingPeriodText}</div>
             </div>
             
+            ${packageSelection.sellCountries && Array.isArray(packageSelection.sellCountries) && packageSelection.sellCountries.length > 0 ? `
+            <div class="details">
+              <div class="label">Sell countries:</div>
+              <div class="value">${packageSelection.sellCountries.join(', ')}</div>
+            </div>
+            ` : ''}
+            
+            ${packageSelection.payoutFrequency ? `
+            <div class="details">
+              <div class="label">Payout frequency (orders via SDeal):</div>
+              <div class="value">${packageSelection.payoutFrequency === 'weekly' ? 'Weekly' : 'Monthly'}</div>
+            </div>
+            ` : ''}
+            
             ${addons.length > 0 ? `
             <div class="details">
               <div class="label">Selected Add-ons:</div>
@@ -227,6 +241,7 @@ Package: ${packageName}
 ${!packageSelection.isNewCustomer && sellerId && !sellerId.startsWith('NEW-') ? `Seller ID: ${sellerId}\n` : ''}Start Date: ${startDateText}
 Commission Percentage: ${commissionText}
 Billing Period: ${billingPeriodText}
+${packageSelection.sellCountries && Array.isArray(packageSelection.sellCountries) && packageSelection.sellCountries.length > 0 ? `Sell countries: ${packageSelection.sellCountries.join(', ')}\n` : ''}${packageSelection.payoutFrequency ? `Payout frequency (orders via SDeal): ${packageSelection.payoutFrequency === 'weekly' ? 'Weekly' : 'Monthly'}\n` : ''}
 ${addons.length > 0 ? `Selected Add-ons:\n• ${addonsText}` : 'Selected Add-ons: None'}
 
 ${packageSelection.isNewCustomer ? `
@@ -380,6 +395,8 @@ module.exports = async (req, res) => {
       startDate,
       commissionPercentage,
       billingPeriod,
+      sellCountries: sellCountriesParam,
+      payoutFrequency: payoutFrequencyParam,
       newCustomer,
       customerData
     } = req.body;
@@ -474,6 +491,21 @@ module.exports = async (req, res) => {
       ? billingPeriod 
       : 'monthly';
     
+    // Validate sell countries: array of allowed codes (NL, BE, DE, FR, GB, AT, IT, DK, SE)
+    const allowedCountries = ['NL', 'BE', 'DE', 'FR', 'GB', 'AT', 'IT', 'DK', 'SE'];
+    const sellCountries = Array.isArray(sellCountriesParam) 
+      ? sellCountriesParam.filter(c => typeof c === 'string' && allowedCountries.includes(c.toUpperCase()))
+      : [];
+    if (sellCountries.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Select at least one country you want to sell in.'
+      });
+    }
+    const payoutValue = payoutFrequencyParam && ['weekly', 'monthly'].includes(payoutFrequencyParam)
+      ? payoutFrequencyParam
+      : 'monthly';
+    
     console.log('Saving to database with values:');
     console.log('- commissionPercentage:', commissionValue);
     console.log('- commissionPercentage type:', typeof commissionValue);
@@ -496,6 +528,8 @@ module.exports = async (req, res) => {
       startDate: startDate,
       commissionPercentage: commissionValue,
       billingPeriod: billingValue,
+      sellCountries: sellCountries,
+      payoutFrequency: payoutValue,
       isNewCustomer: newCustomer || false
     };
     
