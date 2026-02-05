@@ -32,15 +32,15 @@ async function sendPaymentSuccessNotification(packageSelection) {
   const to = (process.env.NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || 'onboarding@sdeal.com').trim();
   if (!to || !process.env.SENDGRID_API_KEY || !process.env.FROM_EMAIL) return;
   try {
-    const subject = 'SDeal – Betaling geslaagd';
+    const subject = 'SDeal – Payment successful';
     const seller = [packageSelection.firstName, packageSelection.lastName].filter(Boolean).join(' ') || packageSelection.sellerEmail || '–';
     const pkg = packageLabel(packageSelection.package);
     const text = [
-      'De betaling is succesvol afgerond.',
+      'The payment was completed successfully.',
       '',
       `Seller: ${seller}`,
       packageSelection.sellerEmail ? `Email: ${packageSelection.sellerEmail}` : '',
-      `Pakket: ${pkg}`,
+      `Package: ${pkg}`,
       `PackageSelection ID: ${packageSelection.id}`,
     ].filter(Boolean).join('\n');
     await sgMail.send({
