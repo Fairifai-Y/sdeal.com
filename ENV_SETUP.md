@@ -43,6 +43,8 @@ MAGENTO_API_BASE_URL="https://www.sdeal.nl/rest/V1"
 
 # SendGrid Email Configuration (optional)
 SENDGRID_API_KEY="your-sendgrid-api-key"
+FROM_EMAIL="noreply@yourdomain.com"        # Verzenderadres voor alle e-mails
+NOTIFICATION_EMAIL="admin@yourdomain.com"   # Ontvanger van o.a. "Betaling geslaagd"-notificatie
 
 # Mollie Payment Configuration (optional)
 MOLLIE_API_KEY="your-mollie-api-key"
