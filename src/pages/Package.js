@@ -37,7 +37,7 @@ const Package = () => {
   // For existing customers, default to 2026-01-01 if before 2026, otherwise immediate
   const [startDate, setStartDate] = useState('immediate');
   const [commissionPercentage, setCommissionPercentage] = useState('');
-  const [sellCountries, setSellCountries] = useState([]); // Country codes: NL, BE, DE, FR, GB, AT, IT, DK, SE
+  const [sellCountries, setSellCountries] = useState([]); // Country codes: NL, BE, DE, FR, AT, IT, DK, SE
   const [payoutFrequency, setPayoutFrequency] = useState('monthly'); // 'weekly' | 'monthly' for orders via our system
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,7 +111,7 @@ const Package = () => {
   };
 
   // Sell country options: current markets + Sweden
-  const SELL_COUNTRY_OPTIONS = ['NL', 'BE', 'DE', 'FR', 'GB', 'AT', 'IT', 'DK', 'SE'];
+  const SELL_COUNTRY_OPTIONS = ['NL', 'BE', 'DE', 'FR', 'AT', 'IT', 'DK', 'SE'];
   const toggleSellCountry = (code) => {
     setSellCountries(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]

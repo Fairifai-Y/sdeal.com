@@ -491,8 +491,8 @@ module.exports = async (req, res) => {
       ? billingPeriod 
       : 'monthly';
     
-    // Validate sell countries: array of allowed codes (NL, BE, DE, FR, GB, AT, IT, DK, SE)
-    const allowedCountries = ['NL', 'BE', 'DE', 'FR', 'GB', 'AT', 'IT', 'DK', 'SE'];
+    // Validate sell countries: array of allowed codes (NL, BE, DE, FR, AT, IT, DK, SE – no GB)
+    const allowedCountries = ['NL', 'BE', 'DE', 'FR', 'AT', 'IT', 'DK', 'SE'];
     const sellCountries = Array.isArray(sellCountriesParam) 
       ? sellCountriesParam.filter(c => typeof c === 'string' && allowedCountries.includes(c.toUpperCase()))
       : [];
