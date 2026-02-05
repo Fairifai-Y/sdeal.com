@@ -573,6 +573,9 @@ const Package = () => {
           
           {packageSelectionId && (
             <div style={{ marginTop: '30px' }}>
+              <p className="payment-platform-fee-note">
+                {getTranslation(currentLanguage, 'paymentPlatformFeeNote')}
+              </p>
               <button
                 onClick={handlePaymentClick}
                 className="cta-button"
@@ -1324,9 +1327,9 @@ const Package = () => {
             </>
           )}
 
-          {/* Payment Section */}
+          {/* Payment Section - platform fee (subscription), distinct from payout frequency above */}
           <section className="package-payment">
-            <h2>{getTranslation(currentLanguage, 'paymentTitle')}</h2>
+            <h2>{getTranslation(currentLanguage, 'paymentTitlePlatformFee')}</h2>
             <div className="payment-options">
               <label className={`payment-option ${billingPeriod === 'monthly' ? 'selected' : ''}`}>
                 <input

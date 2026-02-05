@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "installCommand": "npm install",
-  "buildCommand": "npm run vercel-build",
+  "framework": null,
+  "installCommand": "npm install && (cd server && npm install) && npx prisma generate && npm run setup-images",
+  "buildCommand": "npm run build",
   "outputDirectory": "build",
   "crons": [
     {
