@@ -32,7 +32,7 @@
     "setup-images": "node scripts/setup-images.js",
     "postinstall": "npm run setup-images",
     "prisma:generate": "prisma generate",
-    "vercel-build": "npm run prisma:generate && npm run setup-images && npm run build",
+    "vercel-build": "node scripts/vercel-build-once.js",
     "vercel-build:with-migrations": "npm install && cd server && npm install && cd .. && npm run prisma:generate && npm run prisma:migrate:deploy && npm run setup-images && npm run build",
     "prisma:migrate:deploy": "prisma migrate deploy"
   },
