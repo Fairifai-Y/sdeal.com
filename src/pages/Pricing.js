@@ -35,7 +35,9 @@ const Pricing = () => {
         getTranslation(currentLanguage, 'packageAFeature3'),
         getTranslation(currentLanguage, 'packageAFeature4'),
         getTranslation(currentLanguage, 'packageAFeature5')
-      ]
+      ],
+      ctaKey: 'startSellingToday',
+      icon: 'check'
     },
     {
       id: 'B',
@@ -50,8 +52,13 @@ const Pricing = () => {
         getTranslation(currentLanguage, 'packageBFeature3'),
         getTranslation(currentLanguage, 'packageBFeature4'),
         getTranslation(currentLanguage, 'packageBFeature5'),
-        getTranslation(currentLanguage, 'packageBFeature6')
-      ]
+        getTranslation(currentLanguage, 'packageBFeature6'),
+        getTranslation(currentLanguage, 'packageBFeature7')
+      ],
+      ctaKey: 'scaleSalesToday',
+      icon: 'arrow',
+      highlighted: true,
+      mostPopular: true
     },
     {
       id: 'C',
@@ -67,10 +74,11 @@ const Pricing = () => {
         getTranslation(currentLanguage, 'packageCFeature4'),
         getTranslation(currentLanguage, 'packageCFeature5'),
         getTranslation(currentLanguage, 'packageCFeature6'),
-        getTranslation(currentLanguage, 'packageCFeature7'),
-        getTranslation(currentLanguage, 'packageCFeature8')
+        getTranslation(currentLanguage, 'packageCFeature7')
       ],
-      highlighted: true
+      ctaKey: 'maximizeRevenueToday',
+      icon: 'arrow',
+      fullPackage: true
     }
   ];
 
@@ -151,7 +159,7 @@ const Pricing = () => {
               onClick={() => setBillingPeriod('yearly')}
             >
               {getTranslation(currentLanguage, 'yearly')}
-              <span className="discount-badge">-25%</span>
+              <span className="discount-badge">{getTranslation(currentLanguage, 'yearlySave')}</span>
             </button>
           </div>
         </div>
@@ -161,15 +169,21 @@ const Pricing = () => {
             {packages.map((pkg) => (
               <div key={pkg.id} className={`pricing-card ${pkg.highlighted ? 'highlighted' : ''}`}>
                 <div className="package-icon">
-                  {pkg.id === 'A' && <span className="icon-check">✓</span>}
-                  {pkg.id === 'B' && <span className="icon-arrow">→</span>}
-                  {pkg.id === 'C' && <span className="icon-star">★</span>}
+                  {pkg.icon === 'check' && <span className="icon-check">✓</span>}
+                  {pkg.icon === 'arrow' && <span className="icon-arrow">→</span>}
                 </div>
+                {pkg.mostPopular && (
+                  <span className="package-most-popular">{getTranslation(currentLanguage, 'packageBMostPopular')}</span>
+                )}
+                {pkg.fullPackage && (
+                  <span className="package-full-package">{getTranslation(currentLanguage, 'packageCFullPackage')}</span>
+                )}
                 <h3 className="package-title">{pkg.title}</h3>
                 <p className="package-subtitle">{pkg.subtitle}</p>
                 <div className="package-price">
-                  <span className="price-amount">{calculatePrice(pkg.monthlyPrice)}</span>
-                  <span className="price-period"> {pkg.period}</span>
+                  <p className="package-price-line">
+                    {getTranslation(currentLanguage, 'noSetupCosts')}, {calculatePrice(pkg.monthlyPrice)} / {pkg.period}
+                  </p>
                 </div>
                 <ul className="package-features">
                   {pkg.features.map((feature, index) => (
@@ -183,7 +197,7 @@ const Pricing = () => {
                   to={getLocalizedUrl(`/package?newCustomer=true&package=${pkg.id}`, currentLanguage)}
                   className="package-start-selling-btn"
                 >
-                  {getTranslation(currentLanguage, 'startSelling')}
+                  👉 {getTranslation(currentLanguage, pkg.ctaKey)}
                 </Link>
               </div>
             ))}

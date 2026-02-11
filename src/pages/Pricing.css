@@ -111,8 +111,32 @@
   transform: scale(1.05);
 }
 
+.package-most-popular {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--sdeal-orange);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.package-full-package {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--sdeal-dark-blue);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
 .pricing-card.highlighted::before {
-  content: 'POPULAR';
+  content: none;
   position: absolute;
   top: 20px;
   right: 20px;
@@ -160,6 +184,13 @@
   margin-bottom: 40px;
   padding-bottom: 30px;
   border-bottom: 2px solid #f0f0f0;
+}
+
+.package-price-line {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--sdeal-dark-blue);
+  margin: 0;
 }
 
 .price-amount {
