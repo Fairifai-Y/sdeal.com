@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { UserButton, useAuth } from '@clerk/clerk-react';
 import { useUser } from '@clerk/clerk-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
-import { getTranslation } from '../translations/translations';
 import SEOHead from '../components/SEOHead';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
@@ -21,7 +19,6 @@ function getApiBase() {
 export default function Dashboard() {
   const { user } = useUser();
   const { getToken } = useAuth();
-  const { currentLanguage } = useLanguage();
   const location = useLocation();
   const { orderId } = useParams();
   const pathname = location.pathname || '';

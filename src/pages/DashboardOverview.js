@@ -14,8 +14,6 @@ function formatEuro(value) {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(value || 0));
 }
 
-const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-
 export default function DashboardOverview({ sellerInfo, balanceSummary, sellerLoading, sellerError }) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
