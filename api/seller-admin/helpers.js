@@ -271,6 +271,12 @@ const buildSearchCriteria = (filters = {}) => {
     filterGroupIndex++;
   }
 
+  // Add sort order (e.g. created_at DESC voor nieuwste eerst)
+  if (filters.sortBy) {
+    params['searchCriteria[sortOrders][0][field]'] = filters.sortBy;
+    params['searchCriteria[sortOrders][0][direction]'] = (filters.sortDirection || 'DESC').toUpperCase();
+  }
+
   // Add pagination
   if (filters.page) {
     params['searchCriteria[currentPage]'] = filters.page;

@@ -81,10 +81,23 @@ export default function DashboardOrders() {
 
   const t = (key) => getTranslation(currentLanguage, key);
   const rawItems = data?.items || [];
+  const getOrderDate = (order) => {
+    const raw = order.created_at ?? order.createdAt ?? order.order_date ?? order.date;
+    if (!raw) return 0;
+    const t = new Date(raw).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
+  const getOrderIdNum = (order) => {
+    const id = order.id ?? order.order_id;
+    if (id == null) return 0;
+    const n = Number(id);
+    return Number.isNaN(n) ? 0 : n;
+  };
   const items = [...rawItems].sort((a, b) => {
-    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return dateB - dateA;
+    const dateA = getOrderDate(a);
+    const dateB = getOrderDate(b);
+    if (dateA || dateB) return dateB - dateA; // nieuwste eerst
+    return getOrderIdNum(b) - getOrderIdNum(a); // fallback: hogere id eerst
   });
   const totalCount = data?.total_count ?? data?.totalCount ?? rawItems.length;
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1;

@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
   const { supplierId } = req.dashboardUser;
   const { orderStatus, orderStatuses, dateFrom, dateTo, page = 1, pageSize = 20 } = req.query;
 
-  const filters = { supplierId };
+  const filters = { supplierId, sortBy: 'created_at', sortDirection: 'DESC' };
   if (orderStatuses) filters.orderStatus = orderStatuses.split(',').map((s) => s.trim());
   else if (orderStatus) filters.orderStatus = orderStatus;
   if (dateFrom) filters.dateFrom = dateFrom;
