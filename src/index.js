@@ -10,10 +10,15 @@ if (!publishableKey) {
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const app = <App />;
 root.render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={publishableKey}>
-      <App />
-    </ClerkProvider>
+    {publishableKey ? (
+      <ClerkProvider publishableKey={publishableKey}>
+        {app}
+      </ClerkProvider>
+    ) : (
+      app
+    )}
   </React.StrictMode>
 ); 

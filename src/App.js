@@ -24,22 +24,28 @@ import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import ProtectedDashboardRoute from './components/ProtectedDashboardRoute';
+import ClerkNotConfigured from './components/ClerkNotConfigured';
 import './App.css';
 
+const clerkPublishableKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY;
+
 function App() {
+  const clerkReady = Boolean(clerkPublishableKey);
+  const authFallback = <ClerkNotConfigured />;
+
   return (
     <HelmetProvider>
       <Router>
         <LanguageProvider>
           <div className="App">
             <Routes>
-              {/* Clerk: sign-in / sign-up - no header/footer */}
-              <Route path="/sign-in" element={<SignInPage />} />
-              <Route path="/sign-up" element={<SignUpPage />} />
+              {/* Clerk: sign-in / sign-up - no header/footer; fallback when key missing */}
+              <Route path="/sign-in" element={clerkReady ? <SignInPage /> : authFallback} />
+              <Route path="/sign-up" element={clerkReady ? <SignUpPage /> : authFallback} />
               {/* Admin: only for users with role admin */}
-              <Route path="/admin" element={<ProtectedAdminRoute><Admin /></ProtectedAdminRoute>} />
+              <Route path="/admin" element={clerkReady ? <ProtectedAdminRoute><Admin /></ProtectedAdminRoute> : authFallback} />
               {/* Dashboard: only for signed-in regular users */}
-              <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />
+              <Route path="/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               
               {/* All other routes with header/footer */}
               <Route path="*" element={

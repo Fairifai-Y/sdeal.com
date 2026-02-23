@@ -7,7 +7,8 @@ Clerk wordt gebruikt voor accountbeheer: **admin users** (alleen `/admin`) en **
 - **Frontend (lokaal + Vercel):** `REACT_APP_CLERK_PUBLISHABLE_KEY` – Publishable key uit het Clerk Dashboard.
 - **Backend (Vercel / api):** `CLERK_SECRET_KEY` – Secret key uit het Clerk Dashboard.
 
-Zet beide in je root `.env` en in Vercel → Project → Settings → Environment Variables.
+Zet beide in je root `.env` en in **Vercel → Project → Settings → Environment Variables**.  
+**Belangrijk voor Vercel:** Zonder `REACT_APP_CLERK_PUBLISHABLE_KEY` wordt de key niet in de build gestopt en krijg je een wit scherm of alleen “Inloggen is niet beschikbaar” op /sign-in, /admin, /dashboard. Voeg de variabele toe voor Production (en eventueel Preview) en redeploy.
 
 ## Clerk Dashboard
 
