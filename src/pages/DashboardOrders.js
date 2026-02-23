@@ -28,6 +28,18 @@ function getOrderStatusClass(status) {
   return '';
 }
 
+/** Haal eerste productafbeelding uit order (verschillende API-veldnamen). */
+function getOrderImageUrl(order) {
+  const raw =
+    order.product_image
+    || order.image_url
+    || order.thumbnail_url
+    || order.image
+    || (order.items && order.items[0] && (order.items[0].image_url || order.items[0].product_image || order.items[0].thumbnail_url || order.items[0].image));
+  if (!raw) return null;
+  return typeof raw === 'string' ? raw : (raw.url || raw.src) || null;
+}
+
 export default function DashboardOrders() {
   const { getToken } = useAuth();
   const { currentLanguage } = useLanguage();
@@ -68,8 +80,13 @@ export default function DashboardOrders() {
   }, [getToken, page, pageSize]);
 
   const t = (key) => getTranslation(currentLanguage, key);
-  const items = data?.items || [];
-  const totalCount = data?.total_count ?? data?.totalCount ?? items.length;
+  const rawItems = data?.items || [];
+  const items = [...rawItems].sort((a, b) => {
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA;
+  });
+  const totalCount = data?.total_count ?? data?.totalCount ?? rawItems.length;
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1;
 
   const completed = items.filter((o) => String(o.order_status || '').toLowerCase().includes('confirm') && !String(o.order_status || '').toLowerCase().includes('wait')).length;
@@ -163,7 +180,18 @@ export default function DashboardOrders() {
                 ) : (
                   items.map((order) => (
                     <tr key={order.id || order.order_id || Math.random()}>
-                      <td>{order.product_name || (order.items && order.items.length > 1 ? `${order.items.length} products` : order.items?.[0]?.name) || '–'}</td>
+                      <td>
+                        <div className="dashboard-orders-product-cell">
+                          {getOrderImageUrl(order) ? (
+                            <img src={getOrderImageUrl(order)} alt="" className="dashboard-orders-product-img" />
+                          ) : (
+                            <span className="dashboard-orders-product-placeholder" aria-hidden><i className="fa-solid fa-box" /></span>
+                          )}
+                          <span className="dashboard-orders-product-name">
+                            {order.product_name || (order.items && order.items.length > 1 ? `${order.items.length} products` : order.items?.[0]?.name) || '–'}
+                          </span>
+                        </div>
+                      </td>
                       <td>{order.order_id ?? order.id ?? '–'}</td>
                       <td>{formatEuro(order.total_amount_customer ?? order.order_amount_customer)}</td>
                       <td>{formatEuro(order.order_amount_org ?? order.order_amount)}</td>
