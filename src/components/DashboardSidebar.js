@@ -8,11 +8,14 @@ import './DashboardSidebar.css';
 function getFinancePath(lang) {
   return getLocalizedUrl('/dashboard/finance', lang);
 }
+function getOrdersPath(lang) {
+  return getLocalizedUrl('/dashboard/orders', lang);
+}
 
 const MENU_ITEMS = [
   { key: 'dashboard', translationKey: 'dashboard', icon: 'fa-house', path: '/dashboard', pathFn: null },
   { key: 'products', translationKey: 'dashboardProducts', icon: 'fa-box', path: '/dashboard', pathFn: null },
-  { key: 'orders', translationKey: 'dashboardOrders', icon: 'fa-cart-shopping', path: '/dashboard', pathFn: null },
+  { key: 'orders', translationKey: 'dashboardOrders', icon: 'fa-cart-shopping', path: '/dashboard/orders', pathFn: getOrdersPath },
   { key: 'disputes', translationKey: 'dashboardDisputes', icon: 'fa-shield-halved', path: '/dashboard', pathFn: null },
   { key: 'returns', translationKey: 'dashboardReturns', icon: 'fa-rotate-left', path: '/dashboard', pathFn: null },
   { key: 'performance', translationKey: 'dashboardPerformance', icon: 'fa-chart-pie', path: '/dashboard', pathFn: null },
@@ -38,9 +41,10 @@ export default function DashboardSidebar({ activeSection = 'dashboard' }) {
       <ul className="dashboard-sidebar-list">
         {MENU_ITEMS.map((item) => {
           const isActive =
-            (item.key === 'dashboard' && activeSection === 'dashboard' && !pathname.includes('/finance')) ||
+            (item.key === 'dashboard' && activeSection === 'dashboard' && !pathname.includes('/finance') && !pathname.includes('/orders')) ||
             (item.key === 'finance' && pathname.includes('/finance')) ||
-            (activeSection === item.key && item.key !== 'dashboard' && item.key !== 'finance');
+            (item.key === 'orders' && pathname.includes('/orders')) ||
+            (activeSection === item.key && !['dashboard', 'finance', 'orders'].includes(item.key));
           const to = item.pathFn ? item.pathFn(currentLanguage) : getLocalizedUrl(item.path, currentLanguage);
           const end = item.key === 'dashboard' && !item.pathFn;
           return (

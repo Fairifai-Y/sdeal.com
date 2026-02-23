@@ -47,12 +47,16 @@ function App() {
               {/* Dashboard: only for signed-in regular users (incl. localized) */}
               <Route path="/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/dashboard/finance" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/dashboard/orders" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/nl/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/nl/dashboard/finance" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/nl/dashboard/orders" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/de/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/de/dashboard/finance" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/de/dashboard/orders" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/fr/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               <Route path="/fr/dashboard/finance" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/fr/dashboard/orders" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               
               {/* All other routes with header/footer */}
               <Route path="*" element={

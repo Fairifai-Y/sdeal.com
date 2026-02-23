@@ -1,0 +1,250 @@
+.dashboard-orders {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dashboard-orders-title {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a365d;
+}
+
+.dashboard-orders-loading,
+.dashboard-orders-error {
+  margin: 1rem 0;
+}
+
+.dashboard-orders-error {
+  color: #b91c1c;
+  padding: 0.75rem;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.dashboard-orders-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-orders-status-block {
+  flex: 1;
+  min-width: 200px;
+}
+
+.dashboard-orders-status-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dashboard-orders-status-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.25rem;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 0.7rem;
+  cursor: help;
+}
+
+.dashboard-orders-status-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-orders-status-seg {
+  min-width: 2px;
+  transition: width 0.2s;
+}
+
+.dashboard-orders-status-seg--completed { background: #3b82f6; }
+.dashboard-orders-status-seg--waiting { background: #9ca3af; }
+.dashboard-orders-status-seg--canceled { background: #ef4444; }
+
+.dashboard-orders-status-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.dashboard-orders-status-labels .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.dot--blue { background: #3b82f6; }
+.dot--grey { background: #9ca3af; }
+.dot--red { background: #ef4444; }
+
+.dashboard-orders-downloads {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.dashboard-orders-download-links {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  cursor: pointer;
+}
+
+.dashboard-orders-download-btn {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dashboard-orders-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-orders-records {
+  font-size: 0.9375rem;
+  color: #374151;
+}
+
+.dashboard-orders-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-orders-tool-btn {
+  padding: 0.4rem 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dashboard-orders-perpage {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.dashboard-orders-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.dashboard-orders-page-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dashboard-orders-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dashboard-orders-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dashboard-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.dashboard-orders-table th,
+.dashboard-orders-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+.dashboard-orders-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dashboard-orders-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.dashboard-orders-status-pill {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.orders-status--waiting {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.orders-status--confirmed,
+.orders-status--completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.orders-status--canceled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dashboard-orders-view-btn {
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.dashboard-orders-empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem !important;
+}

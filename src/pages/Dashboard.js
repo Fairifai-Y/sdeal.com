@@ -8,6 +8,7 @@ import SEOHead from '../components/SEOHead';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
 import DashboardFinance from './DashboardFinance';
+import DashboardOrders from './DashboardOrders';
 import './Dashboard.css';
 
 function getApiBase() {
@@ -20,7 +21,9 @@ export default function Dashboard() {
   const { getToken } = useAuth();
   const { currentLanguage } = useLanguage();
   const location = useLocation();
-  const isFinance = (location.pathname || '').includes('/finance');
+  const pathname = location.pathname || '';
+  const isFinance = pathname.includes('/finance');
+  const isOrders = pathname.includes('/orders');
   const [sellerInfo, setSellerInfo] = useState(null);
   const [sellerError, setSellerError] = useState(null);
   const [balanceSummary, setBalanceSummary] = useState(null);
@@ -94,10 +97,12 @@ export default function Dashboard() {
           </div>
         </header>
         <div className="dashboard-body">
-          <DashboardSidebar activeSection={isFinance ? 'finance' : 'dashboard'} />
+          <DashboardSidebar activeSection={isFinance ? 'finance' : isOrders ? 'orders' : 'dashboard'} />
           <main className="dashboard-main">
             {isFinance ? (
               <DashboardFinance />
+            ) : isOrders ? (
+              <DashboardOrders />
             ) : (
               <>
             <h1>{getTranslation(currentLanguage, 'dashboard')}</h1>
