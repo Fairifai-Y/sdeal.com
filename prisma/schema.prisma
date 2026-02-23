@@ -22,7 +22,8 @@ model PackageSelection {
   language             String // en, nl, de, fr
   ipAddress            String?
   sellerEmail          String? // Optional: if you want to track seller email
-  sellerId             String // Required: seller ID
+  sellerId             String // Required: seller ID (supplier_id in SDeal/Magento API)
+  clerkUserId          String? @unique // Clerk user ID: links this signup to a dashboard login
   startDate            String // "immediate" or "2026-01-01"
   commissionPercentage Float? // Commission percentage (12% min for A, 4% min for B/C)
   billingPeriod        String? // "monthly" or "yearly"
@@ -57,6 +58,7 @@ model PackageSelection {
   @@index([language])
   @@index([sellerId])
   @@index([isNewCustomer])
+  @@index([clerkUserId])
 }
 
 model Consumer {

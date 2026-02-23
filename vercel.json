@@ -108,6 +108,30 @@
       "dest": "/api/admin/ldg.js"
     },
     {
+      "src": "/api/admin/link-seller",
+      "dest": "/api/admin/link-seller.js"
+    },
+    {
+      "src": "/api/dashboard/me",
+      "dest": "/api/dashboard/me.js"
+    },
+    {
+      "src": "/api/dashboard/orders",
+      "dest": "/api/dashboard/orders.js"
+    },
+    {
+      "src": "/api/dashboard/balance",
+      "dest": "/api/dashboard/balance.js"
+    },
+    {
+      "src": "/api/dashboard/delivery-info",
+      "dest": "/api/dashboard/delivery-info.js"
+    },
+    {
+      "src": "/api/dashboard/reviews",
+      "dest": "/api/dashboard/reviews.js"
+    },
+    {
       "src": "/api/lifetime-discount/create-payment",
       "dest": "/api/lifetime-discount/create-payment.js"
     },
