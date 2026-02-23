@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { UserButton, useAuth } from '@clerk/clerk-react';
 import { useUser } from '@clerk/clerk-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import SEOHead from '../components/SEOHead';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
+import DashboardFinance from './DashboardFinance';
 import './Dashboard.css';
 
 function getApiBase() {
@@ -18,6 +19,8 @@ export default function Dashboard() {
   const { user } = useUser();
   const { getToken } = useAuth();
   const { currentLanguage } = useLanguage();
+  const location = useLocation();
+  const isFinance = (location.pathname || '').includes('/finance');
   const [sellerInfo, setSellerInfo] = useState(null);
   const [sellerError, setSellerError] = useState(null);
   const [balanceSummary, setBalanceSummary] = useState(null);
@@ -91,8 +94,12 @@ export default function Dashboard() {
           </div>
         </header>
         <div className="dashboard-body">
-          <DashboardSidebar activeSection="dashboard" />
+          <DashboardSidebar activeSection={isFinance ? 'finance' : 'dashboard'} />
           <main className="dashboard-main">
+            {isFinance ? (
+              <DashboardFinance />
+            ) : (
+              <>
             <h1>{getTranslation(currentLanguage, 'dashboard')}</h1>
             <p className="dashboard-welcome">
               Welkom, {user?.firstName || user?.primaryEmailAddress?.emailAddress || 'gebruiker'}.
@@ -131,6 +138,8 @@ export default function Dashboard() {
             )}
 
             <p>Dit is je persoonlijke dashboard. Hier kun je later je verkopen, orders en instellingen beheren.</p>
+              </>
+            )}
           </main>
         </div>
       </div>

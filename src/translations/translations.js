@@ -286,6 +286,23 @@ export const translations = {
     dashboardFeed: 'Feed',
     dashboardFaq: 'FAQ',
     dashboardNews: 'News',
+
+    // Finance (Balance Management)
+    financeTitle: 'Finance - Balance Management',
+    balancePendingLabel: 'Balance Pending Seller (waiting for confirmation)',
+    balanceConfirmedLabel: 'Balance Seller (confirmed)',
+    balanceAvailableLabel: 'Balance Available Seller (ready for payment)',
+    balanceRefundLabel: 'Balance Refund (available for refunds)',
+    sellerReserveLabel: 'Seller Reserve (available for negative payouts)',
+    addFundsButton: 'Add Funds',
+    automaticPaymentsButton: 'Automatic Payments accepted',
+    balanceNoteTitle: 'Balance Note',
+    balanceNotePending: 'Balance (waiting for confirmation) is the balance that has not yet been confirmed.',
+    balanceNoteConfirmed: 'Balance (Confirmed) is the balance that is waiting to be available.',
+    balanceNoteAvailable: 'Balance Available is the balance available for next payment. This balance will top up every Thursday.',
+    balanceNoteRefund: 'Balance refund is the amount you can use for refunding. If not sufficient please top up your balance.',
+    balanceNoteReserve: 'Seller Reserve: A safety buffer to protect your account from chargebacks or cancellations. If your reserve falls below €0, please top up your balance to restore it.',
+    financeLoading: 'Loading…',
   },
   
   nl: {
@@ -575,6 +592,23 @@ export const translations = {
     dashboardFeed: 'Feed',
     dashboardFaq: 'FAQ',
     dashboardNews: 'Nieuws',
+
+    // Finance (Balance Management)
+    financeTitle: 'Financiën - Saldobeheer',
+    balancePendingLabel: 'Saldo in behandeling (wacht op bevestiging)',
+    balanceConfirmedLabel: 'Saldo verkoper (bevestigd)',
+    balanceAvailableLabel: 'Saldo beschikbaar (klaar voor uitbetaling)',
+    balanceRefundLabel: 'Terugbetalingssaldo (beschikbaar voor refunds)',
+    sellerReserveLabel: 'Verkoperreserve (beschikbaar voor negatieve uitbetalingen)',
+    addFundsButton: 'Geld toevoegen',
+    automaticPaymentsButton: 'Automatische betalingen geaccepteerd',
+    balanceNoteTitle: 'Saldonotitie',
+    balanceNotePending: 'Saldo (wacht op bevestiging) is het saldo dat nog niet is bevestigd.',
+    balanceNoteConfirmed: 'Saldo (bevestigd) is het saldo dat wacht op beschikbaarheid.',
+    balanceNoteAvailable: 'Beschikbaar saldo is het saldo voor de volgende uitbetaling. Dit saldo wordt elke donderdag bijgevuld.',
+    balanceNoteRefund: 'Terugbetalingssaldo is het bedrag dat u kunt gebruiken voor refunds. Bij onvoldoende saldo kunt u bijstorten.',
+    balanceNoteReserve: 'Verkoperreserve: een buffer om uw account te beschermen bij chargebacks of annuleringen. Als uw reserve onder €0 komt, stort dan bij om deze te herstellen.',
+    financeLoading: 'Laden…',
   },
   
   de: {
@@ -864,6 +898,23 @@ export const translations = {
     dashboardFeed: 'Feed',
     dashboardFaq: 'FAQ',
     dashboardNews: 'Neuigkeiten',
+
+    // Finance (Balance Management)
+    financeTitle: 'Finanzen - Saldenverwaltung',
+    balancePendingLabel: 'Saldo ausstehend (wartet auf Bestätigung)',
+    balanceConfirmedLabel: 'Verkäufer-Saldo (bestätigt)',
+    balanceAvailableLabel: 'Verfügbares Saldo (bereit für Auszahlung)',
+    balanceRefundLabel: 'Rückerstattungssaldo (für Rückerstattungen)',
+    sellerReserveLabel: 'Verkäuferreserve (für negative Auszahlungen)',
+    addFundsButton: 'Geld aufladen',
+    automaticPaymentsButton: 'Automatische Zahlungen akzeptiert',
+    balanceNoteTitle: 'Saldo-Hinweis',
+    balanceNotePending: 'Saldo (wartet auf Bestätigung) ist das noch nicht bestätigte Saldo.',
+    balanceNoteConfirmed: 'Saldo (bestätigt) ist das Saldo, das auf Verfügbarkeit wartet.',
+    balanceNoteAvailable: 'Verfügbares Saldo ist das Saldo für die nächste Auszahlung. Es wird jeden Donnerstag aufgefüllt.',
+    balanceNoteRefund: 'Rückerstattungssaldo ist der Betrag für Rückerstattungen. Bitte laden Sie bei Bedarf auf.',
+    balanceNoteReserve: 'Verkäuferreserve: Ein Puffer zum Schutz vor Chargebacks oder Stornierungen. Unter €0 bitte aufladen.',
+    financeLoading: 'Laden…',
   },
   
   fr: {
@@ -1153,6 +1204,23 @@ export const translations = {
     dashboardFeed: 'Fil',
     dashboardFaq: 'FAQ',
     dashboardNews: 'Actualités',
+
+    // Finance (Balance Management)
+    financeTitle: 'Finance - Gestion des soldes',
+    balancePendingLabel: 'Solde en attente (en attente de confirmation)',
+    balanceConfirmedLabel: 'Solde vendeur (confirmé)',
+    balanceAvailableLabel: 'Solde disponible (prêt pour paiement)',
+    balanceRefundLabel: 'Solde remboursement (pour remboursements)',
+    sellerReserveLabel: 'Réserve vendeur (pour paiements négatifs)',
+    addFundsButton: 'Ajouter des fonds',
+    automaticPaymentsButton: 'Paiements automatiques acceptés',
+    balanceNoteTitle: 'Note de solde',
+    balanceNotePending: 'Le solde (en attente de confirmation) n\'est pas encore confirmé.',
+    balanceNoteConfirmed: 'Le solde (confirmé) est en attente de disponibilité.',
+    balanceNoteAvailable: 'Le solde disponible est utilisé pour le prochain paiement. Il est rechargé chaque jeudi.',
+    balanceNoteRefund: 'Le solde remboursement sert aux remboursements. En cas d\'insuffisance, rechargez votre solde.',
+    balanceNoteReserve: 'Réserve vendeur : tampon pour les rétrofacturations ou annulations. En dessous de 0 €, rechargez pour restaurer.',
+    financeLoading: 'Chargement…',
   }
 };
 

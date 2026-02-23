@@ -1,0 +1,131 @@
+.dashboard-finance {
+  max-width: 900px;
+}
+
+.dashboard-finance-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a365d;
+}
+
+.dashboard-finance-loading,
+.dashboard-finance-error {
+  margin: 1rem 0;
+}
+
+.dashboard-finance-error {
+  color: #b91c1c;
+  padding: 0.75rem;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.dashboard-finance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .dashboard-finance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-finance-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dashboard-finance-balance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.dashboard-finance-balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9375rem;
+}
+
+.dashboard-finance-balance-row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-finance-amount {
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+}
+
+.dashboard-finance-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dashboard-finance-btn {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.dashboard-finance-btn:hover {
+  opacity: 0.9;
+}
+
+.dashboard-finance-btn--add {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  color: #fff;
+}
+
+.dashboard-finance-btn--auto {
+  background: #22c55e;
+  color: #fff;
+}
+
+.dashboard-finance-note {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.dashboard-finance-note-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a365d;
+}
+
+.dashboard-finance-note-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.dashboard-finance-note-list li {
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-finance-note-list li:last-child {
+  margin-bottom: 0;
+}
