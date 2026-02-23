@@ -15,9 +15,10 @@ const clerkClient = CLERK_SECRET_KEY ? createClerkClient({ secretKey: CLERK_SECR
  * @returns {Promise<{ supplierId: string, packageSelection: object } | null>}
  */
 async function getSupplierIdForClerkUser(clerkUserId) {
-  if (!clerkUserId) return null;
+  const id = typeof clerkUserId === 'string' ? clerkUserId.trim() : clerkUserId;
+  if (!id) return null;
   const row = await prisma.packageSelection.findFirst({
-    where: { clerkUserId },
+    where: { clerkUserId: id },
     orderBy: { createdAt: 'desc' },
   });
   if (!row) return null;
