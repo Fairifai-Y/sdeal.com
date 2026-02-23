@@ -10,6 +10,7 @@ import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
 import DashboardFinance from './DashboardFinance';
 import DashboardOrders from './DashboardOrders';
 import DashboardOrderDetail from './DashboardOrderDetail';
+import DashboardOverview from './DashboardOverview';
 import './Dashboard.css';
 
 function getApiBase() {
@@ -109,46 +110,12 @@ export default function Dashboard() {
             ) : isOrders ? (
               <DashboardOrders />
             ) : (
-              <>
-            <h1>{getTranslation(currentLanguage, 'dashboard')}</h1>
-            <p className="dashboard-welcome">
-              Welkom, {user?.firstName || user?.primaryEmailAddress?.emailAddress || 'gebruiker'}.
-            </p>
-
-            {sellerLoading && (
-              <div className="dashboard-seller-box dashboard-seller-box--loading">
-                <p><strong>Sellergegevens</strong></p>
-                <p>Laden…</p>
-              </div>
-            )}
-
-            {!sellerLoading && sellerError && (
-              <div className="dashboard-seller-box dashboard-seller-box--error">
-                <p><strong>Sellergegevens</strong></p>
-                <p>{sellerError}</p>
-                <p className="dashboard-seller-hint">Controleer of je Clerk-account in de database gekoppeld is aan seller ID 173 (kolom clerkUserId in PackageSelection). Gebruik dezelfde Clerk user ID als in het Clerk Dashboard.</p>
-              </div>
-            )}
-
-            {!sellerLoading && sellerInfo && !sellerError && (
-              <div className="dashboard-seller-box">
-                <p><strong>Jouw seller</strong></p>
-                <p>Seller ID: <strong>{sellerInfo.supplierId}</strong></p>
-                {sellerInfo.sellerEmail && <p>E-mail: {sellerInfo.sellerEmail}</p>}
-                {sellerInfo.package && <p>Package: {sellerInfo.package}</p>}
-                {balanceSummary && (
-                  <div className="dashboard-balance-summary">
-                    <p><strong>Saldo (overzicht)</strong></p>
-                    <p>Totaal: €{parseFloat(balanceSummary.total || 0).toFixed(2)}</p>
-                    <p>Pending: €{parseFloat(balanceSummary.pending || 0).toFixed(2)}</p>
-                    <p>Beschikbaar: €{parseFloat(balanceSummary.available || 0).toFixed(2)}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <p>Dit is je persoonlijke dashboard. Hier kun je later je verkopen, orders en instellingen beheren.</p>
-              </>
+              <DashboardOverview
+                sellerInfo={sellerInfo}
+                balanceSummary={balanceSummary}
+                sellerLoading={sellerLoading}
+                sellerError={sellerError}
+              />
             )}
           </main>
         </div>

@@ -287,6 +287,20 @@ export const translations = {
     dashboardFaq: 'FAQ',
     dashboardNews: 'News',
 
+    dashboardTotalProductsLive: 'Total Products live',
+    dashboardToProducts: 'To products',
+    dashboardTotalProductsAdvertised: 'Total Products advertised',
+    dashboardGood: 'Good',
+    dashboardPreferredSeller: 'Preferred seller (SportDeal NL)',
+    dashboardToPreferredSeller: 'To preferred seller >>',
+    dashboardTotalRevenue: 'Total Revenue',
+    dashboardMonthlyRevenue: 'Monthly Revenue',
+    dashboardOrdersLabel: 'Orders',
+    dashboardRevenue: 'Revenue',
+    dashboardRevenuePerCountry: 'Revenue per country',
+    dashboardLast12Months: 'Last 12 Months',
+    dashboardNotPreferred: 'Not preferred',
+
     // Finance (Balance Management)
     financeTitle: 'Finance - Balance Management',
     balancePendingLabel: 'Balance Pending Seller (waiting for confirmation)',
@@ -653,6 +667,20 @@ export const translations = {
     dashboardFeed: 'Feed',
     dashboardFaq: 'FAQ',
     dashboardNews: 'Nieuws',
+
+    dashboardTotalProductsLive: 'Totaal producten live',
+    dashboardToProducts: 'Naar producten',
+    dashboardTotalProductsAdvertised: 'Totaal producten geadverteerd',
+    dashboardGood: 'Goed',
+    dashboardPreferredSeller: 'Voorkeursverkoper (SportDeal NL)',
+    dashboardToPreferredSeller: 'Naar voorkeursverkoper >>',
+    dashboardTotalRevenue: 'Totale omzet',
+    dashboardMonthlyRevenue: 'Maandomzet',
+    dashboardOrdersLabel: 'Orders',
+    dashboardRevenue: 'Omzet',
+    dashboardRevenuePerCountry: 'Omzet per land',
+    dashboardLast12Months: 'Laatste 12 maanden',
+    dashboardNotPreferred: 'Niet voorkeur',
 
     // Finance (Balance Management)
     financeTitle: 'Financiën - Saldobeheer',
@@ -1021,6 +1049,20 @@ export const translations = {
     dashboardFaq: 'FAQ',
     dashboardNews: 'Neuigkeiten',
 
+    dashboardTotalProductsLive: 'Produkte live gesamt',
+    dashboardToProducts: 'Zu Produkten',
+    dashboardTotalProductsAdvertised: 'Beworbene Produkte gesamt',
+    dashboardGood: 'Gut',
+    dashboardPreferredSeller: 'Bevorzugter Verkäufer (SportDeal NL)',
+    dashboardToPreferredSeller: 'Zum bevorzugten Verkäufer >>',
+    dashboardTotalRevenue: 'Gesamtumsatz',
+    dashboardMonthlyRevenue: 'Monatsumsatz',
+    dashboardOrdersLabel: 'Bestellungen',
+    dashboardRevenue: 'Umsatz',
+    dashboardRevenuePerCountry: 'Umsatz pro Land',
+    dashboardLast12Months: 'Letzte 12 Monate',
+    dashboardNotPreferred: 'Nicht bevorzugt',
+
     // Finance (Balance Management)
     financeTitle: 'Finanzen - Saldenverwaltung',
     balancePendingLabel: 'Saldo ausstehend (wartet auf Bestätigung)',
@@ -1387,6 +1429,20 @@ export const translations = {
     dashboardFeed: 'Fil',
     dashboardFaq: 'FAQ',
     dashboardNews: 'Actualités',
+
+    dashboardTotalProductsLive: 'Total produits en ligne',
+    dashboardToProducts: 'Vers les produits',
+    dashboardTotalProductsAdvertised: 'Total produits annoncés',
+    dashboardGood: 'Bien',
+    dashboardPreferredSeller: 'Vendeur préféré (SportDeal NL)',
+    dashboardToPreferredSeller: 'Vers vendeur préféré >>',
+    dashboardTotalRevenue: 'Chiffre d\'affaires total',
+    dashboardMonthlyRevenue: 'Chiffre d\'affaires mensuel',
+    dashboardOrdersLabel: 'Commandes',
+    dashboardRevenue: 'Chiffre d\'affaires',
+    dashboardRevenuePerCountry: 'Chiffre d\'affaires par pays',
+    dashboardLast12Months: '12 derniers mois',
+    dashboardNotPreferred: 'Non préféré',
 
     // Finance (Balance Management)
     financeTitle: 'Finance - Gestion des soldes',
