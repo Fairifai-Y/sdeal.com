@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import SEOHead from '../components/SEOHead';
 import DashboardSidebar from '../components/DashboardSidebar';
+import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -24,6 +25,7 @@ export default function Dashboard() {
             <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
           </Link>
           <div className="dashboard-user">
+            <DashboardLanguageSwitcher />
             <span className="dashboard-user-name">{user?.firstName || 'Gebruiker'}</span>
             <UserButton afterSignOutUrl="/" />
           </div>

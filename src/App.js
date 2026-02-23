@@ -44,8 +44,11 @@ function App() {
               <Route path="/sign-up" element={clerkReady ? <SignUpPage /> : authFallback} />
               {/* Admin: only for users with role admin */}
               <Route path="/admin" element={clerkReady ? <ProtectedAdminRoute><Admin /></ProtectedAdminRoute> : authFallback} />
-              {/* Dashboard: only for signed-in regular users */}
+              {/* Dashboard: only for signed-in regular users (incl. localized) */}
               <Route path="/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/nl/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/de/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
+              <Route path="/fr/dashboard" element={clerkReady ? <ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute> : authFallback} />
               
               {/* All other routes with header/footer */}
               <Route path="*" element={
