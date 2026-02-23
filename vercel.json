@@ -120,6 +120,10 @@
       "dest": "/api/dashboard/orders.js"
     },
     {
+      "src": "/api/dashboard/order",
+      "dest": "/api/dashboard/order.js"
+    },
+    {
       "src": "/api/dashboard/balance",
       "dest": "/api/dashboard/balance.js"
     },

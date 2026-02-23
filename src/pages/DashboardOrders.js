@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
+import { getLocalizedUrl } from '../utils/languageUtils';
 import './DashboardOrders.css';
 
 function getApiBase() {
@@ -64,6 +66,7 @@ function getOrderImageUrl(order) {
 
 export default function DashboardOrders() {
   const { getToken } = useAuth();
+  const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -246,7 +249,16 @@ export default function DashboardOrders() {
                         </span>
                       </td>
                       <td>{order.paypal_disputes ?? t('noDispute')}</td>
-                      <td><button type="button" className="dashboard-orders-view-btn" aria-label={t('ordersColView')}>👁</button></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="dashboard-orders-view-btn"
+                          aria-label={t('ordersColView')}
+                          onClick={() => navigate(getLocalizedUrl(`/dashboard/orders/${order.order_id ?? order.id}`, currentLanguage))}
+                        >
+                          👁
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

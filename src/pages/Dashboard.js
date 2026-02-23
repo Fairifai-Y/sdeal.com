@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserButton, useAuth } from '@clerk/clerk-react';
 import { useUser } from '@clerk/clerk-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../translations/translations';
 import SEOHead from '../components/SEOHead';
@@ -9,6 +9,7 @@ import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardLanguageSwitcher from '../components/DashboardLanguageSwitcher';
 import DashboardFinance from './DashboardFinance';
 import DashboardOrders from './DashboardOrders';
+import DashboardOrderDetail from './DashboardOrderDetail';
 import './Dashboard.css';
 
 function getApiBase() {
@@ -21,9 +22,11 @@ export default function Dashboard() {
   const { getToken } = useAuth();
   const { currentLanguage } = useLanguage();
   const location = useLocation();
+  const { orderId } = useParams();
   const pathname = location.pathname || '';
   const isFinance = pathname.includes('/finance');
   const isOrders = pathname.includes('/orders');
+  const isOrderDetail = Boolean(orderId);
   const [sellerInfo, setSellerInfo] = useState(null);
   const [sellerError, setSellerError] = useState(null);
   const [balanceSummary, setBalanceSummary] = useState(null);
@@ -99,7 +102,9 @@ export default function Dashboard() {
         <div className="dashboard-body">
           <DashboardSidebar activeSection={isFinance ? 'finance' : isOrders ? 'orders' : 'dashboard'} />
           <main className="dashboard-main">
-            {isFinance ? (
+            {isOrderDetail ? (
+              <DashboardOrderDetail />
+            ) : isFinance ? (
               <DashboardFinance />
             ) : isOrders ? (
               <DashboardOrders />
