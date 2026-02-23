@@ -363,7 +363,7 @@ export const translations = {
     contactCustomer: 'Contact Customer',
     orderStore: 'Order Store',
     backToOrders: 'Back to orders',
-    orderDetailN/A: 'N/A',
+    'orderDetailN/A': 'N/A',
   },
   
   nl: {
@@ -730,7 +730,7 @@ export const translations = {
     contactCustomer: 'Contact klant',
     orderStore: 'Order store',
     backToOrders: 'Terug naar orders',
-    orderDetailN/A: 'N.v.t.',
+    'orderDetailN/A': 'N.v.t.',
   },
   
   de: {
@@ -1097,7 +1097,7 @@ export const translations = {
     contactCustomer: 'Kundenkontakt',
     orderStore: 'Bestellstore',
     backToOrders: 'Zurück zu Bestellungen',
-    orderDetailN/A: 'k. A.',
+    'orderDetailN/A': 'k. A.',
   },
   
   fr: {
@@ -1464,7 +1464,7 @@ export const translations = {
     contactCustomer: 'Contact client',
     orderStore: 'Boutique',
     backToOrders: 'Retour aux commandes',
-    orderDetailN/A: 'N/D',
+    'orderDetailN/A': 'N/D',
   }
 };
 
