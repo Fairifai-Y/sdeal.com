@@ -76,7 +76,6 @@ export default function DashboardOrders() {
   const waiting = items.filter((o) => String(o.order_status || '').toLowerCase().includes('wait')).length;
   const canceled = items.filter((o) => String(o.order_status || '').toLowerCase().includes('cancel')).length;
   const total = items.length;
-  const pct = (n) => (total > 0 ? ((n / total) * 100).toFixed(2) : '0');
   const pctCompleted = total > 0 ? (completed / total * 100).toFixed(2) : '0';
   const pctWaiting = total > 0 ? (waiting / total * 100).toFixed(2) : '0';
   const pctCanceled = total > 0 ? (canceled / total * 100).toFixed(2) : '0';
