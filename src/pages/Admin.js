@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 import './Admin.css';
 
 const Admin = () => {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { signOut } = useClerk();
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState('overview');
   const [overviewData, setOverviewData] = useState(null);
   const [financeData, setFinanceData] = useState(null);
@@ -133,63 +135,30 @@ const Admin = () => {
     { name: 'unsubscribeToken', label: 'Uitschrijftoken', description: 'Unieke token voor uitschrijven', example: 'abc123...' }
   ];
 
-  // Helper function to get auth token
-  const getAuthToken = () => {
-    return localStorage.getItem('adminToken');
-  };
-
-  // Helper function to make authenticated requests
+  // Helper function to make authenticated requests (uses Clerk session token)
   const authenticatedFetch = async (url, options = {}) => {
-    const token = getAuthToken();
+    const token = await getToken();
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers
     };
-    
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
-    const response = await fetch(url, {
-      ...options,
-      headers
-    });
-    
-    // If token is invalid/expired, logout user
+    const response = await fetch(url, { ...options, headers });
     if (response.status === 401) {
       handleLogout();
       throw new Error('Authentication required');
     }
-    
     return response;
   };
 
-  // Check if user is already authenticated
+  // Set authenticated when Clerk is loaded and user is signed in (ProtectedAdminRoute ensures admin role)
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      // Verify token is still valid
-      authenticatedFetch('/api/admin/auth', {
-        method: 'GET'
-      })
-        .then(res => res.json())
-        .then(result => {
-          if (result.success && result.valid) {
-            setIsAuthenticated(true);
-          } else {
-            // Token invalid, remove it
-            localStorage.removeItem('adminToken');
-            setIsAuthenticated(false);
-          }
-        })
-        .catch(() => {
-          // Error checking token, assume invalid
-          localStorage.removeItem('adminToken');
-          setIsAuthenticated(false);
-        });
+    if (isLoaded && isSignedIn) {
+      setIsAuthenticated(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   const fetchSectionData = async (section) => {
     setLoading(true);
@@ -572,56 +541,14 @@ const Admin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignForm.templateId, campaignForm.listId, mailingData.templates, mailingData.lists]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    try {
-      const response = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ password })
-      });
-      
-      // Check if response is OK and is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        setError(`Server error: ${response.status} ${response.statusText}. Please check the logs.`);
-        setPassword('');
-        return;
-      }
-      
-      const result = await response.json();
-      
-      if (result.success && result.data && result.data.token) {
-        // Store token in localStorage (more persistent than sessionStorage)
-        localStorage.setItem('adminToken', result.data.token);
-        setIsAuthenticated(true);
-        setError('');
-        setPassword('');
-      } else {
-        setError(result.error || 'Incorrect password. Please try again.');
-        setPassword('');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError(`Login failed: ${error.message}. Please try again.`);
-      setPassword('');
-    }
-  };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('adminToken');
-    setPassword('');
     setSearchQuery('');
     setSearchResults(null);
     setSelectedSeller(null);
     setSellerInfo(null);
+    await signOut();
+    navigate('/');
   };
 
   const fetchSellerInfo = async (sellerId) => {
@@ -722,34 +649,11 @@ const Admin = () => {
     setSellerInfoError(null);
   };
 
-  if (!isAuthenticated) {
+  if (!isLoaded || !isAuthenticated) {
     return (
       <div className="admin-container">
-        <div className="admin-header-top">
-          <Link to="/" className="admin-logo-link">
-            <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
-          </Link>
-        </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 20px' }}>
-          <div className="admin-login">
-            <h1>Admin Login</h1>
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <label htmlFor="password">Password:</label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
-                  required
-                  autoFocus
-                />
-              </div>
-              {error && <div className="error-message">{error}</div>}
-              <button type="submit" className="login-button">Login</button>
-            </form>
-          </div>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+          <div className="admin-loading">Loading...</div>
         </div>
       </div>
     );

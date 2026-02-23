@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 module.exports = async (req, res) => {
   // Require authentication for all admin endpoints
-  if (!requireAuth(req, res)) {
+  if (!(await requireAuth(req, res))) {
     return; // Error response already sent
   }
   

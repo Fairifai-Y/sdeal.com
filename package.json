@@ -4,6 +4,8 @@
   "description": "SDeal.com React Application",
   "private": true,
   "dependencies": {
+    "@clerk/backend": "^2.32.0",
+    "@clerk/clerk-react": "^5.61.1",
     "@mollie/api-client": "^4.0.0",
     "@prisma/client": "^5.7.1",
     "@sendgrid/mail": "^7.7.0",

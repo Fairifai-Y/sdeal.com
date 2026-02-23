@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './context/LanguageContext';
 import Header from './components/Header';
@@ -19,6 +19,11 @@ import Pricing from './pages/Pricing';
 import Admin from './pages/Admin';
 import Package from './pages/Package';
 import LifetimeDiscountGroup from './pages/LifetimeDiscountGroup';
+import Dashboard from './pages/Dashboard';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import ProtectedDashboardRoute from './components/ProtectedDashboardRoute';
 import './App.css';
 
 function App() {
@@ -28,8 +33,13 @@ function App() {
         <LanguageProvider>
           <div className="App">
             <Routes>
-              {/* Admin route - no header/footer */}
-              <Route path="/admin" element={<Admin />} />
+              {/* Clerk: sign-in / sign-up - no header/footer */}
+              <Route path="/sign-in" element={<SignInPage />} />
+              <Route path="/sign-up" element={<SignUpPage />} />
+              {/* Admin: only for users with role admin */}
+              <Route path="/admin" element={<ProtectedAdminRoute><Admin /></ProtectedAdminRoute>} />
+              {/* Dashboard: only for signed-in regular users */}
+              <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />
               
               {/* All other routes with header/footer */}
               <Route path="*" element={
