@@ -26,11 +26,28 @@ function getOrderStatusClass(status) {
   return 'orders-status--waiting';
 }
 
+/** Vertaald label voor order status (20=Confirmed, 25=Cancelled, rest=Waiting). */
+function getOrderStatusLabel(status, t) {
+  const n = status != null ? Number(status) : NaN;
+  if (Number(n) === 20) return t('orderStatusConfirmed');
+  if (Number(n) === 25) return t('orderStatusCanceled');
+  return t('orderStatusWaiting');
+}
+
 /** Finance status: 80 = settled, 50 = paid, 30 = invoice accepted (groen); rest neutraal. */
 function getFinanceStatusClass(status) {
   const n = status != null ? Number(status) : NaN;
   if (n === 80 || n === 50 || n === 30) return 'finance-status--ok';
   return '';
+}
+
+/** Vertaald label voor finance status (80=Settled, 50=Paid, 30=Invoice accepted). */
+function getFinanceStatusLabel(status, t) {
+  const n = status != null ? Number(status) : NaN;
+  if (n === 80) return t('financeStatusSettled');
+  if (n === 50) return t('financeStatusPaid');
+  if (n === 30) return t('financeStatusInvoiceAccepted');
+  return status != null && status !== '' ? String(status) : '–';
 }
 
 /** Haal eerste productafbeelding uit order (verschillende API-veldnamen). */
@@ -217,7 +234,7 @@ export default function DashboardOrders() {
                       <td>{order.customer_order_id ?? order.increment_id ?? '–'}</td>
                       <td>
                         <span className={`dashboard-orders-status-pill ${getOrderStatusClass(order.order_status)}`}>
-                          {order.order_status || '–'}
+                          {getOrderStatusLabel(order.order_status, t)}
                         </span>
                       </td>
                       <td>{formatEuro(order.commission)}</td>
@@ -225,7 +242,7 @@ export default function DashboardOrders() {
                       <td>{order.internal_status ?? '–'}</td>
                       <td>
                         <span className={`dashboard-orders-status-pill ${getFinanceStatusClass(order.finance_status)}`}>
-                          {order.finance_status ?? '–'}
+                          {getFinanceStatusLabel(order.finance_status, t)}
                         </span>
                       </td>
                       <td>{order.paypal_disputes ?? t('noDispute')}</td>
