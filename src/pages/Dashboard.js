@@ -15,13 +15,13 @@ export default function Dashboard() {
         description="Your SDeal dashboard"
       />
       <div className="dashboard-page">
-        <header className="dashboard-header">
-          <div className="dashboard-header-inner">
-            <Link to="/" className="dashboard-logo">SDeal</Link>
-            <div className="dashboard-user">
-              <span className="dashboard-email">{user?.primaryEmailAddress?.emailAddress}</span>
-              <UserButton afterSignOutUrl="/" />
-            </div>
+        <header className="admin-header-top">
+          <Link to="/" className="admin-logo-link">
+            <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
+          </Link>
+          <div className="dashboard-user">
+            <span className="dashboard-user-name">{user?.firstName || 'Gebruiker'}</span>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </header>
         <main className="dashboard-main">
