@@ -1,6 +1,8 @@
 .dashboard-page {
   min-height: 100vh;
   background: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Zelfde headerbalk als Admin (admin-header-top, admin-logo-link, admin-logo in Admin.css) */
@@ -38,10 +40,17 @@
   color: #333;
 }
 
+.dashboard-body {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 80px);
+}
+
 .dashboard-main {
-  max-width: 1200px;
-  margin: 0 auto;
+  flex: 1;
   padding: 2rem;
+  overflow: auto;
+  background: #fff;
 }
 
 .dashboard-main h1 {

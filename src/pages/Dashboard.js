@@ -2,11 +2,15 @@ import React from 'react';
 import { UserButton } from '@clerk/clerk-react';
 import { useUser } from '@clerk/clerk-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../translations/translations';
 import SEOHead from '../components/SEOHead';
+import DashboardSidebar from '../components/DashboardSidebar';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
 
   return (
     <>
@@ -24,13 +28,16 @@ export default function Dashboard() {
             <UserButton afterSignOutUrl="/" />
           </div>
         </header>
-        <main className="dashboard-main">
-          <h1>Dashboard</h1>
-          <p className="dashboard-welcome">
-            Welkom, {user?.firstName || user?.primaryEmailAddress?.emailAddress || 'gebruiker'}.
-          </p>
-          <p>Dit is je persoonlijke dashboard. Hier kun je later je verkopen, orders en instellingen beheren.</p>
-        </main>
+        <div className="dashboard-body">
+          <DashboardSidebar activeSection="dashboard" />
+          <main className="dashboard-main">
+            <h1>{getTranslation(currentLanguage, 'dashboard')}</h1>
+            <p className="dashboard-welcome">
+              Welkom, {user?.firstName || user?.primaryEmailAddress?.emailAddress || 'gebruiker'}.
+            </p>
+            <p>Dit is je persoonlijke dashboard. Hier kun je later je verkopen, orders en instellingen beheren.</p>
+          </main>
+        </div>
       </div>
     </>
   );

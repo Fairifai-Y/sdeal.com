@@ -267,9 +267,25 @@ export const translations = {
      contactUsJobs: 'Does one of the positions above suit you perfectly? Don\'t hesitate and contact us at',
      viewDetails: 'View Details',
      applyNow: 'Apply Now',
-     keyResponsibilities: 'Key Responsibilities',
-     requirements: 'Requirements',
-     whatWeOffer: 'What We Offer',
+    keyResponsibilities: 'Key Responsibilities',
+    requirements: 'Requirements',
+    whatWeOffer: 'What We Offer',
+
+    // Dashboard menu
+    menuLabel: 'MENU',
+    dashboard: 'Dashboard',
+    dashboardProducts: 'Products',
+    dashboardOrders: 'Orders',
+    dashboardDisputes: 'Disputes',
+    dashboardReturns: 'Returns',
+    dashboardPerformance: 'Performance',
+    dashboardFinance: 'Finance',
+    dashboardPayout: 'Payout',
+    dashboardInvoice: 'Invoice',
+    dashboardSettings: 'Settings',
+    dashboardFeed: 'Feed',
+    dashboardFaq: 'FAQ',
+    dashboardNews: 'News',
   },
   
   nl: {
@@ -543,6 +559,22 @@ export const translations = {
      keyResponsibilities: 'Belangrijkste Verantwoordelijkheden',
      requirements: 'Vereisten',
      whatWeOffer: 'Wat Wij Bieden',
+
+    // Dashboard menu
+    menuLabel: 'MENU',
+    dashboard: 'Dashboard',
+    dashboardProducts: 'Producten',
+    dashboardOrders: 'Orders',
+    dashboardDisputes: 'Geschillen',
+    dashboardReturns: 'Retourzendingen',
+    dashboardPerformance: 'Prestaties',
+    dashboardFinance: 'Financiën',
+    dashboardPayout: 'Uitbetaling',
+    dashboardInvoice: 'Factuur',
+    dashboardSettings: 'Instellingen',
+    dashboardFeed: 'Feed',
+    dashboardFaq: 'FAQ',
+    dashboardNews: 'Nieuws',
   },
   
   de: {
@@ -816,6 +848,22 @@ export const translations = {
      keyResponsibilities: 'Wichtige Verantwortlichkeiten',
      requirements: 'Anforderungen',
      whatWeOffer: 'Was Wir Bieten',
+
+    // Dashboard menu
+    menuLabel: 'MENÜ',
+    dashboard: 'Dashboard',
+    dashboardProducts: 'Produkte',
+    dashboardOrders: 'Bestellungen',
+    dashboardDisputes: 'Streitigkeiten',
+    dashboardReturns: 'Retouren',
+    dashboardPerformance: 'Leistung',
+    dashboardFinance: 'Finanzen',
+    dashboardPayout: 'Auszahlung',
+    dashboardInvoice: 'Rechnung',
+    dashboardSettings: 'Einstellungen',
+    dashboardFeed: 'Feed',
+    dashboardFaq: 'FAQ',
+    dashboardNews: 'Neuigkeiten',
   },
   
   fr: {
@@ -1089,6 +1137,22 @@ export const translations = {
      keyResponsibilities: 'Responsabilités Clés',
      requirements: 'Exigences',
      whatWeOffer: 'Ce Que Nous Offrons',
+
+    // Dashboard menu
+    menuLabel: 'MENU',
+    dashboard: 'Tableau de bord',
+    dashboardProducts: 'Produits',
+    dashboardOrders: 'Commandes',
+    dashboardDisputes: 'Litiges',
+    dashboardReturns: 'Retours',
+    dashboardPerformance: 'Performance',
+    dashboardFinance: 'Finance',
+    dashboardPayout: 'Paiement',
+    dashboardInvoice: 'Facture',
+    dashboardSettings: 'Paramètres',
+    dashboardFeed: 'Fil',
+    dashboardFaq: 'FAQ',
+    dashboardNews: 'Actualités',
   }
 };
 
