@@ -266,6 +266,11 @@
   color: #b91c1c;
 }
 
+.finance-status--ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
 .dashboard-orders-view-btn {
   padding: 0.25rem;
   border: none;

@@ -18,13 +18,18 @@ function formatDate(dateStr, locale) {
   return d.toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'nl' ? 'nl-NL' : locale === 'de' ? 'de-DE' : 'fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+/** Order status: 20 = confirmed (groen), 25 = cancelled (rood), rest = waiting (grijs). */
 function getOrderStatusClass(status) {
-  if (!status) return '';
-  const s = String(status).toLowerCase();
-  if (s.includes('confirm') && !s.includes('wait')) return 'orders-status--confirmed';
-  if (s.includes('wait')) return 'orders-status--waiting';
-  if (s.includes('cancel')) return 'orders-status--canceled';
-  if (s.includes('complet')) return 'orders-status--completed';
+  const n = status != null ? Number(status) : NaN;
+  if (Number(n) === 20) return 'orders-status--confirmed';
+  if (Number(n) === 25) return 'orders-status--canceled';
+  return 'orders-status--waiting';
+}
+
+/** Finance status: 80 = settled, 50 = paid, 30 = invoice accepted (groen); rest neutraal. */
+function getFinanceStatusClass(status) {
+  const n = status != null ? Number(status) : NaN;
+  if (n === 80 || n === 50 || n === 30) return 'finance-status--ok';
   return '';
 }
 
@@ -102,9 +107,9 @@ export default function DashboardOrders() {
   const totalCount = data?.total_count ?? data?.totalCount ?? rawItems.length;
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1;
 
-  const completed = items.filter((o) => String(o.order_status || '').toLowerCase().includes('confirm') && !String(o.order_status || '').toLowerCase().includes('wait')).length;
-  const waiting = items.filter((o) => String(o.order_status || '').toLowerCase().includes('wait')).length;
-  const canceled = items.filter((o) => String(o.order_status || '').toLowerCase().includes('cancel')).length;
+  const completed = items.filter((o) => Number(o.order_status) === 20).length;
+  const waiting = items.filter((o) => Number(o.order_status) !== 20 && Number(o.order_status) !== 25).length;
+  const canceled = items.filter((o) => Number(o.order_status) === 25).length;
   const total = items.length;
   const pctCompleted = total > 0 ? (completed / total * 100).toFixed(2) : '0';
   const pctWaiting = total > 0 ? (waiting / total * 100).toFixed(2) : '0';
@@ -218,7 +223,11 @@ export default function DashboardOrders() {
                       <td>{formatEuro(order.commission)}</td>
                       <td>{formatDate(order.created_at, currentLanguage)}</td>
                       <td>{order.internal_status ?? '–'}</td>
-                      <td>{order.finance_status ?? '–'}</td>
+                      <td>
+                        <span className={`dashboard-orders-status-pill ${getFinanceStatusClass(order.finance_status)}`}>
+                          {order.finance_status ?? '–'}
+                        </span>
+                      </td>
                       <td>{order.paypal_disputes ?? t('noDispute')}</td>
                       <td><button type="button" className="dashboard-orders-view-btn" aria-label={t('ordersColView')}>👁</button></td>
                     </tr>
