@@ -61,10 +61,6 @@ module.exports = async (req, res) => {
     filters.page = parseInt(page, 10);
     filters.pageSize = parseInt(pageSize, 10);
 
-    // Nieuwste orders eerst
-    filters.sortBy = 'created_at';
-    filters.sortDirection = 'DESC';
-
     // Build search criteria query parameters
     const queryParams = buildSearchCriteria(filters);
 
