@@ -43,7 +43,7 @@ model PackageSelection {
   kvkNumber     String? // Chamber of Commerce number
   vatNumber     String? // VAT/BTW number
   iban          String? // IBAN
-  bic           String? // BIC
+  bic           String? // BIC (SWIFT)
 
   // Mollie payment fields
   molliePaymentId  String? // Mollie payment ID

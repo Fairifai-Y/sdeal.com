@@ -61,6 +61,12 @@ PIPEDRIVE_FIELD_MARGEAFSPRAAK="..."     # Margeafspraak = commissie (%)
 PIPEDRIVE_FIELD_PACKAGE="..."           # Package = Package A / Package B / Package C
 PIPEDRIVE_FIELD_PAYMENT="..."           # Payment = Monthly / Yearly
 
+# Custom Organisatie-velden (40-char key per veld). Haal keys op via: /api/admin/test-pipedrive?organizationFields=1
+PIPEDRIVE_ORG_FIELD_KVK="..."           # KVK / registratienummer
+PIPEDRIVE_ORG_FIELD_VAT="..."           # BTW / VAT nummer
+PIPEDRIVE_ORG_FIELD_IBAN="..."          # IBAN
+PIPEDRIVE_ORG_FIELD_SWIFT="..."         # SWIFT / BIC
+
 # Magento: seller aanmaken na succesvolle betaling (alleen voor nieuwe klanten met placeholder sellerId)
 # Zet op "true" om na betaling POST /supplier/create aan te roepen en seller_id op te slaan
 MAGENTO_CREATE_SELLER_ENABLED="false"   # op "true" zetten als je live wilt gaan

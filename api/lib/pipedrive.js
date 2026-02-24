@@ -14,6 +14,11 @@ const PIPEDRIVE_FIELD_MAGENTO_DEAL_ID = process.env.PIPEDRIVE_FIELD_MAGENTO_DEAL
 const PIPEDRIVE_FIELD_MARGEAFSPRAAK = process.env.PIPEDRIVE_FIELD_MARGEAFSPRAAK;   // commissie
 const PIPEDRIVE_FIELD_PACKAGE = process.env.PIPEDRIVE_FIELD_PACKAGE;               // Package A/B/C
 const PIPEDRIVE_FIELD_PAYMENT = process.env.PIPEDRIVE_FIELD_PAYMENT;               // Monthly/Yearly
+// Organization custom fields (keys uit /api/admin/test-pipedrive?organizationFields=1)
+const PIPEDRIVE_ORG_FIELD_IBAN = process.env.PIPEDRIVE_ORG_FIELD_IBAN;             // IBAN
+const PIPEDRIVE_ORG_FIELD_SWIFT = process.env.PIPEDRIVE_ORG_FIELD_SWIFT;           // BIC/SWIFT
+const PIPEDRIVE_ORG_FIELD_KVK = process.env.PIPEDRIVE_ORG_FIELD_KVK;               // KVK/registratienummer
+const PIPEDRIVE_ORG_FIELD_VAT = process.env.PIPEDRIVE_ORG_FIELD_VAT;               // BTW/VAT nummer
 const PIPEDRIVE_DOMAIN = (process.env.PIPEDRIVE_DOMAIN || '').replace(/\.pipedrive\.com$/i, '');
 const PIPEDRIVE_BASE_URL = process.env.PIPEDRIVE_BASE_URL ||
   (PIPEDRIVE_DOMAIN ? `https://${PIPEDRIVE_DOMAIN}.pipedrive.com/api/v1` : null);
@@ -71,7 +76,21 @@ async function pushAanmeldingToPipedrive(record) {
 
     let orgId = null;
     if (companyName) {
-      const orgRes = await pipedriveRequest('POST', '/organizations', { name: companyName });
+      const orgCustom = {};
+      if (PIPEDRIVE_ORG_FIELD_KVK && (record.kvkNumber != null && record.kvkNumber !== '')) {
+        orgCustom[PIPEDRIVE_ORG_FIELD_KVK] = String(record.kvkNumber).trim();
+      }
+      if (PIPEDRIVE_ORG_FIELD_VAT && (record.vatNumber != null && record.vatNumber !== '')) {
+        orgCustom[PIPEDRIVE_ORG_FIELD_VAT] = String(record.vatNumber).trim();
+      }
+      if (PIPEDRIVE_ORG_FIELD_IBAN && (record.iban != null && record.iban !== '')) {
+        orgCustom[PIPEDRIVE_ORG_FIELD_IBAN] = String(record.iban).trim();
+      }
+      if (PIPEDRIVE_ORG_FIELD_SWIFT && (record.bic != null && record.bic !== '')) {
+        orgCustom[PIPEDRIVE_ORG_FIELD_SWIFT] = String(record.bic).trim();
+      }
+      const orgBody = { name: companyName, ...orgCustom };
+      const orgRes = await pipedriveRequest('POST', '/organizations', orgBody);
       if (orgRes && orgRes.data && orgRes.data.id) {
         orgId = orgRes.data.id;
       }

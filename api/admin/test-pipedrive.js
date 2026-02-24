@@ -14,6 +14,7 @@ module.exports = async (req, res) => {
     const baseUrl = getBaseUrl();
     const token = process.env.PIPEDRIVE_API_TOKEN;
     const includeDealFields = req.query.dealFields === '1' || req.query.dealFields === 'true';
+    const includeOrgFields = req.query.organizationFields === '1' || req.query.organizationFields === 'true';
 
     if (!baseUrl || !token) {
       return res.status(400).json({
@@ -52,12 +53,27 @@ module.exports = async (req, res) => {
           field_type: f.field_type,
           options: f.options ? f.options.map((o) => ({ id: o.id, label: o.label })) : undefined,
         }));
-        result.hint = 'Gebruik de "key" waarde in je .env (PIPEDRIVE_FIELD_...). Voor dropdowns: waarde is vaak de optie-id of het label, afhankelijk van veldtype.';
       } else {
         result.dealFieldsError = fieldsData.error || 'Kon dealFields niet ophalen';
       }
-    } else {
-      result.hint = 'Voeg ?dealFields=1 toe aan de URL om alle Deal-velden (name + key) op te halen voor je custom velden.';
+    }
+    if (includeOrgFields) {
+      const orgFieldsUrl = `${baseUrl.replace(/\/$/, '')}/organizationFields?api_token=${token}`;
+      const orgFieldsRes = await fetch(orgFieldsUrl);
+      const orgFieldsData = await orgFieldsRes.json().catch(() => ({}));
+      if (orgFieldsRes.ok && orgFieldsData.data) {
+        result.organizationFields = orgFieldsData.data.map((f) => ({
+          name: f.name,
+          key: f.key,
+          field_type: f.field_type,
+          options: f.options ? f.options.map((o) => ({ id: o.id, label: o.label })) : undefined,
+        }));
+      } else {
+        result.organizationFieldsError = orgFieldsData.error || 'Kon organizationFields niet ophalen';
+      }
+    }
+    if (!result.hint) {
+      result.hint = 'Voeg ?dealFields=1 en/of ?organizationFields=1 toe om Deal- of Organisatie-velden (name + key) op te halen.';
     }
 
     return res.json(result);
