@@ -5,6 +5,31 @@ import { UserButton } from '@clerk/clerk-react';
 import AdminSidebar from '../components/AdminSidebar';
 import './Admin.css';
 
+// Package ID → prijs en naam (voor weergave per seller)
+const PACKAGE_PRICES = {
+  1: { name: 'Pakket B - 2026', price: 49, type: 'Subscription', billing: 'Monthly' },
+  2: { name: 'Pakket A - 2026', price: 29, type: 'Subscription', billing: 'Monthly' },
+  3: { name: 'Platform connection (Small)', price: 19, type: 'Subscription', billing: 'Monthly' },
+  4: { name: 'Pakket C - 2026', price: 99, type: 'Subscription', billing: 'Monthly' },
+  5: { name: 'DEAL CSS', price: 24.95, type: 'Add On', billing: 'Monthly' },
+  6: { name: 'CPC (Cost per click)', price: 39.95, type: 'Add On', billing: 'Monthly' },
+  7: { name: 'Pakket A - 2026 Yearly', price: 245, type: 'Subscription', billing: 'Yearly' },
+  8: { name: 'Pakket B - 2026 Yearly', price: 415, type: 'Subscription', billing: 'Yearly' },
+  9: { name: 'Pakket C - 2026 Yearly', price: 825, type: 'Subscription', billing: 'Yearly' },
+};
+const getPackageLabel = (p) => {
+  const id = p?.id != null ? Number(p.id) : null;
+  const info = id != null ? PACKAGE_PRICES[id] : null;
+  if (info) return `ID ${id}: ${info.name} - €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}`;
+  return p?.packages_type || p?.name || (id != null ? `ID ${id}` : '-');
+};
+const getPackageShortLabel = (p) => {
+  const id = p?.id != null ? Number(p.id) : null;
+  const info = id != null ? PACKAGE_PRICES[id] : null;
+  if (info) return `ID ${id}: €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}`;
+  return p?.packages_type || p?.name || (id != null ? `ID ${id}` : '-');
+};
+
 const Admin = () => {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
@@ -1074,7 +1099,7 @@ const Admin = () => {
                           </td>
                           <td style={{ fontSize: '0.85rem' }}>
                             {seller.packages && seller.packages.length > 0
-                              ? seller.packages.map((p) => p.packages_type || p.name || `ID ${p.id}`).filter(Boolean).join(', ') || '-'
+                              ? seller.packages.map((p) => getPackageShortLabel(p)).filter(Boolean).join(', ') || '-'
                               : '-'}
                           </td>
                         </tr>
@@ -4562,17 +4587,32 @@ const Admin = () => {
                                 )}
                                 {view.packages && view.packages.length > 0 && (() => {
                                   const pkgKeys = [...new Set(view.packages.flatMap((p) => Object.keys(p)))].filter((k) => !k.match(/^_/)).sort();
-                                  const displayKeys = ['id', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at', ...pkgKeys.filter((k) => !['id', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at'].includes(k))];
+                                  const displayKeys = ['id', 'prijs_display', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at', ...pkgKeys.filter((k) => !['id', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at'].includes(k))];
+                                  const getPriceForPackage = (p) => {
+                                    const id = p?.id != null ? Number(p.id) : null;
+                                    const info = id != null ? PACKAGE_PRICES[id] : null;
+                                    return info != null ? `€${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}` : '-';
+                                  };
                                   return (
                                     <div style={{ marginTop: '1rem' }}>
                                       <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Packages</h4>
+                                      <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#555' }}>
+                                        Opbrengsten per package: {view.packages.map((p) => {
+                                          const id = p?.id != null ? Number(p.id) : null;
+                                          const info = id != null ? PACKAGE_PRICES[id] : null;
+                                          return info ? `ID ${id} = €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}` : null;
+                                        }).filter(Boolean).join(', ') || '-'}
+                                      </p>
                                       <div style={{ overflowX: 'auto' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                                          <thead><tr style={{ borderBottom: '1px solid #ddd' }}>{displayKeys.map((k) => <th key={k} style={{ textAlign: 'left', padding: '6px 8px', whiteSpace: 'nowrap' }}>{k.replace(/_/g, ' ')}</th>)}</tr></thead>
+                                          <thead><tr style={{ borderBottom: '1px solid #ddd' }}>{displayKeys.map((k) => <th key={k} style={{ textAlign: 'left', padding: '6px 8px', whiteSpace: 'nowrap' }}>{k === 'prijs_display' ? 'Prijs' : k.replace(/_/g, ' ')}</th>)}</tr></thead>
                                           <tbody>
                                             {view.packages.map((p) => (
                                               <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
                                                 {displayKeys.map((key) => {
+                                                  if (key === 'prijs_display') {
+                                                    return <td key={key} style={{ padding: '6px 8px', fontWeight: 600 }}>{getPriceForPackage(p)}</td>;
+                                                  }
                                                   const val = p[key];
                                                   let display = val == null ? '-' : String(val);
                                                   if (key === 'created_at' || key === 'updated_at') display = val ? new Date(val).toLocaleString('nl-NL') : '-';
