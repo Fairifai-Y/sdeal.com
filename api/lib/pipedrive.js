@@ -125,6 +125,19 @@ async function pushAanmeldingToPipedrive(record) {
     const dealTitle = companyName
       ? `${companyName} deal`
       : `${name} deal`;
+    // Dealwaarde: monthly = 12 × maandbedrag, yearly = jaarbedrag (zelfde als Admin.js package-prijzen)
+    const packageMonthlyPrice = { A: 29, B: 49, C: 99 };
+    const packageYearlyPrice = { A: 245, B: 415, C: 825 };
+    const pkg = (record.package || '').toUpperCase();
+    const billing = String(record.billingPeriod || '').toLowerCase();
+    const monthlyAmount = packageMonthlyPrice[pkg];
+    const yearlyAmount = packageYearlyPrice[pkg];
+    let dealValue = null;
+    if (billing === 'yearly' && yearlyAmount != null) {
+      dealValue = yearlyAmount;
+    } else if ((billing === 'monthly' || !billing) && monthlyAmount != null) {
+      dealValue = 12 * monthlyAmount;
+    }
     // Pipedrive enum velden vereisen optie-ID (uit dealFields). IDs uit jullie Pipedrive:
     const packageOptionId = { A: 197, B: 198, C: 199 };  // Package A/B/C
     const paymentOptionId = { monthly: 204, yearly: 205 }; // Monthly / Yearly
@@ -152,6 +165,7 @@ async function pushAanmeldingToPipedrive(record) {
       person_id: personId,
       ...(orgId ? { org_id: orgId } : {}),
       ...(PIPEDRIVE_STAGE_OVK_GETEKEND ? { stage_id: Number(PIPEDRIVE_STAGE_OVK_GETEKEND) } : {}),
+      ...(dealValue != null ? { value: Number(dealValue), currency: 'EUR' } : {}),
       ...customFields,
     };
     const dealRes = await pipedriveRequest('POST', '/deals', dealBody);
