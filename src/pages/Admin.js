@@ -12,6 +12,7 @@ const Admin = () => {
   const [overviewData, setOverviewData] = useState(null);
   const [financeData, setFinanceData] = useState(null);
   const [customersData, setCustomersData] = useState(null);
+  const [sellersData, setSellersData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -173,6 +174,8 @@ const Admin = () => {
           setFinanceData(result.data);
         } else if (section === 'customers') {
           setCustomersData(result.data);
+        } else if (section === 'sellers') {
+          setSellersData(result.data);
         }
       } else {
         console.error('Error fetching data:', result.error);
@@ -948,6 +951,64 @@ const Admin = () => {
             {!isSearchMode && customersData && (!customersData.customers || customersData.customers.length === 0) && (
               <div style={{ marginTop: '30px', padding: '20px', textAlign: 'center', color: '#666' }}>
                 Geen klanten gevonden
+              </div>
+            )}
+          </div>
+        );
+
+      case 'sellers':
+        const sellers = sellersData?.sellers || [];
+        return (
+          <div className="admin-section-content">
+            <h2>Sellers</h2>
+            <p style={{ marginBottom: '1rem', color: '#666' }}>
+              {sellersData ? `${sellersData.total} seller${sellersData.total !== 1 ? 's' : ''} in de database` : 'Laden...'}
+            </p>
+            {loading && sellers.length === 0 ? (
+              <div className="admin-loading">Laden...</div>
+            ) : sellers.length > 0 ? (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Seller ID</th>
+                      <th>Email</th>
+                      <th>Bedrijf</th>
+                      <th>Naam</th>
+                      <th>Pakket</th>
+                      <th>Clerk gekoppeld</th>
+                      <th>Datum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sellers.map((seller) => (
+                      <tr
+                        key={seller.id}
+                        onClick={() => seller.sellerId && fetchSellerInfo(seller.sellerId)}
+                        style={{
+                          cursor: seller.sellerId ? 'pointer' : 'default',
+                          backgroundColor: selectedSeller === seller.sellerId ? '#e3f2fd' : 'transparent',
+                        }}
+                      >
+                        <td>{seller.sellerId || '-'}</td>
+                        <td>{seller.sellerEmail || '-'}</td>
+                        <td>{seller.companyName || '-'}</td>
+                        <td>
+                          {seller.firstName || seller.lastName
+                            ? `${seller.firstName || ''} ${seller.lastName || ''}`.trim()
+                            : '-'}
+                        </td>
+                        <td>{seller.package || '-'}</td>
+                        <td>{seller.clerkUserId ? 'Ja' : '–'}</td>
+                        <td>{seller.createdAt ? new Date(seller.createdAt).toLocaleDateString('nl-NL') : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ marginTop: '1rem', padding: '20px', textAlign: 'center', color: '#666' }}>
+                Geen sellers gevonden
               </div>
             )}
           </div>
@@ -4341,6 +4402,12 @@ const Admin = () => {
             onClick={() => setActiveSection('customers')}
           >
             Klanten
+          </button>
+          <button 
+            className={`admin-nav-button ${activeSection === 'sellers' ? 'active' : ''}`}
+            onClick={() => setActiveSection('sellers')}
+          >
+            Sellers
           </button>
           <button 
             className={`admin-nav-button ${activeSection === 'mailing' ? 'active' : ''}`}
