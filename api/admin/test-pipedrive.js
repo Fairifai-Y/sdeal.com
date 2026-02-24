@@ -1,4 +1,3 @@
-const { requireAuth } = require('./auth');
 const { getBaseUrl } = require('../lib/pipedrive');
 
 module.exports = async (req, res) => {
@@ -10,9 +9,6 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method not allowed. Use GET.' });
   }
-
-  // Protect with admin auth
-  if (!(await requireAuth(req, res))) return;
 
   try {
     const baseUrl = getBaseUrl();
