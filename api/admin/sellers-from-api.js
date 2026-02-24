@@ -36,6 +36,10 @@ module.exports = async (req, res) => {
           seen.set(sid, {
             supplier_id: sid,
             supplier_name: item.supplier_name || null,
+            is_active: item.is_active,
+            enabled: item.enabled,
+            status: item.status,
+            supplier_status: item.supplier_status,
           });
         }
       });

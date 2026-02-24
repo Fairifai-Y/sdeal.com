@@ -962,6 +962,13 @@ const Admin = () => {
 
       case 'sellers':
         const sellers = sellersData?.sellers || [];
+        const getSellerStatusLabel = (s) => {
+          if (s?.is_active !== undefined && s?.is_active !== null) return s.is_active ? 'Enabled' : 'Disabled';
+          if (s?.enabled !== undefined && s?.enabled !== null) return s.enabled ? 'Enabled' : 'Disabled';
+          if (s?.status != null && s.status !== '') return String(s.status);
+          if (s?.supplier_status != null && s.supplier_status !== '') return String(s.supplier_status);
+          return '–';
+        };
         return (
           <div className="admin-section-content">
             <h2>Sellers (API)</h2>
@@ -977,11 +984,13 @@ const Admin = () => {
                     <tr>
                       <th>Supplier ID</th>
                       <th>Supplier naam</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sellers.map((seller) => {
                       const sid = seller.supplier_id ?? seller.sellerId;
+                      const statusLabel = getSellerStatusLabel(seller);
                       return (
                         <tr
                           key={sid}
@@ -993,6 +1002,11 @@ const Admin = () => {
                         >
                           <td>{sid || '-'}</td>
                           <td>{seller.supplier_name ?? seller.sellerEmail ?? '-'}</td>
+                          <td>
+                            {statusLabel === 'Enabled' && <span style={{ color: '#059669', fontWeight: 600 }}>Enabled</span>}
+                            {statusLabel === 'Disabled' && <span style={{ color: '#dc2626', fontWeight: 600 }}>Disabled</span>}
+                            {statusLabel !== 'Enabled' && statusLabel !== 'Disabled' && statusLabel}
+                          </td>
                         </tr>
                       );
                     })}
