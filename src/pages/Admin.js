@@ -567,13 +567,13 @@ const Admin = () => {
     
     try {
       console.log(`[Admin] Fetching seller info for ID: ${sellerId}`);
-      // Fetch all seller info in parallel
-      // Note: These endpoints automatically use the proxy if PROXY_BASE_URL is configured
-      const [balanceRes, ordersRes, deliveryRes, reviewsRes] = await Promise.allSettled([
+      // Fetch all seller info in parallel (seller-admin + admin seller-view)
+      const [balanceRes, ordersRes, deliveryRes, reviewsRes, viewRes] = await Promise.allSettled([
         fetch(`/api/seller-admin/balance?supplierId=${sellerId}`),
         fetch(`/api/seller-admin/orders?supplierId=${sellerId}&page=1&pageSize=10`),
         fetch(`/api/seller-admin/delivery-info?supplierId=${sellerId}`),
-        fetch(`/api/seller-admin/reviews?supplierId=${sellerId}`)
+        fetch(`/api/seller-admin/reviews?supplierId=${sellerId}`),
+        authenticatedFetch(`/api/admin/seller-view?supplierId=${encodeURIComponent(sellerId)}`)
       ]);
 
       const sellerData = {
@@ -582,6 +582,7 @@ const Admin = () => {
         orders: null,
         deliveryInfo: null,
         reviews: null,
+        sellerView: null,
         errors: {}
       };
 
@@ -639,6 +640,18 @@ const Admin = () => {
         }
       } else {
         sellerData.errors.reviews = 'Failed to fetch reviews';
+      }
+
+      // Process supplier view (supplier + addresses + contacts + packages)
+      if (viewRes.status === 'fulfilled' && viewRes.value && viewRes.value.ok) {
+        const viewData = await viewRes.value.json();
+        if (viewData.success && viewData.data) {
+          sellerData.sellerView = viewData.data;
+        } else {
+          sellerData.errors.sellerView = viewData.error || 'Failed to fetch supplier view';
+        }
+      } else {
+        sellerData.errors.sellerView = 'Failed to fetch supplier view';
       }
 
       setSellerInfo(sellerData);
@@ -4416,6 +4429,107 @@ const Admin = () => {
                 </div>
               ) : sellerInfo ? (
                 <div className="seller-info-sections">
+                  {/* Supplier View (API: supplier + addresses + contacts + packages) */}
+                  {(sellerInfo.sellerView || sellerInfo.errors.sellerView) && (
+                    <div className="seller-info-section">
+                      <h3>Supplier (view)</h3>
+                      {sellerInfo.errors.sellerView ? (
+                        <div style={{ color: 'red' }}>Error: {sellerInfo.errors.sellerView}</div>
+                      ) : sellerInfo.sellerView && Array.isArray(sellerInfo.sellerView) && sellerInfo.sellerView[0] ? (
+                        <>
+                          {(() => {
+                            const view = sellerInfo.sellerView[0];
+                            const sup = view.supplier || {};
+                            return (
+                              <>
+                                <div className="seller-info-card" style={{ marginBottom: '1rem' }}>
+                                  <div className="seller-info-row"><strong>Naam:</strong> {sup.name || '-'}</div>
+                                  <div className="seller-info-row"><strong>ID:</strong> {sup.id ?? '-'}</div>
+                                  <div className="seller-info-row"><strong>Status:</strong> {sup.is_active === 1 ? 'Enabled' : sup.is_active === 0 ? 'Disabled' : (sup.is_active ?? '-')}</div>
+                                  <div className="seller-info-row"><strong>Commission:</strong> {sup.commission ?? '-'}%</div>
+                                  <div className="seller-info-row"><strong>URL key:</strong> {sup.url_key || '-'}</div>
+                                  <div className="seller-info-row"><strong>Official seller:</strong> {sup.official_seller ? 'Ja' : 'Nee'}</div>
+                                  <div className="seller-info-row"><strong>Created:</strong> {sup.created_at ? new Date(sup.created_at).toLocaleString('nl-NL') : '-'}</div>
+                                  <div className="seller-info-row"><strong>Updated:</strong> {sup.updated_at ? new Date(sup.updated_at).toLocaleString('nl-NL') : '-'}</div>
+                                  {sup.description && (
+                                    <div className="seller-info-row" style={{ marginTop: '0.5rem' }}>
+                                      <strong>Description:</strong>
+                                      <div style={{ marginTop: '0.25rem', whiteSpace: 'pre-wrap', maxHeight: '120px', overflowY: 'auto' }}>{sup.description.replace(/<[^>]+>/g, ' ')}</div>
+                                    </div>
+                                  )}
+                                  {sup.notes && (
+                                    <div className="seller-info-row" style={{ marginTop: '0.5rem' }}><strong>Notes:</strong> <span style={{ whiteSpace: 'pre-wrap' }}>{sup.notes}</span></div>
+                                  )}
+                                  {sup.service && (
+                                    <div className="seller-info-row" style={{ marginTop: '0.5rem' }}><strong>Service:</strong> <span style={{ whiteSpace: 'pre-wrap' }}>{sup.service}</span></div>
+                                  )}
+                                </div>
+                                {view.addresses && view.addresses.length > 0 && (
+                                  <div style={{ marginTop: '1rem' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Adressen</h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                      <thead><tr style={{ borderBottom: '1px solid #ddd' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>Type</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Straat</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Postcode</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Plaats</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Land</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Active</th></tr></thead>
+                                      <tbody>
+                                        {view.addresses.map((addr) => (
+                                          <tr key={addr.id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '6px 8px' }}>{addr.type || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{[addr.street, addr.housenumber].filter(Boolean).join(' ') || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{addr.postcode || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{addr.city || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{addr.country_code || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{addr.is_active === 1 ? 'Ja' : 'Nee'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                                {view.contacts && view.contacts.length > 0 && (
+                                  <div style={{ marginTop: '1rem' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Contacten</h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                      <thead><tr style={{ borderBottom: '1px solid #ddd' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>Type</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Naam</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Email</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Telefoon</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Active</th></tr></thead>
+                                      <tbody>
+                                        {view.contacts.map((c) => (
+                                          <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '6px 8px' }}>{c.type || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{[c.firstname, c.lastname].filter(Boolean).join(' ') || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{c.emailaddress || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{c.phonenumber || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{c.is_active === 1 ? 'Ja' : 'Nee'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                                {view.packages && view.packages.length > 0 && (
+                                  <div style={{ marginTop: '1rem' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Packages</h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                      <thead><tr style={{ borderBottom: '1px solid #ddd' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Package type</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Created</th></tr></thead>
+                                      <tbody>
+                                        {view.packages.map((p) => (
+                                          <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '6px 8px' }}>{p.id}</td>
+                                            <td style={{ padding: '6px 8px' }}>{p.packages_type || '-'}</td>
+                                            <td style={{ padding: '6px 8px' }}>{p.created_at ? new Date(p.created_at).toLocaleString('nl-NL') : '-'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                                </>
+                              );
+                          })()}
+                        </>
+                      ) : (
+                        <div>Geen supplier view data</div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Balance Info */}
                   <div className="seller-info-section">
                     <h3>Balance</h3>

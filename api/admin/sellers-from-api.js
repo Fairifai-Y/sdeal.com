@@ -1,7 +1,8 @@
 /**
  * GET /api/admin/sellers-from-api
- * Admin only. Returns list of sellers (suppliers) from the SDeal/Magento API
- * by fetching balance records (balance/search without supplier filter) and deduplicating by supplier_id.
+ * Admin only. Returns list of sellers from the SDeal Seller Admin API:
+ * GET /rest/V1/supplier/list/ (see API doc §8).
+ * Each item has id, name, is_active (1=enabled, 0=disabled), status, commission, created_at, etc.
  */
 
 const { requireAuth } = require('./auth');
@@ -18,42 +19,47 @@ module.exports = async (req, res) => {
   if (!(await requireAuth(req, res))) return;
 
   try {
-    const pageSize = 1000;
-    const seen = new Map(); // supplier_id -> { supplier_id, supplier_name }
+    const pageSize = 500;
+    const allItems = [];
     let page = 1;
     let hasMore = true;
+    const dateFrom = '2010-01-01 00:00:00';
+    const dateTo = '2030-12-31 23:59:59';
 
     while (hasMore) {
-      const data = await makeRequest('/sportdeal-balancemanagement/balance/search/', {
+      const params = {
+        'searchCriteria[filter_groups][0][filters][0][field]': 'created_at',
+        'searchCriteria[filter_groups][0][filters][0][condition_type]': 'from',
+        'searchCriteria[filter_groups][0][filters][0][value]': dateFrom,
+        'searchCriteria[filter_groups][1][filters][0][field]': 'created_at',
+        'searchCriteria[filter_groups][1][filters][0][condition_type]': 'to',
+        'searchCriteria[filter_groups][1][filters][0][value]': dateTo,
         'searchCriteria[pageSize]': pageSize,
         'searchCriteria[currentPage]': page,
-      });
-
+      };
+      const data = await makeRequest('/supplier/list/', params);
       const items = data?.items || [];
-      items.forEach((item) => {
-        const sid = item.supplier_id != null ? String(item.supplier_id) : null;
-        if (sid && !seen.has(sid)) {
-          seen.set(sid, {
-            supplier_id: sid,
-            supplier_name: item.supplier_name || null,
-            is_active: item.is_active,
-            enabled: item.enabled,
-            status: item.status,
-            supplier_status: item.supplier_status,
-          });
-        }
-      });
-
+      allItems.push(...items);
       const totalCount = data?.total_count ?? data?.totalCount ?? 0;
       if (items.length < pageSize || page * pageSize >= totalCount) {
         hasMore = false;
       } else {
         page += 1;
-        if (page > 50) hasMore = false; // safety limit
+        if (page > 100) hasMore = false;
       }
     }
 
-    const sellers = Array.from(seen.values()).sort((a, b) => {
+    const sellers = allItems.map((item) => ({
+      supplier_id: item.id != null ? String(item.id) : null,
+      supplier_name: item.name || null,
+      is_active: item.is_active,
+      status: item.status,
+      commission: item.commission,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      url_key: item.url_key,
+      official_seller: item.official_seller,
+    })).filter((s) => s.supplier_id).sort((a, b) => {
       const na = Number(a.supplier_id);
       const nb = Number(b.supplier_id);
       if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
