@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { pushAanmeldingToPipedrive } = require('../lib/pipedrive');
+const { generateAgreementPDF } = require('../package/generate-agreement-pdf');
 
 const globalForPrisma = global;
 const prisma = globalForPrisma.prisma || new PrismaClient({ log: ['error'] });
@@ -7,8 +8,8 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 /**
  * Test: push één seller (uit PackageSelection) naar Pipedrive.
- * GET of POST: ?sellerId=1773
- * Gebruikt de eerste PackageSelection met die sellerId (meest recente eerst).
+ * GET of POST: ?sellerId=1773&attachPdf=1
+ * attachPdf=1: genereert het getekende contract-PDF en koppelt het aan de deal.
  */
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,7 +42,22 @@ module.exports = async (req, res) => {
       });
     }
 
-    const result = await pushAanmeldingToPipedrive(packageSelection);
+    const attachPdf = req.query.attachPdf === '1' || req.query.attachPdf === 'true' || (req.body && (req.body.attachPdf === '1' || req.body.attachPdf === true));
+    let pipedriveOptions;
+    if (attachPdf) {
+      try {
+        const sellerEmail = (packageSelection.sellerEmail || '').trim() || '';
+        const pdfBuffer = await generateAgreementPDF(packageSelection, packageSelection.sellerId, sellerEmail);
+        pipedriveOptions = {
+          pdfBuffer,
+          pdfFilename: `SDeal_Agreement_${packageSelection.sellerId}_${packageSelection.id}.pdf`,
+        };
+      } catch (pdfErr) {
+        console.warn('[test-pipedrive-push] PDF generation failed:', pdfErr.message);
+      }
+    }
+
+    const result = await pushAanmeldingToPipedrive(packageSelection, pipedriveOptions);
 
     return res.status(200).json({
       success: result.success,

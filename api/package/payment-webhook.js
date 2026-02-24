@@ -3,6 +3,7 @@ const { createMollieClient } = require('@mollie/api-client');
 const sgMail = require('@sendgrid/mail');
 const { createSellerInMagento } = require('../lib/magento-create-seller');
 const { pushAanmeldingToPipedrive } = require('../lib/pipedrive');
+const { generateAgreementPDF } = require('./generate-agreement-pdf');
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -132,8 +133,20 @@ module.exports = async (req, res) => {
         }
       }
 
-      // 2. Push to Pipedrive (zelfde flow als test-pipedrive-push: org + person + deal, stage OVK getekend)
-      const pipedriveResult = await pushAanmeldingToPipedrive(recordForPipedrive);
+      // 2. Getekend contract (PDF) genereren en meesturen naar Pipedrive
+      let pdfBuffer = null;
+      try {
+        const sellerEmail = (recordForPipedrive.sellerEmail || '').trim() || null;
+        pdfBuffer = await generateAgreementPDF(recordForPipedrive, recordForPipedrive.sellerId, sellerEmail || '');
+      } catch (pdfErr) {
+        console.warn('[Payment webhook] Agreement PDF generation failed (continuing without attachment):', pdfErr.message);
+      }
+
+      // 3. Push to Pipedrive (org + person + deal + eventueel contract-PDF)
+      const pipedriveOptions = pdfBuffer
+        ? { pdfBuffer, pdfFilename: `SDeal_Agreement_${recordForPipedrive.sellerId}_${recordForPipedrive.id}.pdf` }
+        : undefined;
+      const pipedriveResult = await pushAanmeldingToPipedrive(recordForPipedrive, pipedriveOptions);
       if (pipedriveResult.success) {
         console.log('[Payment webhook] Pipedrive deal created:', pipedriveResult.dealId);
       } else {

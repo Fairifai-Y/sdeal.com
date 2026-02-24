@@ -53,12 +53,44 @@ async function pipedriveRequest(method, path, body = null) {
 }
 
 /**
+ * Upload a file (e.g. agreement PDF) to a Pipedrive deal.
+ * @param {number} dealId - Deal ID
+ * @param {Buffer|Uint8Array} fileBuffer - PDF bytes
+ * @param {string} filename - Filename for the attachment
+ * @returns {Promise<{ success: boolean, fileId?: number, error?: string }>}
+ */
+async function uploadFileToDeal(dealId, fileBuffer, filename = 'SDeal_Agreement.pdf') {
+  const base = getBaseUrl();
+  if (!base || !PIPEDRIVE_API_TOKEN) {
+    return { success: false, error: 'Pipedrive not configured' };
+  }
+  const url = `${base.replace(/\/$/, '')}/files?api_token=${PIPEDRIVE_API_TOKEN}`;
+  const body = new FormData();
+  body.append('deal_id', String(dealId));
+  const blob = new Blob([fileBuffer], { type: 'application/pdf' });
+  body.append('file', blob, filename);
+  const res = await fetch(url, {
+    method: 'POST',
+    body,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.warn('[Pipedrive] File upload failed:', data);
+    return { success: false, error: data.error || data.message || `HTTP ${res.status}` };
+  }
+  const fileId = data.data && data.data.id;
+  if (fileId) console.log('[Pipedrive] File attached to deal', dealId, 'fileId', fileId);
+  return { success: true, fileId };
+}
+
+/**
  * Push one PackageSelection (aanmelding) to Pipedrive: create Organization (if company),
- * Person, and Deal.
+ * Person, and Deal. Optionally attach the signed agreement PDF to the deal.
  * @param {object} record - PackageSelection record (from Prisma)
+ * @param {object} [options] - Optional: { pdfBuffer: Buffer|Uint8Array, pdfFilename: string }
  * @returns {{ success: boolean, dealId?: number, personId?: number, orgId?: number, error?: string }}
  */
-async function pushAanmeldingToPipedrive(record) {
+async function pushAanmeldingToPipedrive(record, options = null) {
   if (!record) {
     return { success: false, error: 'No record' };
   }
@@ -196,6 +228,14 @@ async function pushAanmeldingToPipedrive(record) {
       dealId = dealRes.data.id;
     } else {
       return { success: false, error: 'Failed to create Pipedrive deal', personId, dealRes };
+    }
+
+    if (dealId && options && options.pdfBuffer) {
+      const filename = options.pdfFilename || `SDeal_Agreement_${record.sellerId || record.id}.pdf`;
+      const uploadResult = await uploadFileToDeal(dealId, options.pdfBuffer, filename);
+      if (!uploadResult.success) {
+        console.warn('[Pipedrive] Could not attach agreement PDF:', uploadResult.error);
+      }
     }
 
     console.log('[Pipedrive] Created deal', dealId, 'person', personId, orgId ? `org ${orgId}` : '');
