@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, useClerk } from '@clerk/clerk-react';
+import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/clerk-react';
+import AdminSidebar from '../components/AdminSidebar';
 import './Admin.css';
 
 const Admin = () => {
   const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -164,7 +167,8 @@ const Admin = () => {
   const fetchSectionData = async (section) => {
     setLoading(true);
     try {
-      const response = await authenticatedFetch(`/api/admin/${section}`);
+      const url = section === 'sellers' ? '/api/admin/sellers-from-api' : `/api/admin/${section}`;
+      const response = await authenticatedFetch(url);
       const result = await response.json();
       
       if (result.success) {
@@ -960,9 +964,9 @@ const Admin = () => {
         const sellers = sellersData?.sellers || [];
         return (
           <div className="admin-section-content">
-            <h2>Sellers</h2>
+            <h2>Sellers (API)</h2>
             <p style={{ marginBottom: '1rem', color: '#666' }}>
-              {sellersData ? `${sellersData.total} seller${sellersData.total !== 1 ? 's' : ''} in de database` : 'Laden...'}
+              {sellersData ? `${sellersData.total} seller${sellersData.total !== 1 ? 's' : ''} uit de SDeal API (balance)` : 'Laden...'}
             </p>
             {loading && sellers.length === 0 ? (
               <div className="admin-loading">Laden...</div>
@@ -971,44 +975,33 @@ const Admin = () => {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Seller ID</th>
-                      <th>Email</th>
-                      <th>Bedrijf</th>
-                      <th>Naam</th>
-                      <th>Pakket</th>
-                      <th>Clerk gekoppeld</th>
-                      <th>Datum</th>
+                      <th>Supplier ID</th>
+                      <th>Supplier naam</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sellers.map((seller) => (
-                      <tr
-                        key={seller.id}
-                        onClick={() => seller.sellerId && fetchSellerInfo(seller.sellerId)}
-                        style={{
-                          cursor: seller.sellerId ? 'pointer' : 'default',
-                          backgroundColor: selectedSeller === seller.sellerId ? '#e3f2fd' : 'transparent',
-                        }}
-                      >
-                        <td>{seller.sellerId || '-'}</td>
-                        <td>{seller.sellerEmail || '-'}</td>
-                        <td>{seller.companyName || '-'}</td>
-                        <td>
-                          {seller.firstName || seller.lastName
-                            ? `${seller.firstName || ''} ${seller.lastName || ''}`.trim()
-                            : '-'}
-                        </td>
-                        <td>{seller.package || '-'}</td>
-                        <td>{seller.clerkUserId ? 'Ja' : '–'}</td>
-                        <td>{seller.createdAt ? new Date(seller.createdAt).toLocaleDateString('nl-NL') : '-'}</td>
-                      </tr>
-                    ))}
+                    {sellers.map((seller) => {
+                      const sid = seller.supplier_id ?? seller.sellerId;
+                      return (
+                        <tr
+                          key={sid}
+                          onClick={() => sid && fetchSellerInfo(sid)}
+                          style={{
+                            cursor: sid ? 'pointer' : 'default',
+                            backgroundColor: selectedSeller === sid ? '#e3f2fd' : 'transparent',
+                          }}
+                        >
+                          <td>{sid || '-'}</td>
+                          <td>{seller.supplier_name ?? seller.sellerEmail ?? '-'}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             ) : (
               <div style={{ marginTop: '1rem', padding: '20px', textAlign: 'center', color: '#666' }}>
-                Geen sellers gevonden
+                Geen sellers gevonden in de API
               </div>
             )}
           </div>
@@ -4373,59 +4366,20 @@ const Admin = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-header-top">
+      <header className="admin-header-top">
         <Link to="/" className="admin-logo-link">
           <img src="/images/logo_sdeal_navbar.svg" alt="SDeal Logo" className="admin-logo" />
         </Link>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
-      </div>
-      <div className="admin-panel">
-        <div className="admin-panel-header">
-          <h1>Admin Panel</h1>
+        <div className="admin-header-user">
+          <span className="admin-header-name">{user?.firstName || 'Admin'}</span>
+          <UserButton afterSignOutUrl="/" />
         </div>
-        
-        <div className="admin-navigation">
-          <button 
-            className={`admin-nav-button ${activeSection === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveSection('overview')}
-          >
-            Overzicht
-          </button>
-          <button 
-            className={`admin-nav-button ${activeSection === 'finance' ? 'active' : ''}`}
-            onClick={() => setActiveSection('finance')}
-          >
-            Finance
-          </button>
-          <button 
-            className={`admin-nav-button ${activeSection === 'customers' ? 'active' : ''}`}
-            onClick={() => setActiveSection('customers')}
-          >
-            Klanten
-          </button>
-          <button 
-            className={`admin-nav-button ${activeSection === 'sellers' ? 'active' : ''}`}
-            onClick={() => setActiveSection('sellers')}
-          >
-            Sellers
-          </button>
-          <button 
-            className={`admin-nav-button ${activeSection === 'mailing' ? 'active' : ''}`}
-            onClick={() => setActiveSection('mailing')}
-          >
-            Mailing
-          </button>
-          <button 
-            className={`admin-nav-button ${activeSection === 'ldg' ? 'active' : ''}`}
-            onClick={() => setActiveSection('ldg')}
-          >
-            LDG
-          </button>
-        </div>
-        
-        <div className="admin-content">
+      </header>
+      <div className="admin-body">
+        <AdminSidebar activeSection={activeSection} onSelectSection={setActiveSection} />
+        <main className="admin-main">
           {renderSectionContent()}
-        </div>
+        </main>
       </div>
 
       {/* Seller Info Modal */}

@@ -56,6 +56,10 @@
       "dest": "/api/admin/sellers.js"
     },
     {
+      "src": "/api/admin/sellers-from-api",
+      "dest": "/api/admin/sellers-from-api.js"
+    },
+    {
       "src": "/api/admin/search-customers",
       "dest": "/api/admin/search-customers.js"
     },
