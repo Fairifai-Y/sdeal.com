@@ -69,23 +69,41 @@ module.exports = async (req, res) => {
 
     if (includePackages && sellers.length > 0) {
       const maxWithPackages = Math.min(sellers.length, 80);
-      const viewResults = await Promise.allSettled(
-        sellers.slice(0, maxWithPackages).map((s) =>
-          makeRequest(`/supplier/view/${s.supplier_id}`).then((viewData) => ({ supplier_id: s.supplier_id, view: viewData }))
-        )
-      );
+      const batchSize = 10;
+      const delayMs = 150;
       const viewBySupplier = {};
-      viewResults.forEach((res) => {
-        if (res.status === 'fulfilled' && res.value && res.value.view) {
-          const v = res.value.view;
-          const first = Array.isArray(v) ? v[0] : v;
-          if (first && first.packages && first.packages.length > 0) {
-            viewBySupplier[res.value.supplier_id] = first.packages;
+      const slice = sellers.slice(0, maxWithPackages);
+      for (let i = 0; i < slice.length; i += batchSize) {
+        const batch = slice.slice(i, i + batchSize);
+        const batchResults = await Promise.allSettled(
+          batch.map((s) =>
+            makeRequest(`/supplier/view/${s.supplier_id}`).then((viewData) => ({ supplier_id: String(s.supplier_id), view: viewData }))
+          )
+        );
+        batchResults.forEach((res) => {
+          if (res.status === 'fulfilled' && res.value && res.value.view) {
+            const v = res.value.view;
+            let first = null;
+            if (Array.isArray(v) && v.length > 0) first = v[0];
+            else if (v && Array.isArray(v.items) && v.items.length > 0) first = v.items[0];
+            else if (v && Array.isArray(v.data) && v.data.length > 0) first = v.data[0];
+            else if (v && typeof v === 'object' && !Array.isArray(v)) first = v;
+            if (first) {
+              const packages = first.packages || first.package || [];
+              const list = Array.isArray(packages) ? packages : [packages];
+              if (list.length > 0) {
+                viewBySupplier[res.value.supplier_id] = list.filter(Boolean);
+              }
+            }
           }
+        });
+        if (i + batchSize < slice.length) {
+          await new Promise((r) => setTimeout(r, delayMs));
         }
-      });
+      }
       sellers.forEach((s) => {
-        s.packages = viewBySupplier[s.supplier_id] || [];
+        const key = String(s.supplier_id);
+        s.packages = viewBySupplier[key] || [];
       });
     }
 

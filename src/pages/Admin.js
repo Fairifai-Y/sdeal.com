@@ -18,8 +18,15 @@ const PACKAGE_PRICES = {
   9: { name: 'Pakket C - 2026 Yearly', price: 825, type: 'Subscription', billing: 'Yearly' },
 };
 const getPackageId = (p) => {
-  const raw = p?.id ?? p?.package_id;
+  const raw = p?.id ?? p?.package_id ?? p?.entity_id;
   return raw != null ? Number(raw) : null;
+};
+// Fallback maandbedrag als we alleen type hebben (geen id in 1-9)
+const PACKAGE_TYPE_MONTHLY_FALLBACK = {
+  subscription: 29,
+  Subscription: 29,
+  'Add On': 0,
+  'add on': 0,
 };
 const getPackageShortLabel = (p) => {
   const id = getPackageId(p);
@@ -27,14 +34,19 @@ const getPackageShortLabel = (p) => {
   if (info) return `ID ${id}: €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}`;
   return p?.packages_type || p?.name || (id != null ? `ID ${id}` : '-');
 };
-// Maandelijkse revenue voor één package (yearly → price/12)
+// Maandelijkse revenue voor één package (yearly → price/12); fallback op type als id ontbreekt
 const getPackageMonthlyRevenue = (p) => {
   const id = getPackageId(p);
   const info = id != null ? PACKAGE_PRICES[id] : null;
-  if (!info) return 0;
-  const price = Number(info.price);
-  if (String(info.billing || '').toLowerCase() === 'yearly') return price / 12;
-  return price;
+  if (info) {
+    const price = Number(info.price);
+    if (String(info.billing || '').toLowerCase() === 'yearly') return price / 12;
+    return price;
+  }
+  const type = (p?.packages_type || p?.package_type || p?.name || '').trim();
+  if (type && PACKAGE_TYPE_MONTHLY_FALLBACK[type] !== undefined) return PACKAGE_TYPE_MONTHLY_FALLBACK[type];
+  if (/subscription/i.test(type)) return 29;
+  return 0;
 };
 const getMonthlyRevenueForPackages = (packages) => {
   if (!packages || !packages.length) return 0;
