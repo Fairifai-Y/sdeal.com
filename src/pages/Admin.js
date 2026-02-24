@@ -27,6 +27,19 @@ const getPackageShortLabel = (p) => {
   if (info) return `ID ${id}: €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}`;
   return p?.packages_type || p?.name || (id != null ? `ID ${id}` : '-');
 };
+// Maandelijkse revenue voor één package (yearly → price/12)
+const getPackageMonthlyRevenue = (p) => {
+  const id = getPackageId(p);
+  const info = id != null ? PACKAGE_PRICES[id] : null;
+  if (!info) return 0;
+  const price = Number(info.price);
+  if (String(info.billing || '').toLowerCase() === 'yearly') return price / 12;
+  return price;
+};
+const getMonthlyRevenueForPackages = (packages) => {
+  if (!packages || !packages.length) return 0;
+  return packages.reduce((sum, p) => sum + getPackageMonthlyRevenue(p), 0);
+};
 
 const Admin = () => {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -719,15 +732,20 @@ const Admin = () => {
             <h2>Overzicht</h2>
             {overviewData && (
               <div className="admin-stats-grid">
-                <div className="stat-card highlight">
+                <div className="stat-card">
+                  <h3>Totaal enabled sellers</h3>
+                  <p className="stat-number">{overviewData.totalEnabledSellers ?? '-'}</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers met status Enabled (API)</p>
+                </div>
+                <div className="stat-card">
                   <h3>Totaal Balance Sellers</h3>
                   <p className="stat-number">{overviewData.totalBalanceSellers || 0}</p>
-                  <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>Sellers met balance record</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers met balance record</p>
                 </div>
-                <div className="stat-card highlight">
+                <div className="stat-card">
                   <h3>Sellers met Orders</h3>
                   <p className="stat-number">{overviewData.sellersWithOrders || 0}</p>
-                  <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     Sellers uit laatste 1000 orders
                     {overviewData.fetchedOrdersCount && (
                       <span style={{ display: 'block', marginTop: '3px' }}>
@@ -736,10 +754,10 @@ const Admin = () => {
                     )}
                   </p>
                 </div>
-                <div className="stat-card highlight">
+                <div className="stat-card">
                   <h3>New Model Sellers</h3>
                   <p className="stat-number">{overviewData.newModelCustomers || 0}</p>
-                  <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>Sellers uit database</p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Sellers uit database</p>
                 </div>
                 <div className="stat-card">
                   <h3>Nieuwe Klanten</h3>
@@ -769,10 +787,10 @@ const Admin = () => {
                   <h3>Pakket C</h3>
                   <p className="stat-number">{overviewData.statsByPackage?.C || 0}</p>
                 </div>
-                <div className="stat-card highlight">
+                <div className="stat-card">
                   <h3>LDG Registraties</h3>
                   <p className="stat-number">{overviewData.ldgTotal || 0}</p>
-                  <p style={{ fontSize: '12px', color: 'white', marginTop: '5px', opacity: 0.9 }}>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     Lifetime Discount Group
                     {overviewData.ldgPaid !== undefined && (
                       <span style={{ display: 'block', marginTop: '3px' }}>
@@ -1074,6 +1092,7 @@ const Admin = () => {
                       <th>Supplier naam</th>
                       <th>Status</th>
                       <th>Packages</th>
+                      <th>Verwacht €/maand</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1099,6 +1118,11 @@ const Admin = () => {
                           <td style={{ fontSize: '0.85rem' }}>
                             {seller.packages && seller.packages.length > 0
                               ? seller.packages.map((p) => getPackageShortLabel(p)).filter(Boolean).join(', ') || '-'
+                              : '-'}
+                          </td>
+                          <td style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            {seller.packages && seller.packages.length > 0
+                              ? `€${getMonthlyRevenueForPackages(seller.packages).toFixed(2)}`
                               : '-'}
                           </td>
                         </tr>
@@ -4592,9 +4616,13 @@ const Admin = () => {
                                     const info = id != null ? PACKAGE_PRICES[id] : null;
                                     return info != null ? `€${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}` : '-';
                                   };
+                                  const monthlyRevenue = getMonthlyRevenueForPackages(view.packages);
                                   return (
                                     <div style={{ marginTop: '1rem' }}>
                                       <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Packages</h4>
+                                      <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 600, color: '#333' }}>
+                                        Verwachte maandelijkse revenue: €{monthlyRevenue.toFixed(2)}
+                                      </p>
                                       <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#555' }}>
                                         Opbrengsten per package: {view.packages.map((p) => {
                                           const id = getPackageId(p);

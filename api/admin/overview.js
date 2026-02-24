@@ -90,7 +90,32 @@ module.exports = async (req, res) => {
       }
     }
     
-    // 2. Get sellers with orders from last 1000 orders (unique suppliers from latest orders)
+    // 2. Total enabled sellers (from supplier list API, is_active = 1)
+    let totalEnabledSellers = 0;
+    const enabledSellersCacheKey = 'api_total_enabled_sellers';
+    if (cache[enabledSellersCacheKey] && (now - cache[enabledSellersCacheKey].timestamp) < cacheTTL) {
+      totalEnabledSellers = cache[enabledSellersCacheKey].value;
+      console.log('[Overview] Using cached total enabled sellers:', totalEnabledSellers);
+    } else {
+      try {
+        const supplierListData = await makeRequest('/supplier/list/', {
+          'searchCriteria[filter_groups][0][filters][0][field]': 'is_active',
+          'searchCriteria[filter_groups][0][filters][0][condition_type]': 'eq',
+          'searchCriteria[filter_groups][0][filters][0][value]': '1',
+          'searchCriteria[pageSize]': 1,
+          'searchCriteria[currentPage]': 1
+        });
+        const totalCount = supplierListData?.total_count ?? supplierListData?.totalCount ?? 0;
+        totalEnabledSellers = typeof totalCount === 'number' ? totalCount : parseInt(totalCount, 10) || 0;
+        cache[enabledSellersCacheKey] = { value: totalEnabledSellers, timestamp: now };
+        global.apiCache = cache;
+        console.log('[Overview] Fetched total enabled sellers (cached):', totalEnabledSellers);
+      } catch (enabledErr) {
+        console.warn('[Overview] Failed to fetch enabled sellers count:', enabledErr?.message);
+      }
+    }
+
+    // 3. Get sellers with orders from last 1000 orders (unique suppliers from latest orders)
     let sellersWithOrders = 0;
     let fetchedOrdersCount = 0; // Count of orders actually fetched and processed (should be 1000)
     const ordersCacheKey = 'api_sellers_with_orders_last_1000';
@@ -216,6 +241,8 @@ module.exports = async (req, res) => {
     res.json({
       success: true,
       data: {
+        // Enabled sellers (first tab on overview)
+        totalEnabledSellers, // Sellers with is_active=1 from supplier list API
         // Three main seller counts
         totalBalanceSellers, // Sellers with balance record (from balance endpoint)
         sellersWithOrders, // Sellers that have had orders (from last 1000 orders)
