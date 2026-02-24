@@ -113,20 +113,27 @@ async function pushAanmeldingToPipedrive(record) {
     const dealTitle = companyName
       ? `${companyName} deal`
       : `${name} deal`;
-    const packageLabel = { A: 'Package A', B: 'Package B', C: 'Package C' };
-    const paymentLabel = (p) => (p === 'yearly' ? 'Yearly' : 'Monthly');
+    // Pipedrive enum velden vereisen optie-ID (uit dealFields). IDs uit jullie Pipedrive:
+    const packageOptionId = { A: 197, B: 198, C: 199 };  // Package A/B/C
+    const paymentOptionId = { monthly: 204, yearly: 205 }; // Monthly / Yearly
+    const margeafspraakLabelToId = { 5: 139, 6: 140, 7: 141, 8: 142, 9: 143, 10: 144, 11: 145, 12: 146, '12.4': 88, 13: 147, 14: 90, 15: 34, 16: 148, '16.7': 89, 17: 149, 18: 150, 19: 151, 20: 35, 25: 36, 30: 152, 40: 153, 50: 154 };
     const customFields = {};
     if (PIPEDRIVE_FIELD_MAGENTO_DEAL_ID && record.sellerId && !String(record.sellerId).startsWith('NEW-')) {
       customFields[PIPEDRIVE_FIELD_MAGENTO_DEAL_ID] = String(record.sellerId);
     }
     if (PIPEDRIVE_FIELD_MARGEAFSPRAAK && record.commissionPercentage != null && record.commissionPercentage !== '') {
-      customFields[PIPEDRIVE_FIELD_MARGEAFSPRAAK] = Number(record.commissionPercentage);
+      const commission = Number(record.commissionPercentage);
+      const id = margeafspraakLabelToId[commission] ?? margeafspraakLabelToId[String(commission)];
+      if (id != null) customFields[PIPEDRIVE_FIELD_MARGEAFSPRAAK] = id;
     }
     if (PIPEDRIVE_FIELD_PACKAGE && record.package) {
-      customFields[PIPEDRIVE_FIELD_PACKAGE] = packageLabel[record.package] || `Package ${record.package}`;
+      const id = packageOptionId[record.package.toUpperCase()];
+      if (id != null) customFields[PIPEDRIVE_FIELD_PACKAGE] = id;
     }
     if (PIPEDRIVE_FIELD_PAYMENT && record.billingPeriod) {
-      customFields[PIPEDRIVE_FIELD_PAYMENT] = paymentLabel(String(record.billingPeriod).toLowerCase());
+      const key = String(record.billingPeriod).toLowerCase();
+      const id = paymentOptionId[key];
+      if (id != null) customFields[PIPEDRIVE_FIELD_PAYMENT] = id;
     }
     const dealBody = {
       title: dealTitle,
