@@ -1,12 +1,16 @@
 const { makePostRequest } = require('../seller-admin/helpers');
 
 /**
- * Test: maak een seller (supplier) in Magento met alleen naam + is_active.
+ * Test: maak een seller (supplier) in Magento met minimaal dezelfde body als de officiële API:
+ *   { \"name\", \"commission\", \"description\" }.
  *
  * GET of POST:
- *   /api/magento/test-create-seller-minimal?name=Test%20seller&active=1
+ *   /api/magento/test-create-seller-minimal?name=Test%20seller&commission=21.0&description=Test
  *
- * Default: name = 'SDeal minimal test seller', active = 1.
+ * Defaults:
+ *   name        = 'SDeal minimal test seller'
+ *   commission  = '21.0'
+ *   description = 'Testapi description'
  */
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,14 +26,20 @@ module.exports = async (req, res) => {
     (req.query.name ||
       (req.body && req.body.name) ||
       'SDeal minimal test seller').toString().trim();
-  const activeParam =
-    (req.query.active || (req.body && req.body.active) || '1').toString().trim();
-  const isActive = activeParam === '1' || activeParam.toLowerCase() === 'true';
+  const commission =
+    (req.query.commission ||
+      (req.body && req.body.commission) ||
+      '21.0').toString().trim();
+  const description =
+    (req.query.description ||
+      (req.body && req.body.description) ||
+      'Testapi description').toString().trim();
 
   try {
     const body = {
       name,
-      is_active: isActive ? 1 : 0,
+      commission,
+      description,
     };
 
     const response = await makePostRequest('/supplier/create', body);
