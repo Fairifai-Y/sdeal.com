@@ -17,12 +17,6 @@ const PACKAGE_PRICES = {
   8: { name: 'Pakket B - 2026 Yearly', price: 415, type: 'Subscription', billing: 'Yearly' },
   9: { name: 'Pakket C - 2026 Yearly', price: 825, type: 'Subscription', billing: 'Yearly' },
 };
-const getPackageLabel = (p) => {
-  const id = p?.id != null ? Number(p.id) : null;
-  const info = id != null ? PACKAGE_PRICES[id] : null;
-  if (info) return `ID ${id}: ${info.name} - €${Number(info.price) === info.price ? info.price : info.price.toFixed(2)}`;
-  return p?.packages_type || p?.name || (id != null ? `ID ${id}` : '-');
-};
 const getPackageShortLabel = (p) => {
   const id = p?.id != null ? Number(p.id) : null;
   const info = id != null ? PACKAGE_PRICES[id] : null;
