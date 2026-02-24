@@ -132,16 +132,13 @@ module.exports = async (req, res) => {
         }
       }
 
-      // 2. Push to Pipedrive (company + person + deal, with seller_id in deal title when present)
-      pushAanmeldingToPipedrive(recordForPipedrive)
-        .then((result) => {
-          if (result.success) {
-            console.log('[Payment webhook] Pipedrive deal created:', result.dealId);
-          } else {
-            console.warn('[Payment webhook] Pipedrive push failed:', result.error);
-          }
-        })
-        .catch((err) => console.error('[Payment webhook] Pipedrive error:', err.message));
+      // 2. Push to Pipedrive (zelfde flow als test-pipedrive-push: org + person + deal, stage OVK getekend)
+      const pipedriveResult = await pushAanmeldingToPipedrive(recordForPipedrive);
+      if (pipedriveResult.success) {
+        console.log('[Payment webhook] Pipedrive deal created:', pipedriveResult.dealId);
+      } else {
+        console.warn('[Payment webhook] Pipedrive push failed:', pipedriveResult.error);
+      }
 
       // Notify admin that payment succeeded (if NOTIFICATION_EMAIL or ADMIN_EMAIL is set)
       await sendPaymentSuccessNotification(packageSelection);

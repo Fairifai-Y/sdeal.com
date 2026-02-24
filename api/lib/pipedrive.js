@@ -14,6 +14,7 @@ const PIPEDRIVE_FIELD_MAGENTO_DEAL_ID = process.env.PIPEDRIVE_FIELD_MAGENTO_DEAL
 const PIPEDRIVE_FIELD_MARGEAFSPRAAK = process.env.PIPEDRIVE_FIELD_MARGEAFSPRAAK;   // commissie
 const PIPEDRIVE_FIELD_PACKAGE = process.env.PIPEDRIVE_FIELD_PACKAGE;               // Package A/B/C
 const PIPEDRIVE_FIELD_PAYMENT = process.env.PIPEDRIVE_FIELD_PAYMENT;               // Monthly/Yearly
+const PIPEDRIVE_STAGE_OVK_GETEKEND = process.env.PIPEDRIVE_STAGE_OVK_GETEKEND;     // Deal stage \"OVK getekend\" (stage_id)
 // Organization custom fields (keys uit /api/admin/test-pipedrive?organizationFields=1)
 const PIPEDRIVE_ORG_FIELD_IBAN = process.env.PIPEDRIVE_ORG_FIELD_IBAN;             // IBAN
 const PIPEDRIVE_ORG_FIELD_SWIFT = process.env.PIPEDRIVE_ORG_FIELD_SWIFT;           // BIC/SWIFT
@@ -139,6 +140,7 @@ async function pushAanmeldingToPipedrive(record) {
       title: dealTitle,
       person_id: personId,
       ...(orgId ? { org_id: orgId } : {}),
+      ...(PIPEDRIVE_STAGE_OVK_GETEKEND ? { stage_id: Number(PIPEDRIVE_STAGE_OVK_GETEKEND) } : {}),
       ...customFields,
     };
     const dealRes = await pipedriveRequest('POST', '/deals', dealBody);
