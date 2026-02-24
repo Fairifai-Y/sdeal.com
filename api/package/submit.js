@@ -3,7 +3,6 @@
 const { PrismaClient } = require('@prisma/client');
 const sgMail = require('@sendgrid/mail');
 const { generateAgreementPDF } = require('./generate-agreement-pdf');
-const { pushAanmeldingToPipedrive } = require('../lib/pipedrive');
 
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
@@ -656,16 +655,7 @@ module.exports = async (req, res) => {
       console.log('emailToSend validation result:', emailToSend ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend.trim()) : false);
     }
 
-    // Push to Pipedrive (non-blocking; don't fail signup if Pipedrive fails)
-    pushAanmeldingToPipedrive(recordForEmail)
-      .then((result) => {
-        if (result.success) {
-          console.log('[Pipedrive] Aanmelding pushed:', result.dealId);
-        } else {
-          console.warn('[Pipedrive] Push failed:', result.error);
-        }
-      })
-      .catch((err) => console.error('[Pipedrive] Error:', err.message));
+    // Pipedrive + Magento: done after successful payment (see payment-webhook.js)
 
     // Send response
     res.json({

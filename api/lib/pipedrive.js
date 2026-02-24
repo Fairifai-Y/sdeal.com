@@ -9,6 +9,11 @@
  */
 
 const PIPEDRIVE_API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
+// Custom deal field keys (40-char hash per veld; haal op via GET /api/admin/test-pipedrive?dealFields=1)
+const PIPEDRIVE_FIELD_MAGENTO_DEAL_ID = process.env.PIPEDRIVE_FIELD_MAGENTO_DEAL_ID || process.env.PIPEDRIVE_MAGENTO_DEAL_ID_FIELD_KEY;
+const PIPEDRIVE_FIELD_MARGEAFSPRAAK = process.env.PIPEDRIVE_FIELD_MARGEAFSPRAAK;   // commissie
+const PIPEDRIVE_FIELD_PACKAGE = process.env.PIPEDRIVE_FIELD_PACKAGE;               // Package A/B/C
+const PIPEDRIVE_FIELD_PAYMENT = process.env.PIPEDRIVE_FIELD_PAYMENT;               // Monthly/Yearly
 const PIPEDRIVE_DOMAIN = (process.env.PIPEDRIVE_DOMAIN || '').replace(/\.pipedrive\.com$/i, '');
 const PIPEDRIVE_BASE_URL = process.env.PIPEDRIVE_BASE_URL ||
   (PIPEDRIVE_DOMAIN ? `https://${PIPEDRIVE_DOMAIN}.pipedrive.com/api/v1` : null);
@@ -89,10 +94,26 @@ async function pushAanmeldingToPipedrive(record) {
     const dealTitle = companyName
       ? `${companyName} deal`
       : `${name} deal`;
+    const packageLabel = { A: 'Package A', B: 'Package B', C: 'Package C' };
+    const paymentLabel = (p) => (p === 'yearly' ? 'Yearly' : 'Monthly');
+    const customFields = {};
+    if (PIPEDRIVE_FIELD_MAGENTO_DEAL_ID && record.sellerId && !String(record.sellerId).startsWith('NEW-')) {
+      customFields[PIPEDRIVE_FIELD_MAGENTO_DEAL_ID] = String(record.sellerId);
+    }
+    if (PIPEDRIVE_FIELD_MARGEAFSPRAAK && record.commissionPercentage != null && record.commissionPercentage !== '') {
+      customFields[PIPEDRIVE_FIELD_MARGEAFSPRAAK] = Number(record.commissionPercentage);
+    }
+    if (PIPEDRIVE_FIELD_PACKAGE && record.package) {
+      customFields[PIPEDRIVE_FIELD_PACKAGE] = packageLabel[record.package] || `Package ${record.package}`;
+    }
+    if (PIPEDRIVE_FIELD_PAYMENT && record.billingPeriod) {
+      customFields[PIPEDRIVE_FIELD_PAYMENT] = paymentLabel(String(record.billingPeriod).toLowerCase());
+    }
     const dealBody = {
       title: dealTitle,
       person_id: personId,
       ...(orgId ? { org_id: orgId } : {}),
+      ...customFields,
     };
     const dealRes = await pipedriveRequest('POST', '/deals', dealBody);
     let dealId = null;

@@ -49,11 +49,21 @@ NOTIFICATION_EMAIL="admin@yourdomain.com"   # Ontvanger van o.a. "Betaling gesla
 # Mollie Payment Configuration (optional)
 MOLLIE_API_KEY="your-mollie-api-key"
 
-# Pipedrive (aanmeldingen automatisch naar Pipedrive)
+# Pipedrive (aanmeldingen na betaling: bedrijf + contact + deal)
 PIPEDRIVE_API_TOKEN="your-pipedrive-api-token"
 PIPEDRIVE_DOMAIN="sdeal"   # of je company subdomain → sdeal.pipedrive.com
 # Optioneel: volledige base URL in plaats van domain:
 # PIPEDRIVE_BASE_URL="https://sdeal.pipedrive.com/api/v1"
+#
+# Custom Deal-velden (40-char key per veld). Haal keys op via: /api/admin/test-pipedrive?dealFields=1
+PIPEDRIVE_FIELD_MAGENTO_DEAL_ID="..."   # Magento Deal ID = seller_id
+PIPEDRIVE_FIELD_MARGEAFSPRAAK="..."     # Margeafspraak = commissie (%)
+PIPEDRIVE_FIELD_PACKAGE="..."           # Package = Package A / Package B / Package C
+PIPEDRIVE_FIELD_PAYMENT="..."           # Payment = Monthly / Yearly
+
+# Magento: seller aanmaken na succesvolle betaling (alleen voor nieuwe klanten met placeholder sellerId)
+# Zet op "true" om na betaling POST /supplier/create aan te roepen en seller_id op te slaan
+MAGENTO_CREATE_SELLER_ENABLED="false"   # op "true" zetten als je live wilt gaan
 
 # Clerk Authentication (for /admin and /dashboard)
 REACT_APP_CLERK_PUBLISHABLE_KEY="pk_test_..."   # Frontend (Create React App)

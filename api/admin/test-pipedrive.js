@@ -13,6 +13,7 @@ module.exports = async (req, res) => {
   try {
     const baseUrl = getBaseUrl();
     const token = process.env.PIPEDRIVE_API_TOKEN;
+    const includeDealFields = req.query.dealFields === '1' || req.query.dealFields === 'true';
 
     if (!baseUrl || !token) {
       return res.status(400).json({
@@ -33,12 +34,33 @@ module.exports = async (req, res) => {
       });
     }
 
-    return res.json({
+    const result = {
       success: true,
       message: 'Pipedrive-verbinding OK',
       baseUrl,
       user: data.data || null,
-    });
+    };
+
+    if (includeDealFields) {
+      const fieldsUrl = `${baseUrl.replace(/\/$/, '')}/dealFields?api_token=${token}`;
+      const fieldsRes = await fetch(fieldsUrl);
+      const fieldsData = await fieldsRes.json().catch(() => ({}));
+      if (fieldsRes.ok && fieldsData.data) {
+        result.dealFields = fieldsData.data.map((f) => ({
+          name: f.name,
+          key: f.key,
+          field_type: f.field_type,
+          options: f.options ? f.options.map((o) => ({ id: o.id, label: o.label })) : undefined,
+        }));
+        result.hint = 'Gebruik de "key" waarde in je .env (PIPEDRIVE_FIELD_...). Voor dropdowns: waarde is vaak de optie-id of het label, afhankelijk van veldtype.';
+      } else {
+        result.dealFieldsError = fieldsData.error || 'Kon dealFields niet ophalen';
+      }
+    } else {
+      result.hint = 'Voeg ?dealFields=1 toe aan de URL om alle Deal-velden (name + key) op te halen voor je custom velden.';
+    }
+
+    return res.json(result);
   } catch (error) {
     console.error('[Admin test-pipedrive]', error);
     return res.status(500).json({

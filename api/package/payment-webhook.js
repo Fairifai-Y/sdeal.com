@@ -1,6 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const { createMollieClient } = require('@mollie/api-client');
 const sgMail = require('@sendgrid/mail');
+const { createSellerInMagento } = require('../lib/magento-create-seller');
+const { pushAanmeldingToPipedrive } = require('../lib/pipedrive');
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -108,6 +110,38 @@ module.exports = async (req, res) => {
           }
         });
       }
+
+      let recordForPipedrive = packageSelection;
+      const magentoCreateEnabled = process.env.MAGENTO_CREATE_SELLER_ENABLED === 'true';
+      const isNewCustomerWithPlaceholder = packageSelection.isNewCustomer
+        && packageSelection.sellerId
+        && String(packageSelection.sellerId).startsWith('NEW-');
+
+      // 1. Create seller in Magento for new customers (get real supplier_id), then save to DB (only if enabled)
+      if (magentoCreateEnabled && isNewCustomerWithPlaceholder) {
+        const magentoResult = await createSellerInMagento(packageSelection);
+        if (magentoResult.success && magentoResult.supplier_id) {
+          await prisma.packageSelection.update({
+            where: { id: packageSelection.id },
+            data: { sellerId: magentoResult.supplier_id }
+          });
+          recordForPipedrive = { ...packageSelection, sellerId: magentoResult.supplier_id };
+          console.log('[Payment webhook] Magento seller created, sellerId saved:', magentoResult.supplier_id);
+        } else {
+          console.warn('[Payment webhook] Magento create seller failed:', magentoResult.error);
+        }
+      }
+
+      // 2. Push to Pipedrive (company + person + deal, with seller_id in deal title when present)
+      pushAanmeldingToPipedrive(recordForPipedrive)
+        .then((result) => {
+          if (result.success) {
+            console.log('[Payment webhook] Pipedrive deal created:', result.dealId);
+          } else {
+            console.warn('[Payment webhook] Pipedrive push failed:', result.error);
+          }
+        })
+        .catch((err) => console.error('[Payment webhook] Pipedrive error:', err.message));
 
       // Notify admin that payment succeeded (if NOTIFICATION_EMAIL or ADMIN_EMAIL is set)
       await sendPaymentSuccessNotification(packageSelection);

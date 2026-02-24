@@ -223,6 +223,54 @@ const makeRequest = async (endpoint, queryParams = {}) => {
 };
 
 /**
+ * Make a POST request to the Seller Admin API (e.g. supplier/create)
+ * @param {string} endpoint - API endpoint (relative to base URL, e.g. /supplier/create)
+ * @param {Object} body - JSON body
+ * @returns {Promise<Object|string>} Response data (parsed JSON or raw text for e.g. "2338")
+ */
+const makePostRequest = async (endpoint, body) => {
+  try {
+    const headers = getAuthHeaders();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    let url;
+    const finalHeaders = { ...headers };
+    if (PROXY_BASE_URL) {
+      const targetUrl = `${ORIGINAL_API_BASE_URL}${cleanEndpoint}`;
+      const proxyQueryString = new URLSearchParams();
+      proxyQueryString.append('url', targetUrl);
+      url = `${PROXY_BASE_URL}?${proxyQueryString.toString()}`;
+      if (PROXY_SECRET) finalHeaders['X-Proxy-Secret'] = PROXY_SECRET;
+      delete finalHeaders['Accept-Encoding'];
+    } else {
+      url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}`;
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: finalHeaders,
+      body: JSON.stringify(body),
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const contentEncoding = response.headers.get('content-encoding') || '';
+    const buffer = await response.arrayBuffer();
+    const responseText = await decompressIfNeeded(buffer, contentEncoding);
+    if (!response.ok) {
+      const err = new Error(responseText || `POST ${response.status}`);
+      err.status = response.status;
+      err.details = responseText;
+      throw err;
+    }
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      return responseText.trim();
+    }
+  } catch (error) {
+    console.error('[Seller Admin API] POST error:', error);
+    throw error;
+  }
+};
+
+/**
  * Build search criteria query parameters for Magento-style API
  * @param {Object} filters - Filter configuration
  * @returns {Object} Query parameters object
@@ -292,6 +340,7 @@ const buildSearchCriteria = (filters = {}) => {
 module.exports = {
   getAuthHeaders,
   makeRequest,
+  makePostRequest,
   buildSearchCriteria,
   SELLER_ADMIN_API_BASE_URL
 };
