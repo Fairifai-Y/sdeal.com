@@ -90,7 +90,18 @@ async function pushAanmeldingToPipedrive(record) {
       if (PIPEDRIVE_ORG_FIELD_SWIFT && (record.bic != null && record.bic !== '')) {
         orgCustom[PIPEDRIVE_ORG_FIELD_SWIFT] = String(record.bic).trim();
       }
-      const orgBody = { name: companyName, ...orgCustom };
+      const addressParts = [
+        record.street && record.street.trim(),
+        record.postalCode && record.postalCode.trim(),
+        record.city && record.city.trim(),
+        record.country && record.country.trim(),
+      ].filter(Boolean);
+      const address = addressParts.length ? addressParts.join(', ') : null;
+      const orgBody = {
+        name: companyName,
+        ...(address ? { address } : {}),
+        ...orgCustom,
+      };
       const orgRes = await pipedriveRequest('POST', '/organizations', orgBody);
       if (orgRes && orgRes.data && orgRes.data.id) {
         orgId = orgRes.data.id;
