@@ -124,6 +124,10 @@
       "dest": "/api/admin/link-seller.js"
     },
     {
+      "src": "/api/admin/test-pipedrive",
+      "dest": "/api/admin/test-pipedrive.js"
+    },
+    {
       "src": "/api/dashboard/me",
       "dest": "/api/dashboard/me.js"
     },
