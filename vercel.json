@@ -208,6 +208,10 @@
       "dest": "/api/seller-admin/test-proxy.js"
     },
     {
+      "src": "/api/magento/test-create-seller-minimal",
+      "dest": "/api/magento/test-create-seller-minimal.js"
+    },
+    {
       "src": "/adwords-tool",
       "dest": "/adwords-tool/tool.html"
     },
