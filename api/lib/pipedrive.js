@@ -20,6 +20,7 @@ const PIPEDRIVE_ORG_FIELD_IBAN = process.env.PIPEDRIVE_ORG_FIELD_IBAN;          
 const PIPEDRIVE_ORG_FIELD_SWIFT = process.env.PIPEDRIVE_ORG_FIELD_SWIFT;           // BIC/SWIFT
 const PIPEDRIVE_ORG_FIELD_KVK = process.env.PIPEDRIVE_ORG_FIELD_KVK;               // KVK/registratienummer
 const PIPEDRIVE_ORG_FIELD_VAT = process.env.PIPEDRIVE_ORG_FIELD_VAT;               // BTW/VAT nummer
+const PIPEDRIVE_ORG_FIELD_SELL_COUNTRIES = process.env.PIPEDRIVE_ORG_FIELD_SELL_COUNTRIES; // Verkoop in landen (set)
 const PIPEDRIVE_DOMAIN = (process.env.PIPEDRIVE_DOMAIN || '').replace(/\.pipedrive\.com$/i, '');
 const PIPEDRIVE_BASE_URL = process.env.PIPEDRIVE_BASE_URL ||
   (PIPEDRIVE_DOMAIN ? `https://${PIPEDRIVE_DOMAIN}.pipedrive.com/api/v1` : null);
@@ -89,6 +90,27 @@ async function pushAanmeldingToPipedrive(record) {
       }
       if (PIPEDRIVE_ORG_FIELD_SWIFT && (record.bic != null && record.bic !== '')) {
         orgCustom[PIPEDRIVE_ORG_FIELD_SWIFT] = String(record.bic).trim();
+      }
+      if (PIPEDRIVE_ORG_FIELD_SELL_COUNTRIES && record.sellCountries != null) {
+        let countries = [];
+        if (Array.isArray(record.sellCountries)) {
+          countries = record.sellCountries;
+        } else if (typeof record.sellCountries === 'string') {
+          try {
+            const parsed = JSON.parse(record.sellCountries);
+            if (Array.isArray(parsed)) countries = parsed;
+          } catch (e) {
+            // ignore
+          }
+        }
+        const countryCodeToOptionId = { NL: 76, DE: 77, FR: 78, BE: 79, UK: 80, DK: 168, IT: 169, AT: 170 };
+        const optionIds = (countries || [])
+          .map((c) => String(c || '').toUpperCase())
+          .map((code) => countryCodeToOptionId[code])
+          .filter((id) => id != null);
+        if (optionIds.length) {
+          orgCustom[PIPEDRIVE_ORG_FIELD_SELL_COUNTRIES] = optionIds;
+        }
       }
       const addressParts = [
         record.street && record.street.trim(),
