@@ -49,6 +49,12 @@ NOTIFICATION_EMAIL="admin@yourdomain.com"   # Ontvanger van o.a. "Betaling gesla
 # Mollie Payment Configuration (optional)
 MOLLIE_API_KEY="your-mollie-api-key"
 
+# Pipedrive (aanmeldingen automatisch naar Pipedrive)
+PIPEDRIVE_API_TOKEN="your-pipedrive-api-token"
+PIPEDRIVE_DOMAIN="sdeal"   # of je company subdomain → sdeal.pipedrive.com
+# Optioneel: volledige base URL in plaats van domain:
+# PIPEDRIVE_BASE_URL="https://sdeal.pipedrive.com/api/v1"
+
 # Clerk Authentication (for /admin and /dashboard)
 REACT_APP_CLERK_PUBLISHABLE_KEY="pk_test_..."   # Frontend (Create React App)
 CLERK_SECRET_KEY="sk_test_..."                   # Backend (API routes)

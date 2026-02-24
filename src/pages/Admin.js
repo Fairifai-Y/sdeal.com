@@ -4718,30 +4718,41 @@ const Admin = () => {
                     {sellerInfo.errors.orders ? (
                       <div style={{ color: 'red' }}>Error: {sellerInfo.errors.orders}</div>
                     ) : sellerInfo.orders && sellerInfo.orders.items && sellerInfo.orders.items.length > 0 ? (
-                      <div className="seller-orders-table">
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr>
-                              <th>Order ID</th>
-                              <th>Status</th>
-                              <th>Finance Status</th>
-                              <th>Bedrag</th>
-                              <th>Datum</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sellerInfo.orders.items.map((order) => (
-                              <tr key={order.id}>
-                                <td>{order.id}</td>
-                                <td>{order.order_status}</td>
-                                <td>{order.finance_status}</td>
-                                <td>€{parseFloat(order.order_amount_org || 0).toFixed(2)}</td>
-                                <td>{order.created_at ? new Date(order.created_at).toLocaleDateString('nl-NL') : '-'}</td>
+                      <>
+                        {(() => {
+                          const items = sellerInfo.orders.items;
+                          const totalOmzet = items.reduce((sum, o) => sum + parseFloat(o.order_amount_org || 0), 0);
+                          return (
+                            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+                              Totale omzet (laatste {items.length} orders): €{totalOmzet.toFixed(2)}
+                            </p>
+                          );
+                        })()}
+                        <div className="seller-orders-table">
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr>
+                                <th>Order ID</th>
+                                <th>Status</th>
+                                <th>Finance Status</th>
+                                <th>Bedrag</th>
+                                <th>Datum</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {sellerInfo.orders.items.map((order) => (
+                                <tr key={order.id}>
+                                  <td>{order.id}</td>
+                                  <td>{order.order_status}</td>
+                                  <td>{order.finance_status}</td>
+                                  <td>€{parseFloat(order.order_amount_org || 0).toFixed(2)}</td>
+                                  <td>{order.created_at ? new Date(order.created_at).toLocaleDateString('nl-NL') : '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
                     ) : (
                       <div>Geen orders gevonden</div>
                     )}
