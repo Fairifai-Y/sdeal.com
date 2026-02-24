@@ -16,6 +16,8 @@ const Admin = () => {
   const [financeData, setFinanceData] = useState(null);
   const [customersData, setCustomersData] = useState(null);
   const [sellersData, setSellersData] = useState(null);
+  const [sellersStatusFilter, setSellersStatusFilter] = useState('all'); // 'all' | 'enabled' | 'disabled'
+  const [sellersIncludePackages, setSellersIncludePackages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -164,10 +166,13 @@ const Admin = () => {
     }
   }, [isLoaded, isSignedIn]);
 
-  const fetchSectionData = async (section) => {
+  const fetchSectionData = async (section, opts = {}) => {
     setLoading(true);
     try {
-      const url = section === 'sellers' ? '/api/admin/sellers-from-api' : `/api/admin/${section}`;
+      let url = section === 'sellers' ? '/api/admin/sellers-from-api' : `/api/admin/${section}`;
+      if (section === 'sellers' && (opts.includePackages || sellersIncludePackages)) {
+        url += '?includePackages=1';
+      }
       const response = await authenticatedFetch(url);
       const result = await response.json();
       
@@ -974,7 +979,12 @@ const Admin = () => {
         );
 
       case 'sellers':
-        const sellers = sellersData?.sellers || [];
+        const allSellers = sellersData?.sellers || [];
+        const sellersFiltered = allSellers.filter((s) => {
+          if (sellersStatusFilter === 'enabled') return s.is_active === 1 || s.is_active === true;
+          if (sellersStatusFilter === 'disabled') return s.is_active === 0 || s.is_active === false;
+          return true;
+        });
         const getSellerStatusLabel = (s) => {
           if (s?.is_active !== undefined && s?.is_active !== null) return s.is_active ? 'Enabled' : 'Disabled';
           if (s?.enabled !== undefined && s?.enabled !== null) return s.enabled ? 'Enabled' : 'Disabled';
@@ -985,12 +995,53 @@ const Admin = () => {
         return (
           <div className="admin-section-content">
             <h2>Sellers (API)</h2>
-            <p style={{ marginBottom: '1rem', color: '#666' }}>
-              {sellersData ? `${sellersData.total} seller${sellersData.total !== 1 ? 's' : ''} uit de SDeal API (balance)` : 'Laden...'}
-            </p>
-            {loading && sellers.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+              <p style={{ margin: 0, color: '#666' }}>
+                {sellersData ? `${sellersFiltered.length} van ${sellersData.total} seller${sellersData.total !== 1 ? 's' : ''}` : 'Laden...'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: '#666' }}>Filter:</span>
+                <button
+                  type="button"
+                  className={sellersStatusFilter === 'all' ? 'admin-btn primary' : 'admin-btn'}
+                  onClick={() => setSellersStatusFilter('all')}
+                  style={{ padding: '6px 12px', fontSize: '0.9rem' }}
+                >
+                  Alles
+                </button>
+                <button
+                  type="button"
+                  className={sellersStatusFilter === 'enabled' ? 'admin-btn primary' : 'admin-btn'}
+                  onClick={() => setSellersStatusFilter('enabled')}
+                  style={{ padding: '6px 12px', fontSize: '0.9rem', color: sellersStatusFilter === 'enabled' ? undefined : '#059669' }}
+                >
+                  Enabled
+                </button>
+                <button
+                  type="button"
+                  className={sellersStatusFilter === 'disabled' ? 'admin-btn primary' : 'admin-btn'}
+                  onClick={() => setSellersStatusFilter('disabled')}
+                  style={{ padding: '6px 12px', fontSize: '0.9rem', color: sellersStatusFilter === 'disabled' ? undefined : '#dc2626' }}
+                >
+                  Disabled
+                </button>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={sellersIncludePackages}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSellersIncludePackages(checked);
+                    if (allSellers.length > 0) fetchSectionData('sellers', { includePackages: checked });
+                  }}
+                />
+                Packages in lijst tonen (eerste 80 sellers, duurt langer)
+              </label>
+            </div>
+            {loading && allSellers.length === 0 ? (
               <div className="admin-loading">Laden...</div>
-            ) : sellers.length > 0 ? (
+            ) : sellersFiltered.length > 0 ? (
               <div className="admin-table-container">
                 <table className="admin-table">
                   <thead>
@@ -998,10 +1049,11 @@ const Admin = () => {
                       <th>Supplier ID</th>
                       <th>Supplier naam</th>
                       <th>Status</th>
+                      <th>Packages</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sellers.map((seller) => {
+                    {sellersFiltered.map((seller) => {
                       const sid = seller.supplier_id ?? seller.sellerId;
                       const statusLabel = getSellerStatusLabel(seller);
                       return (
@@ -1019,6 +1071,11 @@ const Admin = () => {
                             {statusLabel === 'Enabled' && <span style={{ color: '#059669', fontWeight: 600 }}>Enabled</span>}
                             {statusLabel === 'Disabled' && <span style={{ color: '#dc2626', fontWeight: 600 }}>Disabled</span>}
                             {statusLabel !== 'Enabled' && statusLabel !== 'Disabled' && statusLabel}
+                          </td>
+                          <td style={{ fontSize: '0.85rem' }}>
+                            {seller.packages && seller.packages.length > 0
+                              ? seller.packages.map((p) => p.packages_type || p.name || `ID ${p.id}`).filter(Boolean).join(', ') || '-'
+                              : '-'}
                           </td>
                         </tr>
                       );
@@ -4503,23 +4560,34 @@ const Admin = () => {
                                     </table>
                                   </div>
                                 )}
-                                {view.packages && view.packages.length > 0 && (
-                                  <div style={{ marginTop: '1rem' }}>
-                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Packages</h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                      <thead><tr style={{ borderBottom: '1px solid #ddd' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Package type</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Created</th></tr></thead>
-                                      <tbody>
-                                        {view.packages.map((p) => (
-                                          <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-                                            <td style={{ padding: '6px 8px' }}>{p.id}</td>
-                                            <td style={{ padding: '6px 8px' }}>{p.packages_type || '-'}</td>
-                                            <td style={{ padding: '6px 8px' }}>{p.created_at ? new Date(p.created_at).toLocaleString('nl-NL') : '-'}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
+                                {view.packages && view.packages.length > 0 && (() => {
+                                  const pkgKeys = [...new Set(view.packages.flatMap((p) => Object.keys(p)))].filter((k) => !k.match(/^_/)).sort();
+                                  const displayKeys = ['id', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at', ...pkgKeys.filter((k) => !['id', 'packages_type', 'name', 'description', 'type_id', 'status', 'is_active', 'created_at', 'updated_at'].includes(k))];
+                                  return (
+                                    <div style={{ marginTop: '1rem' }}>
+                                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Packages</h4>
+                                      <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                          <thead><tr style={{ borderBottom: '1px solid #ddd' }}>{displayKeys.map((k) => <th key={k} style={{ textAlign: 'left', padding: '6px 8px', whiteSpace: 'nowrap' }}>{k.replace(/_/g, ' ')}</th>)}</tr></thead>
+                                          <tbody>
+                                            {view.packages.map((p) => (
+                                              <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                {displayKeys.map((key) => {
+                                                  const val = p[key];
+                                                  let display = val == null ? '-' : String(val);
+                                                  if (key === 'created_at' || key === 'updated_at') display = val ? new Date(val).toLocaleString('nl-NL') : '-';
+                                                  if (key === 'is_active') display = val === 1 || val === true ? 'Ja' : val === 0 || val === false ? 'Nee' : display;
+                                                  if (key === 'description' && display.length > 80) display = display.slice(0, 80) + '…';
+                                                  return <td key={key} style={{ padding: '6px 8px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={val != null && String(val).length > 80 ? String(val) : undefined}>{display}</td>;
+                                                })}
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                                 </>
                               );
                           })()}

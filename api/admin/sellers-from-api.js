@@ -19,6 +19,7 @@ module.exports = async (req, res) => {
   if (!(await requireAuth(req, res))) return;
 
   try {
+    const includePackages = req.query.includePackages === '1' || req.query.includePackages === 'true';
     const pageSize = 500;
     const allItems = [];
     let page = 1;
@@ -65,6 +66,28 @@ module.exports = async (req, res) => {
       if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
       return String(a.supplier_id).localeCompare(String(b.supplier_id));
     });
+
+    if (includePackages && sellers.length > 0) {
+      const maxWithPackages = Math.min(sellers.length, 80);
+      const viewResults = await Promise.allSettled(
+        sellers.slice(0, maxWithPackages).map((s) =>
+          makeRequest(`/supplier/view/${s.supplier_id}`).then((viewData) => ({ supplier_id: s.supplier_id, view: viewData }))
+        )
+      );
+      const viewBySupplier = {};
+      viewResults.forEach((res) => {
+        if (res.status === 'fulfilled' && res.value && res.value.view) {
+          const v = res.value.view;
+          const first = Array.isArray(v) ? v[0] : v;
+          if (first && first.packages && first.packages.length > 0) {
+            viewBySupplier[res.value.supplier_id] = first.packages;
+          }
+        }
+      });
+      sellers.forEach((s) => {
+        s.packages = viewBySupplier[s.supplier_id] || [];
+      });
+    }
 
     res.json({
       success: true,
