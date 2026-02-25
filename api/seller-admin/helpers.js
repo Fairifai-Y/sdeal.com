@@ -232,11 +232,18 @@ const makePostRequest = async (endpoint, body) => {
   try {
     const headers = getAuthHeaders();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    // Voor POST-calls (zoals supplier/create) gaan we direct naar de Seller Admin API,
-    // zodat het exact hetzelfde is als wat je in Postman doet.
-    const url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}`;
+    let url;
     const finalHeaders = { ...headers };
-
+    if (PROXY_BASE_URL) {
+      const targetUrl = `${ORIGINAL_API_BASE_URL}${cleanEndpoint}`;
+      const proxyQueryString = new URLSearchParams();
+      proxyQueryString.append('url', targetUrl);
+      url = `${PROXY_BASE_URL}?${proxyQueryString.toString()}`;
+      if (PROXY_SECRET) finalHeaders['X-Proxy-Secret'] = PROXY_SECRET;
+      delete finalHeaders['Accept-Encoding'];
+    } else {
+      url = `${SELLER_ADMIN_API_BASE_URL}${cleanEndpoint}`;
+    }
     const response = await fetch(url, {
       method: 'POST',
       headers: finalHeaders,
