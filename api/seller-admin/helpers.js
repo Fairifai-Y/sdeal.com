@@ -12,14 +12,12 @@ const inflate = promisify(zlib.inflate);
 // Proxy configuration
 const PROXY_BASE_URL = process.env.PROXY_BASE_URL || '';
 const PROXY_SECRET = process.env.PROXY_SECRET || '';
-// Feature flag to enable/disable proxy usage explicitly
-const USE_SELLER_ADMIN_PROXY = process.env.USE_SELLER_ADMIN_PROXY === '1';
 
 // Original API base URL (the target that the proxy will forward to)
 const ORIGINAL_API_BASE_URL = (process.env.SELLER_ADMIN_API_BASE_URL || 'https://www.sdeal.nl/rest/V1').replace(/\/$/, '');
 
-// Always treat this as the real Magento base URL (not the proxy)
-const SELLER_ADMIN_API_BASE_URL = ORIGINAL_API_BASE_URL;
+// If proxy is configured, use proxy URL, otherwise use original API URL
+const SELLER_ADMIN_API_BASE_URL = PROXY_BASE_URL || ORIGINAL_API_BASE_URL;
 const ADMIN_ACCESS_TOKEN = process.env.SELLER_ADMIN_ACCESS_TOKEN || '';
 
 /**
@@ -110,7 +108,7 @@ const makeRequest = async (endpoint, queryParams = {}) => {
     let finalHeaders = { ...headers };
     
     // If using proxy, construct the request differently
-    if (USE_SELLER_ADMIN_PROXY && PROXY_BASE_URL) {
+    if (PROXY_BASE_URL) {
       // Build the target URL (original API URL + endpoint + query params)
       const targetUrl = `${ORIGINAL_API_BASE_URL}${cleanEndpoint}${queryString.toString() ? '?' + queryString.toString() : ''}`;
       
@@ -236,7 +234,7 @@ const makePostRequest = async (endpoint, body) => {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     let url;
     const finalHeaders = { ...headers };
-    if (USE_SELLER_ADMIN_PROXY && PROXY_BASE_URL) {
+    if (PROXY_BASE_URL) {
       const targetUrl = `${ORIGINAL_API_BASE_URL}${cleanEndpoint}`;
       const proxyQueryString = new URLSearchParams();
       proxyQueryString.append('url', targetUrl);
