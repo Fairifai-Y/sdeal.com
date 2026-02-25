@@ -132,6 +132,10 @@
       "dest": "/api/admin/test-pipedrive-push.js"
     },
     {
+      "src": "/api/admin/test-pipedrive-files",
+      "dest": "/api/admin/test-pipedrive-files.js"
+    },
+    {
       "src": "/api/dashboard/me",
       "dest": "/api/dashboard/me.js"
     },

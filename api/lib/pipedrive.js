@@ -74,13 +74,71 @@ async function uploadFileToDeal(dealId, fileBuffer, filename = 'SDeal_Agreement.
     body,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.warn('[Pipedrive] File upload failed:', data);
-    return { success: false, error: data.error || data.message || `HTTP ${res.status}` };
+
+  const apiSuccess = data && typeof data.success !== 'undefined' ? !!data.success : res.ok;
+  const fileId = data && data.data && data.data.id;
+
+  if (!apiSuccess || !fileId) {
+    console.warn('[Pipedrive] File upload failed:', {
+      httpStatus: res.status,
+      apiSuccess: data.success,
+      error: data.error || data.message,
+      data,
+    });
+    return {
+      success: false,
+      error: data.error || data.message || `HTTP ${res.status}`,
+    };
   }
-  const fileId = data.data && data.data.id;
-  if (fileId) console.log('[Pipedrive] File attached to deal', dealId, 'fileId', fileId);
+
+  console.log('[Pipedrive] File attached to deal', dealId, 'fileId', fileId);
   return { success: true, fileId };
+}
+
+/**
+ * Get a single file from Pipedrive by its ID (for debugging attachments).
+ * @param {number|string} fileId
+ * @returns {Promise<Object>}
+ */
+async function getPipedriveFile(fileId) {
+  const base = getBaseUrl();
+  if (!base || !PIPEDRIVE_API_TOKEN) {
+    throw new Error('Pipedrive not configured: set PIPEDRIVE_API_TOKEN and PIPEDRIVE_DOMAIN or PIPEDRIVE_BASE_URL');
+  }
+  const url = `${base.replace(/\/$/, '')}/files/${fileId}?api_token=${PIPEDRIVE_API_TOKEN}`;
+  const res = await fetch(url, { method: 'GET' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) {
+    const err = new Error(data.error || data.message || `Pipedrive GET /files/${fileId} ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * List files attached to a specific deal.
+ * @param {number|string} dealId
+ * @returns {Promise<Object>}
+ */
+async function listPipedriveFilesForDeal(dealId) {
+  const base = getBaseUrl();
+  if (!base || !PIPEDRIVE_API_TOKEN) {
+    throw new Error('Pipedrive not configured: set PIPEDRIVE_API_TOKEN and PIPEDRIVE_DOMAIN or PIPEDRIVE_BASE_URL');
+  }
+  const url = `${base.replace(/\/$/, '')}/files?api_token=${PIPEDRIVE_API_TOKEN}&deal_id=${encodeURIComponent(
+    String(dealId),
+  )}`;
+  const res = await fetch(url, { method: 'GET' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) {
+    const err = new Error(data.error || data.message || `Pipedrive GET /files ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
 }
 
 /**
@@ -249,4 +307,6 @@ async function pushAanmeldingToPipedrive(record, options = null) {
 module.exports = {
   pushAanmeldingToPipedrive,
   getBaseUrl,
+  getPipedriveFile,
+  listPipedriveFilesForDeal,
 };
